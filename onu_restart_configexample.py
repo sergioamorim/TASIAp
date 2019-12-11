@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# The config file needs to be named 'onu_restart_config.py
+# The config file needs to be named 'onu_restart_config.py'
 # and be placed on the same directory as the file onu_restart.py
 
 telnet = {'ip': '255.255.255.255',

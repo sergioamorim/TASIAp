@@ -63,7 +63,10 @@ class Board:
   def __repr__(self):
     return "<Board(board_id='{0}')>".format(self.board_id)
 
-
+def is_user_authorized(user_id):
+  if user_id in config.authorized_users:
+    return True
+  return False
 
 def format_strhexoctet(strhexoctet):
   return strhexoctet.zfill(2).upper()

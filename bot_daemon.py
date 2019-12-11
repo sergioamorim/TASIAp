@@ -46,14 +46,12 @@ def get_onu_info_string(onu_repr):
 
 def start(bot, update):
   logger.debug('start handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
-  update.message.reply_text('Bem-vindo(a)!\
-      \nEsse BOT envia mensagens de alarme do Zabbix para o grupo da Elite Fibra e também pode autorizar ONUs.\
-      \nSe precisar de ajuda para autorizar ONUs, envie /help')
+  update.message.reply_text('Menus disponíveis:\n/autorizar\n/sinal\n/reiniciar\n\nAjuda em /help')
 
 
 def help(bot, update):
   logger.debug('help handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
-  update.message.reply_text('Para autorizar uma ONU envie autorizar e siga as instruções.')
+  update.message.reply_text('Menus disponíveis: \n/autorizar\n/sinal\n/reiniciar')
 
 def sinal(bot, update):
   logger.debug('sinal handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
@@ -100,7 +98,7 @@ def reiniciar(bot, update):
     update.message.reply_text('Você não tem permissão para acessar o menu /reiniciar.')
 
 def autorizar(bot, update):
-  logger.debug('onu_auth handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
+  logger.debug('autorizar handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
     if len(message_list) == 1:
@@ -152,6 +150,10 @@ def error(bot, update, error):
   logger.warning('Update "%s" caused error "%s"', update, error)
   logger.debug('onu_auth handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
 
+def general(bot, update):
+  logger.debug('general handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
+  update.message.reply_text('Não entendi. Utilize um dos menus para executar funções. Utilize o menu /help para mais informações.')
+
 def main():
   updater = Updater(config.bot_token)
 
@@ -163,7 +165,7 @@ def main():
   dp.add_handler(CommandHandler("reiniciar", reiniciar))
   dp.add_handler(CommandHandler("help", help))
 
-  dp.add_handler(MessageHandler(Filters.text, onu_auth))
+  dp.add_handler(MessageHandler(Filters.text, general))
 
   dp.add_error_handler(error)
 

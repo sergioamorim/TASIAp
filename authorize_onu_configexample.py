@@ -9,3 +9,4 @@ telnet = {'ip': '255.255.255.255',
           'password': 'password_example',
           'password_sudo': 'password_sudo_example'}
 snmp_community = 'community_example'
+authorized_users = ['0123456789']

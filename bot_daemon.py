@@ -103,7 +103,7 @@ def autorizar(bot, update):
     message_list = update.message.text.lower().split(' ')
     if len(message_list) == 1:
       answer_list = subprocess.run(['python3.7', 'authorize_onu.py'], capture_output=True).stdout.decode('utf-8').split(' ')
-      logger.debug('onu_auth: aut: answer_list: {0}'.format(answer_list))
+      logger.debug('autorizar handler: /autorizar: answer_list: {0}'.format(answer_list))
       if '\n' in answer_list:
         answer_list.remove('\n')
       if len(answer_list) is 1:
@@ -122,7 +122,7 @@ def autorizar(bot, update):
         answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a {0}'.format(message_list[1]), '-v {0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
       else:
         answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a {0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
-      logger.debug('onu_auth: int or double_int: answer_string: {0}'.format(answer_string))
+      logger.debug('autorizar: int: answer_string: {0}'.format(answer_string))
       if 'OnuDevice' in answer_string:
         update.message.reply_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(answer_string)))
       elif 'ERR' in answer_string:
@@ -134,7 +134,7 @@ def autorizar(bot, update):
         answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a 1', '-v {0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
       else:
         answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a 1'], capture_output=True).stdout.decode('utf-8')
-      logger.debug('onu_auth: sim: answer_string: {0}'.format(answer_string))
+      logger.debug('autorizar: sim: answer_string: {0}'.format(answer_string))
       if 'OnuDevice' in answer_string:
         update.message.reply_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(answer_string)))
       elif 'ERR' in answer_string:
@@ -148,7 +148,7 @@ def autorizar(bot, update):
 
 def error(bot, update, error):
   logger.warning('Update "%s" caused error "%s"', update, error)
-  logger.debug('onu_auth handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
+  logger.debug('error handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
 
 def general(bot, update):
   logger.debug('general handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))

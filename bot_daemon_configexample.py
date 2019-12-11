@@ -4,3 +4,4 @@
 # and be placed on the same directory as the file bot_daemon.py
 
 bot_token = 'bOt-T0keN_ExaMplE'
+authorized_users = [01234567, 89012345]

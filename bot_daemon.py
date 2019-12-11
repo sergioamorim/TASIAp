@@ -17,6 +17,8 @@ stream_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
 
+def is_user_authorized(user_id):
+    return True if user_id in config.authorized_users else False
 
 def is_int(s):
     try: 

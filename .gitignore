@@ -1,2 +1,4 @@
 *_config.py
 *.log
+screenlog.*
+__pycache__

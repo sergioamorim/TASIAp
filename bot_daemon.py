@@ -99,52 +99,54 @@ def reiniciar(bot, update):
   else:
     update.message.reply_text('Você não tem permissão para acessar o menu /reiniciar.')
 
-def onu_auth(bot, update):
+def autorizar(bot, update):
   logger.debug('onu_auth handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
-  if 'aut' in update.message.text.lower():
-    answer_list = subprocess.run(['python3.7', 'authorize_onu.py'], capture_output=True).stdout.decode('utf-8').split(' ')
-    logger.debug('onu_auth: aut: answer_list: {0}'.format(answer_list))
-    if '\n' in answer_list:
-      answer_list.remove('\n')
-    if len(answer_list) is 1:
-      if 'None' in answer_list[0]:
-        update.message.reply_text('Nenhuma ONU foi encontrada. Envie "autorizar" para verificar novamente se há novas ONUs.')
+  if is_user_authorized(update.message.from_user.id):
+    message_list = update.message.text.lower().split(' ')
+    if len(message_list) == 1:
+      answer_list = subprocess.run(['python3.7', 'authorize_onu.py'], capture_output=True).stdout.decode('utf-8').split(' ')
+      logger.debug('onu_auth: aut: answer_list: {0}'.format(answer_list))
+      if '\n' in answer_list:
+        answer_list.remove('\n')
+      if len(answer_list) is 1:
+        if 'None' in answer_list[0]:
+          update.message.reply_text('Nenhuma ONU foi encontrada. Envie /autorizar para verificar novamente se há novas ONUs.')
+        else:
+          update.message.reply_text('Uma ONU foi encontrada: '+answer_list[0]+'\nConfirma serial para autorizar?\nEnvie "/autorizar sim" para autorizar ou /autorizar para verificar novamente se há novas ONUs.')
       else:
-        update.message.reply_text('Uma ONU foi encontrada: '+answer_list[0]+'\nConfirma serial para autorizar?\nEnvie "sim" para autorizar ou "autorizar" para verificar novamente se há novas ONUs.')
+        reply_list = []
+        for i, answer in enumerate(answer_list):
+          reply_list.append(str(i+1)+'. ')
+          reply_list.append(answer+'\n')
+        update.message.reply_text('ONUs encontradas:\n'+''.join(reply_list)+'Envie o número da ONU que deseja autorizar (ex.: "/autorizar 1") ou /autorizar para verificar novamente se há novas ONUs.')
+    elif is_int(message_list[1]):
+      if len(message_list) == 3 and is_int(message_list[2]) and int(message_list[2]) > 1100 and int(message_list[2]) < 3900 and int(message_list[2][2:]) > 0 and int(message_list[2][1:2]) > 0:
+        answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a {0}'.format(message_list[1]), '-v {0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
+      else:
+        answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a {0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
+      logger.debug('onu_auth: int or double_int: answer_string: {0}'.format(answer_string))
+      if 'OnuDevice' in answer_string:
+        update.message.reply_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(answer_string)))
+      elif 'ERR' in answer_string:
+        update.message.reply_text('A ONU informada não foi encontrada. Envie /autorizar para ver a lista de ONUs disponíveis.')
+      elif 'None' in answer_string:
+        update.message.reply_text('Nenhuma ONU foi encontrada. Envie /autorizar para verificar novamente se há novas ONUs.')
+    elif 'sim' in message_list[1]:
+      if len(message_list) == 3 and is_int(message_list[2]) and int(message_list[2]) > 1100 and int(message_list[2]) < 3900 and int(message_list[2][2:]) > 0 and int(message_list[2][1:2]) > 0:
+        answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a 1', '-v {0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
+      else:
+        answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a 1'], capture_output=True).stdout.decode('utf-8')
+      logger.debug('onu_auth: sim: answer_string: {0}'.format(answer_string))
+      if 'OnuDevice' in answer_string:
+        update.message.reply_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(answer_string)))
+      elif 'ERR' in answer_string:
+        update.message.reply_text('A ONU não foi encontrada. Envie /autorizar para ver a lista de ONUs disponíveis.')
+      elif 'None' in answer_string:
+        update.message.reply_text('Nenhuma ONU foi encontrada. Envie /autorizar para verificar novamente.')
     else:
-      reply_list = []
-      for i, answer in enumerate(answer_list):
-        reply_list.append(str(i+1)+'. ')
-        reply_list.append(answer+'\n')
-      update.message.reply_text('ONUs encontradas:\n'+''.join(reply_list)+'Envie o número da ONU que deseja autorizar (ex.: "1") ou "autorizar" para verificar novamente se há novas ONUs.')
-  elif is_int(update.message.text) or is_double_int(update.message.text):
-    update_message_text_lower_split_space = update.message.text.lower().split(' ')
-    if len(update_message_text_lower_split_space) == 2 and is_int(update_message_text_lower_split_space[1]) and int(update_message_text_lower_split_space[1]) > 0 and int(update_message_text_lower_split_space[1]) < 4096:
-      answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a {0}'.format(update_message_text_lower_split_space[0]), '-v {0}'.format(update_message_text_lower_split_space[1])], capture_output=True).stdout.decode('utf-8')
-    else:
-      answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a {0}'.format(update_message_text_lower_split_space[0])], capture_output=True).stdout.decode('utf-8')
-    logger.debug('onu_auth: int or double_int: answer_string: {0}'.format(answer_string))
-    if 'OnuDevice' in answer_string:
-      update.message.reply_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(answer_string)))
-    elif 'ERR' in answer_string:
-      update.message.reply_text('A ONU informada não foi encontrada. Envie "autorizar" para ver a lista de ONUs disponíveis.')
-    elif 'None' in answer_string:
-      update.message.reply_text('Nenhuma ONU foi encontrada. Envie "autorizar" para verificar novamente se há novas ONUs.')
-  elif 'sim' in update.message.text.lower():
-    update_message_text_lower_split_space = update.message.text.lower().split(' ')
-    if len(update_message_text_lower_split_space) == 2 and is_int(update_message_text_lower_split_space[1]) and int(update_message_text_lower_split_space[1]) > 0 and int(update_message_text_lower_split_space[1]) < 4096:
-      answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a 1', '-v {0}'.format(update_message_text_lower_split_space[1])], capture_output=True).stdout.decode('utf-8')
-    else:
-      answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a 1'], capture_output=True).stdout.decode('utf-8')
-    logger.debug('onu_auth: sim: answer_string: {0}'.format(answer_string))
-    if 'OnuDevice' in answer_string:
-      update.message.reply_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(answer_string)))
-    elif 'ERR' in answer_string:
-      update.message.reply_text('A ONU não foi encontrada. Envie "autorizar" para ver a lista de ONUs disponíveis.')
-    elif 'None' in answer_string:
-      update.message.reply_text('Nenhuma ONU foi encontrada. Envie "autorizar" para verificar novamente.')
+      update.message.reply_text('Para autorizar uma ONU envie /autorizar.')
   else:
-    update.message.reply_text('Para autorizar uma ONU envie "autorizar".')
+    update.message.reply_text('Você não tem permissão para acessar o menu /autorizar.')
 
 def error(bot, update, error):
   logger.warning('Update "%s" caused error "%s"', update, error)
@@ -156,6 +158,7 @@ def main():
   dp = updater.dispatcher
 
   dp.add_handler(CommandHandler("start", start))
+  dp.add_handler(CommandHandler("autorizar", autorizar))
   dp.add_handler(CommandHandler("sinal", sinal))
   dp.add_handler(CommandHandler("reiniciar", reiniciar))
   dp.add_handler(CommandHandler("help", help))

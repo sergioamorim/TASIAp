@@ -61,41 +61,47 @@ def help(bot, update):
 
 def sinal(bot, update):
     logger.debug('sinal handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
-    message_list = update.message.text.lower().split(' ')
-    if is_int(message_list[1]) and int(message_list[1]) > 1100 and int(message_list[1]) < 3900 and int(message_list[1][2:]) > 0 and int(message_list[1][1:2]) > 0 and int(message_list[1][1:2]) < 9:
-        command_list = ['python3.7', 'onu_signal_power.py', '-i', '{0}'.format(message_list[1])]
-        logger.debug('sinal handler: valid id: command_list: {0}'.format(command_list))
-        answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8').replace('\n', '')
-        logger.debug('sinal handler: valid id: answer_string: {0}'.format(answer_string))
-        if answer_string == 'not found':
-            update.message.reply_text('{0} sinal: não existe ONU autorizada com esse ID'.format(message_list[1]))
-        elif answer_string == 'off':
-            update.message.reply_text('{0}: sem sinal'.format(message_list[1]))
-        elif answer_string == 'error':
-            update.message.reply_text('{0}: erro não especificado'.format(message_list[1]))
+    if is_user_authorized(update.message.from_user.id):
+        message_list = update.message.text.lower().split(' ')
+        if is_int(message_list[1]) and int(message_list[1]) > 1100 and int(message_list[1]) < 3900 and int(message_list[1][2:]) > 0 and int(message_list[1][1:2]) > 0 and int(message_list[1][1:2]) < 9:
+            command_list = ['python3.7', 'onu_signal_power.py', '-i', '{0}'.format(message_list[1])]
+            logger.debug('sinal handler: valid id: command_list: {0}'.format(command_list))
+            answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8').replace('\n', '')
+            logger.debug('sinal handler: valid id: answer_string: {0}'.format(answer_string))
+            if answer_string == 'not found':
+                update.message.reply_text('{0} sinal: não existe ONU autorizada com esse ID'.format(message_list[1]))
+            elif answer_string == 'off':
+                update.message.reply_text('{0}: sem sinal'.format(message_list[1]))
+            elif answer_string == 'error':
+                update.message.reply_text('{0}: erro não especificado'.format(message_list[1]))
+            else:
+                update.message.reply_text('{0} sinal: {1}'.format(message_list[1], answer_string))
         else:
-            update.message.reply_text('{0} sinal: {1}'.format(message_list[1], answer_string))
+            update.message.reply_text('ID da ONU inválido. O priméiro dígito do ID deve ser de 1 a 3 (número da placa), o segundo dígito deve ser de 1 a 8 (número da PON) e os dois últimos dígitos devem ser entre 01 e 99 (número da ONU).')
     else:
-        update.message.reply_text('ID da ONU inválido. O priméiro dígito do ID deve ser de 1 a 3 (número da placa), o segundo dígito deve ser de 1 a 8 (número da PON) e os dois últimos dígitos devem ser entre 01 e 99 (número da ONU).')
+        update.message.reply_text('Você não tem permissão para acessar o menu /sinal.')
 
 def reiniciar(bot, update):
     logger.debug('reiniciar handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
-    message_list = update.message.text.lower().split(' ')
-    if is_int(message_list[1]) and int(message_list[1]) > 1100 and int(message_list[1]) < 3900 and int(message_list[1][2:]) > 0 and int(message_list[1][1:2]) > 0 and int(message_list[1][1:2]) < 9:
-        command_list = ['python3.7', 'onu_restart.py', '-i', '{0}'.format(message_list[1])]
-        logger.debug('reiniciar handler: valid id: command_list: {0}'.format(command_list))
-        answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8').replace('\n', '')
-        logger.debug('reiniciar handler: valid id: answer_string: {0}'.format(answer_string))
-        if answer_string == 'not found':
-            update.message.reply_text('{0} reiniciar: sem sinal ou não existe ONU autorizada com esse ID'.format(message_list[1]))
-        elif answer_string == 'error':
-            update.message.reply_text('{0}: erro não especificado'.format(message_list[1]))
-        elif answer_string == 'done':
-            update.message.reply_text('{0}: comando enviado com sucesso. A ONU será reiniciada em até 2 minutos.'.format(message_list[1]))
+    if is_user_authorized(update.message.from_user.id):
+        message_list = update.message.text.lower().split(' ')
+        if is_int(message_list[1]) and int(message_list[1]) > 1100 and int(message_list[1]) < 3900 and int(message_list[1][2:]) > 0 and int(message_list[1][1:2]) > 0 and int(message_list[1][1:2]) < 9:
+            command_list = ['python3.7', 'onu_restart.py', '-i', '{0}'.format(message_list[1])]
+            logger.debug('reiniciar handler: valid id: command_list: {0}'.format(command_list))
+            answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8').replace('\n', '')
+            logger.debug('reiniciar handler: valid id: answer_string: {0}'.format(answer_string))
+            if answer_string == 'not found':
+                update.message.reply_text('{0} reiniciar: sem sinal ou não existe ONU autorizada com esse ID'.format(message_list[1]))
+            elif answer_string == 'error':
+                update.message.reply_text('{0}: erro não especificado'.format(message_list[1]))
+            elif answer_string == 'done':
+                update.message.reply_text('{0}: comando enviado com sucesso. A ONU será reiniciada em até 2 minutos.'.format(message_list[1]))
+            else:
+                update.message.reply_text('{0} reiniciar: resposta desconhecida: {1}'.format(message_list[1], answer_string))
         else:
-            update.message.reply_text('{0} reiniciar: resposta desconhecida: {1}'.format(message_list[1], answer_string))
+            update.message.reply_text('ID da ONU inválido. O priméiro dígito do ID deve ser de 1 a 3 (número da placa), o segundo dígito deve ser de 1 a 8 (número da PON) e os dois últimos dígitos devem ser entre 01 e 99 (número da ONU).')
     else:
-        update.message.reply_text('ID da ONU inválido. O priméiro dígito do ID deve ser de 1 a 3 (número da placa), o segundo dígito deve ser de 1 a 8 (número da PON) e os dois últimos dígitos devem ser entre 01 e 99 (número da ONU).')
+        update.message.reply_text('Você não tem permissão para acessar o menu /reiniciar.')
 
 def onu_auth(bot, update):
     logger.debug('onu_auth handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))

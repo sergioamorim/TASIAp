@@ -44,10 +44,7 @@ def get_onu_info_string(onu_repr):
     cvlan = re.findall(".*cvlan\\=\\'([0-9]*)'.*", onu_repr)[0]
     return '{0}{1}{2}{3} {4} {5}'.format('1' if board == '12' else '2', pon, '0' if int(onu_number) < 10 else '', onu_number, cvlan, phy_address)
 
-# Define a few command handlers. These usually take the two arguments bot and
-# update. Error handlers also receive the raised TelegramError object in error.
 def start(bot, update):
-    """Send a message when the command /start is issued."""
     logger.debug('start handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
     update.message.reply_text('Bem-vindo(a)!\
         \nEsse BOT envia mensagens de alarme do Zabbix para o grupo da Elite Fibra e também pode autorizar ONUs.\
@@ -55,7 +52,6 @@ def start(bot, update):
 
 
 def help(bot, update):
-    """Send a message when the command /help is issued."""
     logger.debug('help handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
     update.message.reply_text('Para autorizar uma ONU envie autorizar e siga as instruções.')
 
@@ -151,39 +147,27 @@ def onu_auth(bot, update):
         update.message.reply_text('Para autorizar uma ONU envie "autorizar".')
 
 def error(bot, update, error):
-    """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, error)
     logger.debug('onu_auth handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
 
 def main():
-    """Start the bot."""
-    # Create the EventHandler and pass it your bot's token.
     updater = Updater(config.bot_token)
 
-    # Get the dispatcher to register handlers
     dp = updater.dispatcher
 
-    # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(CommandHandler("sinal", sinal))
     dp.add_handler(CommandHandler("reiniciar", reiniciar))
     dp.add_handler(CommandHandler("help", help))
 
-    # on noncommand i.e message
     dp.add_handler(MessageHandler(Filters.text, onu_auth))
 
-    # log all errors
     dp.add_error_handler(error)
 
     logger.info('Starting...')
-    # Start the Bot
     updater.start_polling()
 
-    # Run the bot until you press Ctrl-C or the process receives SIGINT,
-    # SIGTERM or SIGABRT. This should be used most of the time, since
-    # start_polling() is non-blocking and will stop the bot gracefully.
     updater.idle()
-
 
 if __name__ == '__main__':
     main()

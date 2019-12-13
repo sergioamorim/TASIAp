@@ -49,7 +49,19 @@ def get_next_value(tn, char):
   return value[:-1].decode('utf-8')
 
 def sanitize_cto_name(cto_name):
-  ## on development
+  cto_sanitized_name = cto_name
+  vlan = cto_name[:5]
+  if cto_name[7:9] == '12':
+    board_id = '1'
+  else:
+  # elif cto_name[7:9] == '14':
+    board_id = '2'
+  pon = cto_name[13:14]
+  onu_number = cto_name[18:20]
+  onu_id = '{0}{1}{2}'.format(board_id, pon, onu_number)
+  cto_actual_name = cto_name[31:].replace('-',' ')
+  cto_sanitized_name = '{0}{1}{2}'.format(onu_id, ' ({0}) '.format(vlan) if vlan[1:] != onu_id else ' ', cto_actual_name)
+  return cto_sanitized_name
 
 def is_cto_id(session, onu_id):
   sql_query = session.execute("SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE :onu_id ORDER BY AcctStartTime DESC LIMIT 1;".format(

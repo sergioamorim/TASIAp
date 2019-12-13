@@ -83,7 +83,7 @@ def is_cto_id(session, onu_id):
   onu_number = onu_id[2:] if onu_id[2:3] != '0' else onu_id[3:]
   cto_like_name = 'P{0}-PON{1}-ONU{2}'.format(board, pon, onu_number)
   cto_vlan_name = session.execute("SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT 1;".format(
-    mysqldb_config.radius_acct_table), cto_like_name).first()
+    mysqldb_config.radius_acct_table, cto_like_name)).scalar()
   if cto_vlan_name:
     return sanitize_cto_vlan_name(cto_vlan_name)
   return None

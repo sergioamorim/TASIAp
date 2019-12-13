@@ -20,18 +20,12 @@ logger.addHandler(stream_handler)
 def is_user_authorized(user_id):
   return True if user_id in config.authorized_users else False
 
+def is_onu_id_valid(onu_id):
+  return is_int(onu_id) and int(onu_id) > 1100 and int(onu_id) < 3900 and int(onu_id[2:]) > 0 and int(onu_id[1:2]) > 0 and int(onu_id[1:2]) < 9
+
 def is_int(s):
   try: 
     int(s)
-    return True
-  except ValueError:
-    return False
-
-def is_double_int(s):
-  try: 
-    s_split_space = s.split(' ')
-    int(s_split_space[0])
-    int(s_split_space[1])
     return True
   except ValueError:
     return False
@@ -57,7 +51,7 @@ def sinal(bot, update):
   logger.debug('sinal handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
-    if is_int(message_list[1]) and int(message_list[1]) > 1100 and int(message_list[1]) < 3900 and int(message_list[1][2:]) > 0 and int(message_list[1][1:2]) > 0 and int(message_list[1][1:2]) < 9:
+    if is_onu_id_valid(message_list[1]):
       command_list = ['python3.7', 'onu_signal_power.py', '-i', '{0}'.format(message_list[1])]
       logger.debug('sinal handler: valid id: command_list: {0}'.format(command_list))
       answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8').replace('\n', '')
@@ -79,7 +73,7 @@ def reiniciar(bot, update):
   logger.debug('reiniciar handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
-    if is_int(message_list[1]) and int(message_list[1]) > 1100 and int(message_list[1]) < 3900 and int(message_list[1][2:]) > 0 and int(message_list[1][1:2]) > 0 and int(message_list[1][1:2]) < 9:
+    if is_onu_id_valid(message_list[1]):
       command_list = ['python3.7', 'onu_restart.py', '-i', '{0}'.format(message_list[1])]
       logger.debug('reiniciar handler: valid id: command_list: {0}'.format(command_list))
       answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8').replace('\n', '')
@@ -146,6 +140,24 @@ def autorizar(bot, update):
   else:
     update.message.reply_text('Você não tem permissão para acessar o menu /autorizar.')
 
+def usuario(bot, update):
+  logger.debug('usuario handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
+  if is_user_authorized(update.message.from_user.id):
+    message_list = update.message.text.lower().split(' ')
+    if is_onu_id_valid(message_list[1]):
+      answer_string = subprocess.run(['python3.7', 'user_from_onu.py', '-i {0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
+      logger.debug('usuario: answer_string: {0}'.format(answer_string))
+      if 'None' in answer_string:
+        update.message.reply_text('{0} usuario: nenhum usuário associado à ONU foi encontrado.'.format(message_list[1]))
+      elif 'ERR' in answer_string:
+        update.message.reply_text('{0} usuario: nenhuma ONU encontrada com este ID.'.format(message_list[1]))
+      else:
+        update.message.reply_text('{0} usuario: {1}'.format(message_list[1], answer_string))
+    else:
+      update.message.reply_text('ID da ONU inválido. O priméiro dígito do ID deve ser de 1 a 3 (número da placa), o segundo dígito deve ser de 1 a 8 (número da PON) e os dois últimos dígitos devem ser entre 01 e 99 (número da ONU).')
+  else:
+    update.message.reply_text('Você não tem permissão para acessar o menu /usuario.')
+
 def error(bot, update, error):
   logger.warning('Update "%s" caused error "%s"', update, error)
   logger.debug('error handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
@@ -163,6 +175,7 @@ def main():
   dp.add_handler(CommandHandler("autorizar", autorizar))
   dp.add_handler(CommandHandler("sinal", sinal))
   dp.add_handler(CommandHandler("reiniciar", reiniciar))
+  dp.add_handler(CommandHandler("usuario", usuario))
   dp.add_handler(CommandHandler("help", help))
 
   dp.add_handler(MessageHandler(Filters.text, general))

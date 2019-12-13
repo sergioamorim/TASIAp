@@ -55,28 +55,25 @@ def get_next_value(tn, char):
   logger.debug('get_next_value: return: {0}'.format(value[:-1]))
   return value[:-1].decode('utf-8')
 
-def sanitize_cto_name(cto_name):
-  vlan = cto_name[:5]
-  if cto_name[7:9] == '12':
+def sanitize_cto_vlan_name(cto_vlan_name):
+  vlan = cto_vlan_name[:5]
+  if cto_vlan_name[7:9] == '12':
     board_id = '1'
   else:
-  # elif cto_name[7:9] == '14':
+  # elif cto_vlan_name[7:9] == '14':
     board_id = '2'
-  pon = cto_name[13:14]
-  onu_number = cto_name[18:20]
+  pon = cto_vlan_name[13:14]
+  onu_number = cto_vlan_name[18:20]
   onu_id = '{0}{1}{2}'.format(board_id, pon, onu_number)
-  cto_actual_name = cto_name[31:].replace('-',' ')
+  cto_actual_name = cto_vlan_name[31:].replace('-',' ')
   cto_sanitized_name = 'CTO {0}{1}{2}'.format(onu_id, ' ({0}) '.format(vlan) if vlan[1:] != onu_id else ' ', cto_actual_name)
   return cto_sanitized_name
 
 def is_cto_id(session, onu_id):
-  sql_query = session.execute("SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT 1;".format(
-    mysqldb_config.radius_acct_table, onu_id)).first()
-  test_sql_query = session.execute("SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT 1;".format(
-    mysqldb_config.radius_acct_table, cto_like_name)).scalar()
-  logger.info('test_sql_query: {0} -- {1}'.format(str(test_sql_query), repr(test_sql_query)))
-  if sql_query:
-    return sanitize_cto_name(sql_query[0])
+  cto_vlan_name = session.execute("SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT 1;".format(
+    mysqldb_config.radius_acct_table, onu_id)).scalar()
+  if cto_vlan_name:
+    return sanitize_cto_vlan_name(cto_vlan_name)
   if onu_id[:1] == '1':
     board = '12'
   else:
@@ -85,10 +82,10 @@ def is_cto_id(session, onu_id):
   pon = onu_id[1:2]
   onu_number = onu_id[2:] if onu_id[2:3] != '0' else onu_id[3:]
   cto_like_name = 'P{0}-PON{1}-ONU{2}'.format(board, pon, onu_number)
-  sql_query = session.execute("SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT 1;".format(
+  cto_vlan_name = session.execute("SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT 1;".format(
     mysqldb_config.radius_acct_table), cto_like_name).first()
-  if sql_query:
-    return sanitize_cto_name(sql_query[0])
+  if cto_vlan_name:
+    return sanitize_cto_vlan_name(cto_vlan_name)
   return None
 
 def is_onu_id_valid(onu_id):
@@ -180,10 +177,10 @@ def get_username_by_onu_id(session, tn, onu_id):
   if len(mac_list) > 0:
     username_list = []
     for mac in mac_list:
-      sql_query = session.execute("SELECT DISTINCT UserName FROM {0} WHERE CallingStationID = :mac ORDER BY AcctStartTime DESC LIMIT 1;".format(
-      mysqldb_config.radius_acct_table), {'mac': mac}).first()
-      if sql_query:
-        username_list.append(sql_query[0])
+      username = session.execute("SELECT DISTINCT UserName FROM {0} WHERE CallingStationID = :mac ORDER BY AcctStartTime DESC LIMIT 1;".format(
+      mysqldb_config.radius_acct_table), {'mac': mac}).scalar()
+      if username:
+        username_list.append(username)
     if username_list:
       return ' '.join(username_list)
   elif 'ERR' in mac_list:

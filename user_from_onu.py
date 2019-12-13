@@ -24,7 +24,7 @@ def str_to_telnet(string):
 
 def connect_su(tn):
   tn.read_until(b'Login: ', timeout=1)
-  tn.write(str_to_telnet(telnet_config.user))
+  tn.write(str_to_telnet(telnet_config.username))
   tn.read_until(b'Password: ', timeout=1)
   tn.write(str_to_telnet(telnet_config.password))
   tn.read_until(b'User> ', timeout=1)

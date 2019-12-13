@@ -87,7 +87,7 @@ def str_to_telnet(string):
 
 def connect_gpononu(tn):
   tn.read_until(b'Login: ', timeout=10)
-  tn.write(str_to_telnet(telnet_config.user))
+  tn.write(str_to_telnet(telnet_config.username))
   tn.read_until(b'Password: ', timeout=10)
   tn.write(str_to_telnet(telnet_config.password))
   tn.read_until(b'User> ', timeout=10)

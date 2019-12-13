@@ -7,7 +7,7 @@ import re
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from telnetlib import Telnet
-import debug_user_config as config
+import mysqldb_config
 import telnet_config
 
 logger = logging.getLogger('debug_user')
@@ -33,7 +33,7 @@ class Login:
   enable = None
   client_id = None
   def autoset_info(self, session):
-    info_query = session.execute("SELECT pass, groupname, ip, mac, enable, cliente_id FROM {0} WHERE user = :username;".format(config.mysql['login_table']), {'username': self.username}).first()
+    info_query = session.execute("SELECT pass, groupname, ip, mac, enable, cliente_id FROM {0} WHERE user = :username;".format(mysqldb_config.login_table), {'username': self.username}).first()
     self.password = info_query[0]
     self.plan = info_query[1]
     self.ip = info_query[2]
@@ -286,7 +286,7 @@ class Client:
   enable = None
   logins = []
   def autoset_info(self, session):
-    info_query = session.execute("SELECT cpfcnpj, nome, endereco, numero, complemento, referencia, bairro, status FROM {0} WHERE id = :client_id;".format(config.mysql['clientes_table']), {'client_id': self.client_id}).first()
+    info_query = session.execute("SELECT cpfcnpj, nome, endereco, numero, complemento, referencia, bairro, status FROM {0} WHERE id = :client_id;".format(mysqldb_config.clientes_table), {'client_id': self.client_id}).first()
     self.cpf = info_query[0]
     self.name = sanitize_name(info_query[1])
     self.address = '{0}, {1}\n{2} {3}\n{4}'.format(info_query[2], info_query[3], sanitize_dumb(info_query[4]), sanitize_dumb(info_query[5]), info_query[6])
@@ -361,7 +361,7 @@ def find_clients_by_onu(session, onu):
   logins = []
   login_usernames = []
   for associated_mac in onu.associated_mac_list:
-    current_login_query = session.execute("SELECT DISTINCT UserName FROM {0} WHERE CallingStationID = :mac ORDER BY AcctStartTime DESC LIMIT 1;".format(config.mysql['radius_acct_table']), {'mac': associated_mac}).first()
+    current_login_query = session.execute("SELECT DISTINCT UserName FROM {0} WHERE CallingStationID = :mac ORDER BY AcctStartTime DESC LIMIT 1;".format(mysqldb_config.radius_acct_table), {'mac': associated_mac}).first()
     if current_login_query and current_login_query[0] not in login_usernames:
       login_usernames.append(current_login_query[0])
       logins.append(Login(session, onu, current_login_query[0]))
@@ -394,7 +394,7 @@ def print_clients(clients):
         printed_logins.append(login.username)
 
 def find_onu_by_user(session, tn, username):
-  login_query = session.execute("SELECT CallingStationID FROM {0} WHERE UserName = :username ORDER BY AcctStartTime DESC LIMIT 1;".format(config.mysql['radius_acct_table']), {'username': username}).first()
+  login_query = session.execute("SELECT CallingStationID FROM {0} WHERE UserName = :username ORDER BY AcctStartTime DESC LIMIT 1;".format(mysqldb_config.radius_acct_table), {'username': username}).first()
   if login_query:
     mac = login_query[0]
     onu = Onu(tn, mac=mac)
@@ -424,7 +424,7 @@ def main():
   elif args.i:
     onu_id = str(args.i)
 
-  engine = create_engine('mysql://{0}:{1}@{2}/{3}'.format(config.mysql['username'], config.mysql['password'], config.mysql['host'], config.mysql['database']), encoding='latin1')
+  engine = create_engine('mysql://{0}:{1}@{2}/{3}'.format(mysqldb_config.username, mysqldb_config.password, mysqldb_config.host, mysqldb_config.database), encoding='latin1')
   Session = sessionmaker(bind=engine)
   session = Session()
   

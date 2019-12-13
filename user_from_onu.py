@@ -106,7 +106,7 @@ def get_mac_list_from_onu_id(tn, onu_id):
   logger.debug('get_mac_list_from_onu_id: remove_header: {0}'.format(remove_header_value))
   if 'gponline#' in remove_header_value.decode('utf-8'):
     logger.error('get_mac_list_from_onu_id: onu not found!')
-    return []
+    return ['ERR']
   found = False
   logger.debug('get_mac_list_from_onu_id: starting find onu_number: {0}'.format(onu_number))
   while not found:
@@ -126,7 +126,7 @@ def get_mac_list_from_onu_id(tn, onu_id):
     logger.debug('get_mac_list_from_onu_id: while not found: waste value: {0}'.format(waste_value.replace('\r','')))
     if 'gponline#' in waste_value:
       logger.error('get_mac_list_from_onu_id: onu not found!')
-      return []
+      return ['ERR']
     if current_onu_number == onu_number:
       logger.debug('get_mac_list_from_onu_id: catch right onu_number')
       associated_mac_list.append(current_mac)
@@ -182,6 +182,8 @@ def get_username_by_onu_id(session, tn, onu_id):
         username_list.append(sql_query[0])
     if username_list:
       return ' '.join(username_list)
+  elif 'ERR' in mac_list:
+    return 'ERR'
   return None
 
 def main():

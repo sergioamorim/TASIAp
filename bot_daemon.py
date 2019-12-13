@@ -145,7 +145,11 @@ def usuario(bot, update):
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
     if is_onu_id_valid(message_list[1]):
+<<<<<<< HEAD
       answer_string = subprocess.run(['python3', 'user_from_onu.py', '-i', '{0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
+=======
+      answer_string = subprocess.run(['python3', 'user_from_onu.py', '-i {0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
+>>>>>>> d390cbe105e184ce63a8f400fad17557927eac56
       logger.debug('usuario: answer_string: {0}'.format(answer_string))
       if 'None' in answer_string:
         update.message.reply_text('{0} usuario: nenhum usuário associado à ONU foi encontrado.'.format(message_list[1]))

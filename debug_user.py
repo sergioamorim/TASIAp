@@ -9,6 +9,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from telnetlib import Telnet
 import debug_user_config as config
+import telnet_config
 
 logger = logging.getLogger('debug_user')
 logger.setLevel(logging.INFO)
@@ -340,13 +341,13 @@ def sanitize_name(name):
 
 def connect_su(tn):
   tn.read_until(b'Login: ', timeout=1)
-  tn.write(str_to_telnet(config.telnet['user']))
+  tn.write(str_to_telnet(telnet_config.user))
   tn.read_until(b'Password: ', timeout=1)
-  tn.write(str_to_telnet(config.telnet['password']))
+  tn.write(str_to_telnet(telnet_config.password))
   tn.read_until(b'User> ', timeout=1)
   tn.write(str_to_telnet('enable'))
   tn.read_until(b'Password: ', timeout=1)
-  tn.write(str_to_telnet(config.telnet['password_sudo']))
+  tn.write(str_to_telnet(telnet_config.password_sudo))
   tn.read_until(b'Admin# ', timeout=1)
   tn.write(str_to_telnet('cd service'))
   tn.read_until(b'service# ', timeout=1)
@@ -448,7 +449,7 @@ def main():
   Session = sessionmaker(bind=engine)
   session = Session()
   
-  with Telnet(config.telnet['ip'], config.telnet['port']) as tn:
+  with Telnet(telnet_config.ip, telnet_config.port) as tn:
     connect_su(tn)
     if onu: print_clients(find_clients_by_onu(session, Onu(tn, string=onu)))
     elif login: find_onu_by_user(session, tn, login)

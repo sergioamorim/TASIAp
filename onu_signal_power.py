@@ -4,7 +4,7 @@
 import argparse
 import logging
 from telnetlib import Telnet
-import onu_signal_power_config as config
+import telnet_config
 
 logger = logging.getLogger('onu_signal_power')
 logger.setLevel(logging.INFO)
@@ -21,13 +21,13 @@ def str_to_telnet(string):
 
 def connect_su(tn):
   tn.read_until(b'Login: ', timeout=1)
-  tn.write(str_to_telnet(config.telnet['user']))
+  tn.write(str_to_telnet(telnet_config.user))
   tn.read_until(b'Password: ', timeout=1)
-  tn.write(str_to_telnet(config.telnet['password']))
+  tn.write(str_to_telnet(telnet_config.password))
   tn.read_until(b'User> ', timeout=1)
   tn.write(str_to_telnet('enable'))
   tn.read_until(b'Password: ', timeout=1)
-  tn.write(str_to_telnet(config.telnet['password_sudo']))
+  tn.write(str_to_telnet(telnet_config.password_sudo))
   tn.read_until(b'Admin# ', timeout=1)
   tn.write(str_to_telnet('cd service'))
   tn.read_until(b'service# ', timeout=1)
@@ -115,7 +115,7 @@ def main():
   if args.i:
     onu_id = str(args.i)
   
-  with Telnet(config.telnet['ip'], config.telnet['port']) as tn:
+  with Telnet(telnet_config.ip, telnet_config.port) as tn:
     connect_su(tn)
     signal_power = get_onu_power_signal_by_id(tn, onu_id)
     print(signal_power)

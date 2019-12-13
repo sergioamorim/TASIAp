@@ -10,9 +10,3 @@ mysql = {'host': '255.255.255.255',
          'radius_acct_table': 'radius_acct_table_example',
          'login_table': 'login_table_example',
          'clientes_table': 'clientes_table_example'}
-
-telnet = {'ip': '255.255.255.255',
-          'port': 65535,
-          'user': 'user_example',
-          'password': 'password_example',
-          'password_sudo': 'password_sudo_example'}

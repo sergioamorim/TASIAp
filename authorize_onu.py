@@ -6,6 +6,7 @@ import argparse
 import subprocess
 import logging
 import authorize_onu_config as config
+import telnet_config
 
 logger = logging.getLogger('authorize_onu')
 logger.setLevel(logging.DEBUG)
@@ -86,13 +87,13 @@ def str_to_telnet(string):
 
 def connect_gpononu(tn):
   tn.read_until(b'Login: ', timeout=10)
-  tn.write(str_to_telnet(config.telnet['user']))
+  tn.write(str_to_telnet(telnet_config.user))
   tn.read_until(b'Password: ', timeout=10)
-  tn.write(str_to_telnet(config.telnet['password']))
+  tn.write(str_to_telnet(telnet_config.password))
   tn.read_until(b'User> ', timeout=10)
   tn.write(str_to_telnet('enable'))
   tn.read_until(b'Password: ', timeout=10)
-  tn.write(str_to_telnet(config.telnet['password_sudo']))
+  tn.write(str_to_telnet(telnet_config.password_sudo))
   tn.read_until(b'Admin# ', timeout=10)
   tn.write(str_to_telnet('cd service'))
   tn.read_until(b'service# ', timeout=10)
@@ -133,7 +134,7 @@ def set_cvlan_trial(ip, community, onu, predefined_cvlan):
 
 def authorize_onu(onu):
   onu.setNumber(onu.pon.last_authorized_onu_number+1)
-  with Telnet(config.telnet['ip'], config.telnet['port']) as tn:
+  with Telnet(telnet_config.ip, telnet_config.port) as tn:
     connect_gpononu(tn)
     tn.write(str_to_telnet('set whitelist phy_addr address '+onu.phy_id+' password null action delete'))
     tn.read_until(b'gpononu#', timeout=10)
@@ -187,7 +188,7 @@ onu_list = []
 pon_list = []
 board_list = []
 
-with Telnet(config.telnet['ip'], config.telnet['port']) as tn:
+with Telnet(telnet_config.ip, telnet_config.port) as tn:
   connect_gpononu(tn)
   tn.write(str_to_telnet('show discovery slot all link all'))
   end_of_pon_list = False
@@ -219,7 +220,7 @@ with Telnet(config.telnet['ip'], config.telnet['port']) as tn:
   disconnect_gpononu(tn)
 
 for pon in pon_list:
-  with Telnet(config.telnet['ip'], config.telnet['port']) as tn:
+  with Telnet(telnet_config.ip, telnet_config.port) as tn:
     connect_gpononu(tn)
     tn.write(str_to_telnet('show authorization slot '+str(pon.board.board_id)+' link '+str(pon.pon_id)))
     tn.read_until(b'ITEM=', timeout=10)
@@ -242,7 +243,7 @@ else:
     for i, onu in enumerate(onu_list):
       if str(i+1) in auth_onu:
         authorize_onu(onu)
-        set_cvlan(config.telnet['ip'], config.snmp_community, onu, predefined_cvlan)
+        set_cvlan(telnet_config.ip, config.snmp_community, onu, predefined_cvlan)
         authed = True
         print(repr(onu))
     if not authed:
@@ -253,10 +254,10 @@ else:
       answer = input('Authorize?')
       if 'y' in answer.lower():
         authorize_onu_trial(onu)
-        set_cvlan_trial(config.telnet['ip'], config.snmp_community, onu, predefined_cvlan)
+        set_cvlan_trial(telnet_config.ip, config.snmp_community, onu, predefined_cvlan)
         answer2 = input('Run?')
         if 'y' in answer2.lower():
           authorize_onu(onu)
-          set_cvlan(config.telnet['ip'], config.snmp_community, onu, predefined_cvlan)
+          set_cvlan(telnet_config.ip, config.snmp_community, onu, predefined_cvlan)
         else: pass
       else: pass

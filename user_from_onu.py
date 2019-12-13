@@ -70,8 +70,8 @@ def sanitize_cto_name(cto_name):
   return cto_sanitized_name
 
 def is_cto_id(session, onu_id):
-  sql_query = session.execute("SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE :onu_id ORDER BY AcctStartTime DESC LIMIT 1;".format(
-    mysqldb_config.radius_acct_table), {'onu_id': onu_id}).first()
+  sql_query = session.execute("SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT 1;".format(
+    mysqldb_config.radius_acct_table, onu_id)).first()
   if sql_query:
     return sanitize_cto_name(login_query[0])
   if onu_id[:1] == '1':
@@ -81,8 +81,12 @@ def is_cto_id(session, onu_id):
     board = '14'
   pon = onu_id[1:2]
   onu_number = onu_id[2:] if onu_id[2:3] != '0' else onu_id[3:]
-  sql_query = session.execute("SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE :cto_like_name ORDER BY AcctStartTime DESC LIMIT 1;".format(
-    mysqldb_config.radius_acct_table), {'cto_like_name': 'P{0}-PON{1}-ONU{2}'.format(board, pon, onu_number)}).first()
+  cto_like_name = 'P{0}-PON{1}-ONU{2}'.format(board, pon, onu_number)
+  sql_query = session.execute("SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT 1;".format(
+    mysqldb_config.radius_acct_table), cto_like_name).first()
+  test_sql_query = session.execute("SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT 1;".format(
+    mysqldb_config.radius_acct_table), cto_like_name).scalar()
+  logger.info('test_sql_query: {0} -- {1}'.format(str(test_sql_query), repr(test_sql_query)))
   if sql_query:
     return sanitize_cto_name(login_query[0])
   return None

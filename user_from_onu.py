@@ -73,7 +73,7 @@ def is_cto_id(session, onu_id):
   sql_query = session.execute("SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT 1;".format(
     mysqldb_config.radius_acct_table, onu_id)).first()
   test_sql_query = session.execute("SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT 1;".format(
-    mysqldb_config.radius_acct_table), cto_like_name).scalar()
+    mysqldb_config.radius_acct_table, cto_like_name)).scalar()
   logger.info('test_sql_query: {0} -- {1}'.format(str(test_sql_query), repr(test_sql_query)))
   if sql_query:
     return sanitize_cto_name(sql_query[0])

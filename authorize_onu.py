@@ -221,7 +221,7 @@ else:
   elif is_int(auth_onu):
     authed = False
     for i, onu in enumerate(onu_list):
-      if str(i+1) in auth_onu:
+      if auth_onu == str(i+1):
         authorize_onu(onu)
         set_cvlan(telnet_config.ip, config.snmp_community, onu, predefined_cvlan)
         authed = True

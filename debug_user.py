@@ -357,13 +357,6 @@ def get_next_value(tn, char):
   logger.debug('get_next_value: return: {0}'.format(value[:-1]))
   return value[:-1].decode('utf-8')
 
-def is_int(s):
-  try: 
-    int(s)
-    return True
-  except ValueError:
-    return False
-
 def find_clients_by_onu(session, onu):
   logins = []
   login_usernames = []

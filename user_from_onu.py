@@ -19,6 +19,13 @@ stream_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
 
+def is_int(s):
+  try: 
+    int(s)
+    return True
+  except ValueError:
+    return False
+
 def str_to_telnet(string):
   return string.encode('ascii')+b'\n'
 

@@ -52,7 +52,7 @@ def sinal(bot, update):
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
     if is_onu_id_valid(message_list[1]):
-      command_list = ['python3.7', 'onu_signal_power.py', '-i', '{0}'.format(message_list[1])]
+      command_list = ['python3', 'onu_signal_power.py', '-i', '{0}'.format(message_list[1])]
       logger.debug('sinal handler: valid id: command_list: {0}'.format(command_list))
       answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8').replace('\n', '')
       logger.debug('sinal handler: valid id: answer_string: {0}'.format(answer_string))
@@ -74,7 +74,7 @@ def reiniciar(bot, update):
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
     if is_onu_id_valid(message_list[1]):
-      command_list = ['python3.7', 'onu_restart.py', '-i', '{0}'.format(message_list[1])]
+      command_list = ['python3', 'onu_restart.py', '-i', '{0}'.format(message_list[1])]
       logger.debug('reiniciar handler: valid id: command_list: {0}'.format(command_list))
       answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8').replace('\n', '')
       logger.debug('reiniciar handler: valid id: answer_string: {0}'.format(answer_string))
@@ -96,7 +96,7 @@ def autorizar(bot, update):
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
     if len(message_list) == 1:
-      answer_list = subprocess.run(['python3.7', 'authorize_onu.py'], capture_output=True).stdout.decode('utf-8').split(' ')
+      answer_list = subprocess.run(['python3', 'authorize_onu.py'], capture_output=True).stdout.decode('utf-8').split(' ')
       logger.debug('autorizar handler: /autorizar: answer_list: {0}'.format(answer_list))
       if '\n' in answer_list:
         answer_list.remove('\n')
@@ -113,9 +113,9 @@ def autorizar(bot, update):
         update.message.reply_text('ONUs encontradas:\n'+''.join(reply_list)+'Envie o número da ONU que deseja autorizar (ex.: "/autorizar 1") ou /autorizar para verificar novamente se há novas ONUs.')
     elif is_int(message_list[1]):
       if len(message_list) == 3 and is_int(message_list[2]) and int(message_list[2]) > 0 and int(message_list[2]) < 4096:
-        answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a {0}'.format(message_list[1]), '-v {0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
+        answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a {0}'.format(message_list[1]), '-v {0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
       else:
-        answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a {0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
+        answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a {0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
       logger.debug('autorizar: int: answer_string: {0}'.format(answer_string))
       if 'OnuDevice' in answer_string:
         update.message.reply_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(answer_string)))
@@ -125,9 +125,9 @@ def autorizar(bot, update):
         update.message.reply_text('Nenhuma ONU foi encontrada. Envie /autorizar para verificar novamente se há novas ONUs.')
     elif 'sim' in message_list[1]:
       if len(message_list) == 3 and is_int(message_list[2]) and int(message_list[2]) > 0 and int(message_list[2]) < 4096:
-        answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a 1', '-v {0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
+        answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a 1', '-v {0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
       else:
-        answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a 1'], capture_output=True).stdout.decode('utf-8')
+        answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a 1'], capture_output=True).stdout.decode('utf-8')
       logger.debug('autorizar: sim: answer_string: {0}'.format(answer_string))
       if 'OnuDevice' in answer_string:
         update.message.reply_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(answer_string)))
@@ -145,7 +145,7 @@ def usuario(bot, update):
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
     if is_onu_id_valid(message_list[1]):
-      answer_string = subprocess.run(['python3.7', 'user_from_onu.py', '-i {0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
+      answer_string = subprocess.run(['python3', 'user_from_onu.py', '-i', '{0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
       logger.debug('usuario: answer_string: {0}'.format(answer_string))
       if 'None' in answer_string:
         update.message.reply_text('{0} usuario: nenhum usuário associado à ONU foi encontrado.'.format(message_list[1]))

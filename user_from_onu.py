@@ -165,7 +165,17 @@ def get_mac_list_from_onu_id(tn, onu_id):
   return associated_mac_list
 
 def get_username_by_onu_id(session, tn, onu_id):
-  ## on development
+  mac_list = get_mac_list_from_onu_id(tn, onu_id)
+  if len(mac_list) > 0:
+    username_list = []
+    for mac in mac_list:
+      sql_query = session.execute("SELECT DISTINCT UserName FROM {0} WHERE CallingStationID = :mac ORDER BY AcctStartTime DESC LIMIT 1;".format(
+      mysqldb_config.radius_acct_table), {'mac': mac}).first()
+      if sql_query:
+        username_list.append(sql_query[0])
+    if username_list:
+      return ' '.join(username_list)
+  return None
 
 def main():
   parser = argparse.ArgumentParser()
@@ -190,7 +200,6 @@ def main():
     else:
       username = get_username_by_onu_id(session, tn, onu_id)
       print(username)
-
 
 if __name__ == '__main__':
   main()

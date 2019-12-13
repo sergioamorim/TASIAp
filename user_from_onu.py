@@ -49,7 +49,6 @@ def get_next_value(tn, char):
   return value[:-1].decode('utf-8')
 
 def sanitize_cto_name(cto_name):
-  cto_sanitized_name = cto_name
   vlan = cto_name[:5]
   if cto_name[7:9] == '12':
     board_id = '1'
@@ -60,7 +59,7 @@ def sanitize_cto_name(cto_name):
   onu_number = cto_name[18:20]
   onu_id = '{0}{1}{2}'.format(board_id, pon, onu_number)
   cto_actual_name = cto_name[31:].replace('-',' ')
-  cto_sanitized_name = '{0}{1}{2}'.format(onu_id, ' ({0}) '.format(vlan) if vlan[1:] != onu_id else ' ', cto_actual_name)
+  cto_sanitized_name = 'CTO {0}{1}{2}'.format(onu_id, ' ({0}) '.format(vlan) if vlan[1:] != onu_id else ' ', cto_actual_name)
   return cto_sanitized_name
 
 def is_cto_id(session, onu_id):
@@ -81,17 +80,22 @@ def is_cto_id(session, onu_id):
     return sanitize_cto_name(login_query[0])
   return None
 
+def is_onu_id_valid(onu_id):
+  return is_int(onu_id) and int(onu_id) > 1100 and int(onu_id) < 3900 and int(onu_id[2:]) > 0 and int(onu_id[1:2]) > 0 and int(onu_id[1:2]) < 9
+
 def get_username_by_onu_id(session, tn, onu_id):
   ## on development
 
 def main():
   parser = argparse.ArgumentParser()
-  parser.add_argument('-i', '--id', dest='i', help='ID da ONU a ser consultada', default=None)
+  parser.add_argument('-i', '--id', dest='i', help='ONU id to find the username from the user connected to it', default=None)
   args = parser.parse_args()
 
   onu_id = None
   if args.i:
     onu_id = str(args.i)
+    if not is_onu_id_valid(onu_id):
+      raise ValueError('The given onu id is invalid. The first digit of the id must be between 1 to 3 (board id), the second digit must be between 1 to 8 (pon number) and the last 2 digits must be between 01 and 99 (onu number).')
 
   engine = create_engine('mysql://{0}:{1}@{2}/{3}'.format(mysqldb_config.username, mysqldb_config.password, mysqldb_config.host, mysqldb_config.database), encoding='latin1')
   Session = sessionmaker(bind=engine)

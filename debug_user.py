@@ -4,7 +4,6 @@
 import argparse
 import logging
 import re
-from functools import wraps
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from telnetlib import Telnet
@@ -323,13 +322,6 @@ def get_pon_list(tn):
   logger.debug('get_pon_list: catch Admin#: {0}'.format(waste_value))
   return pon_list
 
-def logger_decorator(original_function):
-  @wraps
-  def wrapper(*args, **kwargs):
-    logger.debug('args: ({0}) kwargs: ({1})'.format(args, kwargs))
-    return original_function(*args, **kwargs)
-  return wrapper
-
 def sanitize_dumb(string):
   return string.replace(',',', ').replace('//','').replace(' /',', ').replace('\t','').replace(' ,',',').replace(' / ',', ').replace('  ',' ')
 
@@ -355,12 +347,6 @@ def connect_su(tn):
   tn.read_until(b'service# ', timeout=1)
   tn.write(str_to_telnet('cd ..'))
   tn.read_until(b'Admin# ', timeout=1)
-
-def disconnect_su(tn):
-  tn.write(str_to_telnet('cd ..'))
-  tn.read_until(b'Admin# ', timeout=1)
-  tn.write(str_to_telnet('quit'))
-  tn.close()
 
 def get_next_value(tn, char):
   value = tn.read_until(char.encode('ascii'), timeout=1)

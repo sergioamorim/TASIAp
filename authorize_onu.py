@@ -114,24 +114,6 @@ def get_next_value(tn):
     value = tn.read_until(b' ', timeout=10)
   return value[:-1].decode('utf-8')
 
-def authorize_onu_trial(onu):
-  onu.setNumber(onu.pon.last_authorized_onu_number+1)
-  with Telnet(config.telnet['ip'], config.telnet['port']) as tn:
-    connect_gpononu(tn)
-    print('set whitelist phy_addr address '+onu.phy_id+' password null action delete')
-    print('set authorization slot '+str(onu.pon.board.board_id)+' link '+str(onu.pon.pon_id)+' type '+onu.onu_type+' onuid '+str(onu.number)+' phy_id '+onu.phy_id)
-    print('set whitelist phy_addr address '+onu.phy_id+' password null action add slot '+str(onu.pon.board.board_id)+' link '+str(onu.pon.pon_id)+' onu '+str(onu.number)+' type '+onu.onu_type)
-    disconnect_gpononu(tn)
-
-def set_cvlan_trial(ip, community, onu, predefined_cvlan):
-  if predefined_cvlan:
-    onu.cvlan = predefined_cvlan
-  else:
-    onu.autoset_cvlan()
-  logger.debug('set_cvlan_trial: onu.cvlan: {0}'.format(onu.cvlan))
-  command = 'snmpset -v 2c -c ' + community + ' ' + ip + ' 1.3.6.1.4.1.5875.91.1.8.1.1.1.5.1 x "42 47 4D 50 01 00 00 00 00 00 00 00 D7 AC FE 82 BB 34 00 00 00 00 00 00 00 00 CC CC CC CC 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 01 00 00 00 01 00 00 00 A3 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 A3 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ' + int_to_hexoctetstr(onu.pon.board.board_id) + ' 00 ' + int_to_hexoctetstr(onu.pon.pon_id) + ' 00 ' + int_to_hexoctetstr(onu.number) + ' 00 01 00 7A 01 01 01 01 01 00 00 01 00 52 00 00 01 81 00 ' + assure_two_octet_hexstr(int_to_hexoctetstr(onu.cvlan)) + ' 00 00 81 00 FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 81 00 FF FF FF 00 00 00 00 00 00 00 01 00 00 00 00 00 00 00 00 00 00 02 80 00 0F 42 40 00 0F 42 40 00 00 FF FF FF 81 00 FF FF FF 81 00 00 00 00 00 00 00"'
-  print(command)
-
 def authorize_onu(onu):
   onu.setNumber(onu.pon.last_authorized_onu_number+1)
   with Telnet(telnet_config.ip, telnet_config.port) as tn:
@@ -174,14 +156,12 @@ def is_int(s):
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("-a", "--authorize-onu", dest="a", help="Autorizar ONU, m para manual, int para sequencia da lista ONU", default=".")
+parser.add_argument("-a", "--authorize-onu", dest="a", help="Numero da ONU que deve ser autorizada da lista de ONUs disponiveis para autorizacao", default=None)
 parser.add_argument("-v", "--cvlan", dest="v", help="CVLAN para configurar a ONU", default=None)
 
 args = parser.parse_args()
 
-community = config.snmp_community
-ip = config.telnet['ip']
-auth_onu = str(args.a)
+auth_onu = str(args.a) if args.a else None
 predefined_cvlan = int(args.v) if args.v else None
 
 onu_list = []
@@ -234,7 +214,7 @@ for pon in pon_list:
 if not len(onu_list):
   print('None')
 else:
-  if auth_onu is '.':
+  if not auth_onu:
     for i, onu in enumerate(onu_list):
       print('{0}_{1}_{2}'.format(onu.pon.board.board_id, onu.pon.pon_id, onu.phy_id), end=' ')
     print('')
@@ -248,16 +228,3 @@ else:
         print(repr(onu))
     if not authed:
       print('ERR')
-  elif auth_onu is 'm':
-    for onu in onu_list:
-      print('Board: '+str(onu.pon.board.board_id)+'PON: '+str(onu.pon.pon_id)+'Serial: '+str(onu.phy_id))
-      answer = input('Authorize?')
-      if 'y' in answer.lower():
-        authorize_onu_trial(onu)
-        set_cvlan_trial(telnet_config.ip, config.snmp_community, onu, predefined_cvlan)
-        answer2 = input('Run?')
-        if 'y' in answer2.lower():
-          authorize_onu(onu)
-          set_cvlan(telnet_config.ip, config.snmp_community, onu, predefined_cvlan)
-        else: pass
-      else: pass

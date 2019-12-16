@@ -13,7 +13,7 @@ import telnet_config
 logger = logging.getLogger('debug_user')
 logger.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-file_handler = logging.FileHandler('debug_user.log')
+file_handler = logging.FileHandler('logs/debug_user.log')
 file_handler.setFormatter(formatter)
 stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(formatter)

@@ -11,7 +11,7 @@ import telnet_config
 logger = logging.getLogger('authorize_onu')
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-file_handler = logging.FileHandler('authorize_onu.log')
+file_handler = logging.FileHandler('logs/authorize_onu.log')
 file_handler.setFormatter(formatter)
 stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(formatter)

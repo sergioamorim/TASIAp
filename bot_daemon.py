@@ -10,7 +10,7 @@ import bot_daemon_config as config
 logger = logging.getLogger('bot_daemon')
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-file_handler = logging.FileHandler('bot_daemon.log')
+file_handler = logging.FileHandler('logs/bot_daemon.log')
 file_handler.setFormatter(formatter)
 stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(formatter)

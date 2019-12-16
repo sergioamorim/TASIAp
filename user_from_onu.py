@@ -12,7 +12,7 @@ import mysqldb_config
 logger = logging.getLogger('user_from_onu')
 logger.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-file_handler = logging.FileHandler('user_from_onu.log')
+file_handler = logging.FileHandler('logs/user_from_onu.log')
 file_handler.setFormatter(formatter)
 stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(formatter)

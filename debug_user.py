@@ -414,7 +414,7 @@ def main():
   parser.add_argument('-i', '--id', dest='i', help='ID da ONU a ser consultada', default=None)
   args = parser.parse_args()
 
-  login = None
+  username = None
   onu = None
   onu_id = None
   if args.u:

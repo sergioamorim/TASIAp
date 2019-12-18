@@ -113,9 +113,9 @@ def autorizar(bot, update):
         update.message.reply_text('ONUs encontradas:\n'+''.join(reply_list)+'Envie o número da ONU que deseja autorizar (ex.: "/autorizar 1") ou /autorizar para verificar novamente se há novas ONUs.')
     elif is_int(message_list[1]):
       if len(message_list) == 3 and is_int(message_list[2]) and int(message_list[2]) > 0 and int(message_list[2]) < 4096:
-        answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a {0}'.format(message_list[1]), '-v {0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
+        answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a', '{0}'.format(message_list[1]), '-v', '{0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
       else:
-        answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a {0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
+        answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a', '{0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
       logger.debug('autorizar: int: answer_string: {0}'.format(answer_string))
       if 'OnuDevice' in answer_string:
         update.message.reply_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(answer_string)))
@@ -125,9 +125,9 @@ def autorizar(bot, update):
         update.message.reply_text('Nenhuma ONU foi encontrada. Envie /autorizar para verificar novamente se há novas ONUs.')
     elif 'sim' in message_list[1]:
       if len(message_list) == 3 and is_int(message_list[2]) and int(message_list[2]) > 0 and int(message_list[2]) < 4096:
-        answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a 1', '-v {0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
+        answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a', '1', '-v', '{0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
       else:
-        answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a 1'], capture_output=True).stdout.decode('utf-8')
+        answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a', '1'], capture_output=True).stdout.decode('utf-8')
       logger.debug('autorizar: sim: answer_string: {0}'.format(answer_string))
       if 'OnuDevice' in answer_string:
         update.message.reply_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(answer_string)))

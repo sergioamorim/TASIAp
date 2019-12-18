@@ -161,7 +161,7 @@ parser.add_argument("-v", "--cvlan", dest="v", help="CVLAN para configurar a ONU
 
 args = parser.parse_args()
 
-auth_onu = str(args.a) if args.a else None
+auth_onu = str(args.a).replace(' ') if args.a else None
 predefined_cvlan = int(args.v) if args.v else None
 
 onu_list = []

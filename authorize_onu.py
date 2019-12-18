@@ -221,6 +221,7 @@ else:
   elif is_int(auth_onu):
     authed = False
     for i, onu in enumerate(onu_list):
+      logger.debug('loop to authorize onu: auth_onu: {0} current position in list: {1}'.format(auth_onu, str(i+1)))
       if auth_onu == str(i+1):
         authorize_onu(onu)
         set_cvlan(telnet_config.ip, config.snmp_community, onu, predefined_cvlan)

@@ -409,7 +409,7 @@ def find_onu_by_id(session, tn, onu_id):
 
 def main():
   parser = argparse.ArgumentParser()
-  parser.add_argument('-u', '--user', dest='l', help='Usuario a ser consultado', default=None)
+  parser.add_argument('-u', '--user', dest='u', help='Usuario a ser consultado', default=None)
   parser.add_argument('-o', '--onu', dest='o', help='ONU a ser consultada', default=None)
   parser.add_argument('-i', '--id', dest='i', help='ID da ONU a ser consultada', default=None)
   args = parser.parse_args()

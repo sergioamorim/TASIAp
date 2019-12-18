@@ -409,7 +409,7 @@ def find_onu_by_id(session, tn, onu_id):
 
 def main():
   parser = argparse.ArgumentParser()
-  parser.add_argument('-l', '--user', dest='l', help='Usuario a ser consultado', default=None)
+  parser.add_argument('-u', '--user', dest='l', help='Usuario a ser consultado', default=None)
   parser.add_argument('-o', '--onu', dest='o', help='ONU a ser consultada', default=None)
   parser.add_argument('-i', '--id', dest='i', help='ID da ONU a ser consultada', default=None)
   args = parser.parse_args()
@@ -417,8 +417,8 @@ def main():
   login = None
   onu = None
   onu_id = None
-  if args.l:
-    login = str(args.l)
+  if args.u:
+    username = str(args.u)
   elif args.o:
     onu = str(args.o)
   elif args.i:
@@ -431,7 +431,7 @@ def main():
   with Telnet(telnet_config.ip, telnet_config.port) as tn:
     connect_su(tn)
     if onu: print_clients(find_clients_by_onu(session, Onu(tn, string=onu)))
-    elif login: find_onu_by_user(session, tn, login)
+    elif username: find_onu_by_user(session, tn, username)
     elif onu_id: find_onu_by_id(session, tn, onu_id)
 
 if __name__ == '__main__':

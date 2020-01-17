@@ -54,7 +54,7 @@ def sinal(bot, update):
   logger.debug('sinal handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
-    if is_onu_id_valid(message_list[1]):
+    if len(message_list) == 1 and is_onu_id_valid(message_list[1]):
       command_list = ['python3', 'onu_signal_power.py', '-i', '{0}'.format(message_list[1])]
       logger.debug('sinal handler: valid id: command_list: {0}'.format(command_list))
       answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8').replace('\n', '')
@@ -76,7 +76,7 @@ def reiniciar(bot, update):
   logger.debug('reiniciar handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
-    if is_onu_id_valid(message_list[1]):
+    if len(message_list) == 1 and is_onu_id_valid(message_list[1]):
       command_list = ['python3', 'onu_restart.py', '-i', '{0}'.format(message_list[1])]
       logger.debug('reiniciar handler: valid id: command_list: {0}'.format(command_list))
       answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8').replace('\n', '')
@@ -147,7 +147,7 @@ def usuario(bot, update):
   logger.debug('usuario handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
-    if is_onu_id_valid(message_list[1]):
+    if len(message_list) == 1 and is_onu_id_valid(message_list[1]):
       answer_string = subprocess.run(['python3', 'user_from_onu.py', '-i', '{0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
       logger.debug('usuario: answer_string: {0}'.format(answer_string))
       if 'None' in answer_string:
@@ -161,16 +161,17 @@ def usuario(bot, update):
   else:
     update.message.reply_text('Você não tem permissão para acessar o menu /usuario.')
 
-# def cto(bot, update):
-#   logger.debug('cto handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
-#   if is_user_authorized(update.message.from_user.id):
-#     message_list = update.message.text.lower().split(' ')
-#     if is_vlan_id_valid(message_list[1]):
-#       ##
-#     else:
-#       update.message.reply_text('ID da VLAN inválido. Um ID válido deve estar entre 1 e 4095.')
-#   else:
-#     update.message.reply_text('Você não tem permissão para acessar o menu /cto.')
+def cto(bot, update):
+  logger.debug('cto handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
+  if is_user_authorized(update.message.from_user.id):
+    message_list = update.message.text.lower().split(' ')
+    if len(message_list) == 1 and is_vlan_id_valid(message_list[1]):
+      answer_string = subprocess.run(['python3', 'cto_info.py', '-g1', '-c', '{0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
+      logger.debug('cto: answer_string: {0}'.format(answer_string))
+    else:
+      update.message.reply_text('ID da VLAN inválido. Um ID válido deve estar entre 1 e 4095.')
+  else:
+    update.message.reply_text('Você não tem permissão para acessar o menu /cto.')
 
 def error(bot, update, error):
   logger.warning('Update "%s" caused error "%s"', update, error)

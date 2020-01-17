@@ -191,6 +191,7 @@ def main():
   dp.add_handler(CommandHandler("sinal", sinal))
   dp.add_handler(CommandHandler("reiniciar", reiniciar))
   dp.add_handler(CommandHandler("usuario", usuario))
+  dp.add_handler(CommandHandler("cto", cto))
   dp.add_handler(CommandHandler("help", help))
 
   dp.add_handler(MessageHandler(Filters.text, general))

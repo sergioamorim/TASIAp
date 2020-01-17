@@ -5,7 +5,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
 import re
 import subprocess
-import bot_daemon_config as config
+import bot_config as config
 
 logger = logging.getLogger('bot_daemon')
 logger.setLevel(logging.DEBUG)
@@ -165,17 +165,10 @@ def usuario(bot, update):
 #   logger.debug('cto handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
 #   if is_user_authorized(update.message.from_user.id):
 #     message_list = update.message.text.lower().split(' ')
-#     if is_onu_id_valid(message_list[1]):
-#       answer_string = subprocess.run(['python3', 'user_from_onu.py', '-i', '{0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
-#       logger.debug('cto: answer_string: {0}'.format(answer_string))
-#       if 'None' in answer_string:
-#         update.message.reply_text('{0} cto: nenhum usuário associado à ONU foi encontrado.'.format(message_list[1]))
-#       elif 'ERR' in answer_string:
-#         update.message.reply_text('{0} cto: nenhuma ONU encontrada com este ID.'.format(message_list[1]))
-#       else:
-#         update.message.reply_text('{0} cto: {1}'.format(message_list[1], answer_string))
+#     if is_vlan_id_valid(message_list[1]):
+#       ##
 #     else:
-#       update.message.reply_text('ID da ONU inválido. O priméiro dígito do ID deve ser de 1 a 3 (número da placa), o segundo dígito deve ser de 1 a 8 (número da PON) e os dois últimos dígitos devem ser entre 01 e 99 (número da ONU).')
+#       update.message.reply_text('ID da VLAN inválido. Um ID válido deve estar entre 1 e 4095.')
 #   else:
 #     update.message.reply_text('Você não tem permissão para acessar o menu /cto.')
 

@@ -5,7 +5,7 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
 import logging
 import re
 import subprocess
-import bot_config as config
+import bot_config
 
 logger = logging.getLogger('bot_daemon')
 logger.setLevel(logging.DEBUG)
@@ -18,7 +18,7 @@ logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
 
 def is_user_authorized(user_id):
-  return True if user_id in config.authorized_users else False
+  return True if user_id in bot_config.authorized_users else False
 
 def is_onu_id_valid(onu_id):
   return is_int(onu_id) and int(onu_id) > 1100 and int(onu_id) < 3900 and int(onu_id[2:]) > 0 and int(onu_id[1:2]) > 0 and int(onu_id[1:2]) < 9
@@ -181,7 +181,7 @@ def general(bot, update):
   update.message.reply_text('Não entendi. Utilize um dos menus para executar funções. Utilize o menu /help para mais informações.')
 
 def main():
-  updater = Updater(config.bot_token)
+  updater = Updater(bot_config.token)
 
   dp = updater.dispatcher
 

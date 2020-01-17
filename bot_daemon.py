@@ -166,7 +166,7 @@ def cto(bot, update):
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
     if is_vlan_id_valid(message_list[1]):
-      answer_string = subprocess.run(['python3', 'cto_info.py', '-g1', '-c', '{0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
+      answer_string = subprocess.run(['python3', 'cto_info.py', '-c', '{0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
       logger.debug('cto: answer_string: {0}'.format(answer_string))
     else:
       update.message.reply_text('ID da VLAN inválido. Um ID válido deve estar entre 1 e 4095.')

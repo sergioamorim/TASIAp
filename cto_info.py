@@ -86,33 +86,17 @@ def print_cto_fancy_name(cto_name, users_offline_count, users_online_count):
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("-u", "--user", dest="u", help="Usuario PPPoE a ser consultado")
-parser.add_argument("-l", "--last", dest="l", help="Quantidade de conexoes retroativas a consultar (1 por padrao)", default=1)
 parser.add_argument("-c", "--cto", dest="c", help="Codigo da CTO a consultar")
 parser.add_argument("-g", "--generate-pdf", dest="g", help="Gerar arquivo PDF com informações sobre os clientes da CTO")
 parser.add_argument("-t", "--tecnico", dest="t", help="Ordenar clientes de acordo com endereço no PDF")
 
 args = parser.parse_args()
-
-if args.u and args.c:
-  print('Nao foi possivel consultar. Informe apenas a CTO a ser consultada ou o usuario (ao informar o usuario, opcionalmente pode-se informar a quantidade de conexoes retroativas a serem consultadas).')
-  exit()
-
-username = str(args.u)
-last_quantity = to_int(str(args.l))
 cto = str(args.c)
 
-engine = create_engine('mysql://{0}:{1}@{2}/{3}'.format(mysqldb_config.username, mysqldb_config.password, mysqldb_config.host, mysqldb_config.database), encoding='latin1')
-Session = sessionmaker(bind=engine)
-session = Session()
-
-if args.u:
-  last_sessions = session.execute('SELECT CalledStationId, AcctStartTime, AcctStopTime FROM radius_acct WHERE UserName = :username ORDER BY AcctStartTime DESC LIMIT :last_quantity', {'username': username, 'last_quantity': last_quantity})
-  for session in last_sessions:
-    print(session['CalledStationId'].ljust(64), str(session['AcctStartTime']).ljust(20), end=' ')
-    print(str(session['AcctStopTime']).ljust(20))
-
-elif args.c:
+if cto:
+  engine = create_engine('mysql://{0}:{1}@{2}/{3}'.format(mysqldb_config.username, mysqldb_config.password, mysqldb_config.host, mysqldb_config.database), encoding='latin1')
+  Session = sessionmaker(bind=engine)
+  session = Session()
   row_cto_name = session.execute('SELECT CalledStationId FROM radius_acct WHERE CalledStationId LIKE :cto ORDER BY AcctStartTime DESC LIMIT 1', {'cto': '%{0}%'.format(cto)}).first()
   print(row_cto_name['CalledStationId'])
   usernames = session.execute('SELECT DISTINCT UserName FROM radius_acct WHERE CalledStationId LIKE :cto AND UserName IN (SELECT user FROM login WHERE cliente_id IN (SELECT id FROM clientes WHERE status = 1))', {'cto': '%{0}%'.format(cto)})

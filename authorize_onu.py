@@ -5,7 +5,7 @@ from telnetlib import Telnet
 import argparse
 import subprocess
 import logging
-import authorize_onu_config as config
+import snmp_config
 import telnet_config
 
 logger = logging.getLogger('authorize_onu')
@@ -224,7 +224,7 @@ else:
       logger.debug('loop to authorize onu: auth_onu: {0} current position in list: {1}'.format(repr(auth_onu), repr(str(i+1))))
       if auth_onu == str(i+1):
         authorize_onu(onu)
-        set_cvlan(telnet_config.ip, config.snmp_community, onu, predefined_cvlan)
+        set_cvlan(telnet_config.ip, snmp_config.community, onu, predefined_cvlan)
         authed = True
         print(repr(onu))
     if not authed:

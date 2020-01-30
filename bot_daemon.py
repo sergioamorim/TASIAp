@@ -26,6 +26,9 @@ def is_onu_id_valid(onu_id):
 def is_vlan_id_valid(vlan_id):
   return is_int(vlan_id) and int(vlan_id) > 0 and int(vlan_id) < 4096
 
+def create_link_changing_command_list(link):
+  return ['ssh', '-p', '{0}'.format(bot_config.mk_link['ssh']['port']), '{0}@{1}'.format(bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip']), '/system',  'script', 'run', '{0}'.format(bot_config.mk_link['script'][link])]
+
 def is_int(s):
   try: 
     int(s)
@@ -178,17 +181,17 @@ def link(bot, update):
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
     if message_list[1] == 'squid':
-      command_list = ['ssh', '-p', '{0}'.format(bot_config.mk_link['ssh']['port']), '{0}@{1}'.format(bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip']), '/system',  'script', 'run', '{0}'.format(bot_config.mk_link['script']['first-link'])]
+      command_list = create_link_changing_command_list('first-link')
       logger.debug(command_list)
       answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
       logger.debug('link: answer_string: {0}'.format(answer_string))
     elif message_list[1] == 'we':
-      command_list = ['ssh', '-p', '{0}'.format(bot_config.mk_link['ssh']['port']), '{0}@{1}'.format(bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip']), '/system', 'script', 'run', '{0}'.format(bot_config.mk_link['script']['second-link'])]
+      command_list = create_link_changing_command_list('second-link')
       logger.debug(command_list)
       answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
       logger.debug('link: answer_string: {0}'.format(answer_string))
     elif message_list[1] == 'ambos':
-      command_list = ['ssh', '-p', '{0}'.format(bot_config.mk_link['ssh']['port']), '{0}@{1}'.format(bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip']), '/system', 'script', 'run', '{0}'.format(bot_config.mk_link['script']['both-links'])]
+      command_list = create_link_changing_command_list('both-links')
       logger.debug(command_list)
       answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
       logger.debug('link: answer_string: {0}'.format(answer_string))

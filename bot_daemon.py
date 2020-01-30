@@ -178,13 +178,19 @@ def link(bot, update):
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
     if message_list[1] == 'squid':
-      answer_string = subprocess.run(['ssh', '-p', '{0}', '{1}@{2}', '/system', 'script', 'run', '{3}'.format(bot_config.mk_link['ssh']['port'], bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip'], bot_config.mk_link['script']['first-link'])], capture_output=True).stdout.decode('utf-8')
+      command_list = ['ssh', '-p', '{0}'.format(bot_config.mk_link['ssh']['port']), '{0}@{1}'.format(bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip']), '/system',  'script', 'run', '{0}'.format(bot_config.mk_link['script']['first-link'])]
+      logger.debug(command_list)
+      answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
       logger.debug('link: answer_string: {0}'.format(answer_string))
     elif message_list[1] == 'we':
-      answer_string = subprocess.run(['ssh', '-p', '{0}', '{1}@{2}', '/system', 'script', 'run', '{3}'.format(bot_config.mk_link['ssh']['port'], bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip'], bot_config.mk_link['script']['second-link'])], capture_output=True).stdout.decode('utf-8')
+      command_list = ['ssh', '-p', '{0}'.format(bot_config.mk_link['ssh']['port']), '{0}@{1}'.format(bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip']), '/system', 'script', 'run', '{0}'.format(bot_config.mk_link['script']['second-link'])]
+      logger.debug(command_list)
+      answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
       logger.debug('link: answer_string: {0}'.format(answer_string))
     elif message_list[1] == 'ambos':
-      answer_string = subprocess.run(['ssh', '-p', '{0}', '{1}@{2}', '/system', 'script', 'run', '{3}'.format(bot_config.mk_link['ssh']['port'], bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip'], bot_config.mk_link['script']['both-links'])], capture_output=True).stdout.decode('utf-8')
+      command_list = ['ssh', '-p', '{0}'.format(bot_config.mk_link['ssh']['port']), '{0}@{1}'.format(bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip']), '/system', 'script', 'run', '{0}'.format(bot_config.mk_link['script']['both-links'])]
+      logger.debug(command_list)
+      answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
       logger.debug('link: answer_string: {0}'.format(answer_string))
     else:
       update.message.reply_text('Comando inválido. Envie "/link nomedolink" para ativar apenas um link ou "/link ambos" para ativar os dois links.')

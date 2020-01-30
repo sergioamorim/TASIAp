@@ -19,4 +19,3 @@ mk_link = {
     'both-links': 'bothlinksrsc'
   }
 }
-

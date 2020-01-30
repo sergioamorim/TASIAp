@@ -46,12 +46,12 @@ def get_onu_info_string(onu_repr):
 
 def start(bot, update):
   logger.debug('start handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
-  update.message.reply_text('Menus disponíveis:\n/autorizar\n/sinal\n/reiniciar\n\nAjuda em /help')
+  update.message.reply_text(quote=True, 'Menus disponíveis:\n/autorizar\n/sinal\n/reiniciar\n\nAjuda em /help')
 
 
 def help(bot, update):
   logger.debug('help handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
-  update.message.reply_text('Menus disponíveis: \n/autorizar\n/sinal\n/reiniciar')
+  update.message.reply_text(quote=True, 'Menus disponíveis: \n/autorizar\n/sinal\n/reiniciar')
 
 def sinal(bot, update):
   logger.debug('sinal handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
@@ -63,17 +63,17 @@ def sinal(bot, update):
       answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8').replace('\n', '')
       logger.debug('sinal handler: valid id: answer_string: {0}'.format(answer_string))
       if answer_string == 'not found':
-        update.message.reply_text('{0} sinal: não existe ONU autorizada com esse ID'.format(message_list[1]))
+        update.message.reply_text(quote=True, '{0} sinal: não existe ONU autorizada com esse ID'.format(message_list[1]))
       elif answer_string == 'off':
-        update.message.reply_text('{0}: sem sinal'.format(message_list[1]))
+        update.message.reply_text(quote=True, '{0}: sem sinal'.format(message_list[1]))
       elif answer_string == 'error':
-        update.message.reply_text('{0}: erro não especificado'.format(message_list[1]))
+        update.message.reply_text(quote=True, '{0}: erro não especificado'.format(message_list[1]))
       else:
-        update.message.reply_text('{0} sinal: {1}'.format(message_list[1], answer_string))
+        update.message.reply_text(quote=True, '{0} sinal: {1}'.format(message_list[1], answer_string))
     else:
-      update.message.reply_text('ID da ONU inválido. O priméiro dígito do ID deve ser de 1 a 3 (número da placa), o segundo dígito deve ser de 1 a 8 (número da PON) e os dois últimos dígitos devem ser entre 01 e 99 (número da ONU).')
+      update.message.reply_text(quote=True, 'ID da ONU inválido. O priméiro dígito do ID deve ser de 1 a 3 (número da placa), o segundo dígito deve ser de 1 a 8 (número da PON) e os dois últimos dígitos devem ser entre 01 e 99 (número da ONU).')
   else:
-    update.message.reply_text('Você não tem permissão para acessar o menu /sinal.')
+    update.message.reply_text(quote=True, 'Você não tem permissão para acessar o menu /sinal.')
 
 def reiniciar(bot, update):
   logger.debug('reiniciar handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
@@ -85,17 +85,17 @@ def reiniciar(bot, update):
       answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8').replace('\n', '')
       logger.debug('reiniciar handler: valid id: answer_string: {0}'.format(answer_string))
       if answer_string == 'not found':
-        update.message.reply_text('{0} reiniciar: sem sinal ou não existe ONU autorizada com esse ID'.format(message_list[1]))
+        update.message.reply_text(quote=True, '{0} reiniciar: sem sinal ou não existe ONU autorizada com esse ID'.format(message_list[1]))
       elif answer_string == 'error':
-        update.message.reply_text('{0}: erro não especificado'.format(message_list[1]))
+        update.message.reply_text(quote=True, '{0}: erro não especificado'.format(message_list[1]))
       elif answer_string == 'done':
-        update.message.reply_text('{0}: comando enviado com sucesso. A ONU será reiniciada em até 2 minutos.'.format(message_list[1]))
+        update.message.reply_text(quote=True, '{0}: comando enviado com sucesso. A ONU será reiniciada em até 2 minutos.'.format(message_list[1]))
       else:
-        update.message.reply_text('{0} reiniciar: resposta desconhecida: {1}'.format(message_list[1], answer_string))
+        update.message.reply_text(quote=True, '{0} reiniciar: resposta desconhecida: {1}'.format(message_list[1], answer_string))
     else:
-      update.message.reply_text('ID da ONU inválido. O priméiro dígito do ID deve ser de 1 a 3 (número da placa), o segundo dígito deve ser de 1 a 8 (número da PON) e os dois últimos dígitos devem ser entre 01 e 99 (número da ONU).')
+      update.message.reply_text(quote=True, 'ID da ONU inválido. O priméiro dígito do ID deve ser de 1 a 3 (número da placa), o segundo dígito deve ser de 1 a 8 (número da PON) e os dois últimos dígitos devem ser entre 01 e 99 (número da ONU).')
   else:
-    update.message.reply_text('Você não tem permissão para acessar o menu /reiniciar.')
+    update.message.reply_text(quote=True, 'Você não tem permissão para acessar o menu /reiniciar.')
 
 def autorizar(bot, update):
   logger.debug('autorizar handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
@@ -108,15 +108,15 @@ def autorizar(bot, update):
         answer_list.remove('\n')
       if len(answer_list) is 1:
         if 'None' in answer_list[0]:
-          update.message.reply_text('Nenhuma ONU foi encontrada. Envie /autorizar para verificar novamente se há novas ONUs.')
+          update.message.reply_text(quote=True, 'Nenhuma ONU foi encontrada. Envie /autorizar para verificar novamente se há novas ONUs.')
         else:
-          update.message.reply_text('Uma ONU foi encontrada: '+answer_list[0]+'\nConfirma serial para autorizar?\nEnvie "/autorizar sim" para autorizar ou /autorizar para verificar novamente se há novas ONUs.')
+          update.message.reply_text(quote=True, 'Uma ONU foi encontrada: '+answer_list[0]+'\nConfirma serial para autorizar?\nEnvie "/autorizar sim" para autorizar ou /autorizar para verificar novamente se há novas ONUs.')
       else:
         reply_list = []
         for i, answer in enumerate(answer_list):
           reply_list.append(str(i+1)+'. ')
           reply_list.append(answer+'\n')
-        update.message.reply_text('ONUs encontradas:\n'+''.join(reply_list)+'Envie o número da ONU que deseja autorizar (ex.: "/autorizar 1") ou /autorizar para verificar novamente se há novas ONUs.')
+        update.message.reply_text(quote=True, 'ONUs encontradas:\n'+''.join(reply_list)+'Envie o número da ONU que deseja autorizar (ex.: "/autorizar 1") ou /autorizar para verificar novamente se há novas ONUs.')
     elif is_int(message_list[1]):
       if len(message_list) == 3 and is_int(message_list[2]) and int(message_list[2]) > 0 and int(message_list[2]) < 4096:
         answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a', '{0}'.format(message_list[1]), '-v', '{0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
@@ -124,11 +124,11 @@ def autorizar(bot, update):
         answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a', '{0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
       logger.debug('autorizar: int: answer_string: {0}'.format(answer_string))
       if 'OnuDevice' in answer_string:
-        update.message.reply_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(answer_string)))
+        update.message.reply_text(quote=True, 'ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(answer_string)))
       elif 'ERR' in answer_string:
-        update.message.reply_text('A ONU informada não foi encontrada. Envie /autorizar para ver a lista de ONUs disponíveis.')
+        update.message.reply_text(quote=True, 'A ONU informada não foi encontrada. Envie /autorizar para ver a lista de ONUs disponíveis.')
       elif 'None' in answer_string:
-        update.message.reply_text('Nenhuma ONU foi encontrada. Envie /autorizar para verificar novamente se há novas ONUs.')
+        update.message.reply_text(quote=True, 'Nenhuma ONU foi encontrada. Envie /autorizar para verificar novamente se há novas ONUs.')
     elif 'sim' in message_list[1]:
       if len(message_list) == 3 and is_int(message_list[2]) and int(message_list[2]) > 0 and int(message_list[2]) < 4096:
         answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a', '1', '-v', '{0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
@@ -136,15 +136,15 @@ def autorizar(bot, update):
         answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a', '1'], capture_output=True).stdout.decode('utf-8')
       logger.debug('autorizar: sim: answer_string: {0}'.format(answer_string))
       if 'OnuDevice' in answer_string:
-        update.message.reply_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(answer_string)))
+        update.message.reply_text(quote=True, 'ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(answer_string)))
       elif 'ERR' in answer_string:
-        update.message.reply_text('A ONU não foi encontrada. Envie /autorizar para ver a lista de ONUs disponíveis.')
+        update.message.reply_text(quote=True, 'A ONU não foi encontrada. Envie /autorizar para ver a lista de ONUs disponíveis.')
       elif 'None' in answer_string:
-        update.message.reply_text('Nenhuma ONU foi encontrada. Envie /autorizar para verificar novamente.')
+        update.message.reply_text(quote=True, 'Nenhuma ONU foi encontrada. Envie /autorizar para verificar novamente.')
     else:
-      update.message.reply_text('Para autorizar uma ONU envie /autorizar.')
+      update.message.reply_text(quote=True, 'Para autorizar uma ONU envie /autorizar.')
   else:
-    update.message.reply_text('Você não tem permissão para acessar o menu /autorizar.')
+    update.message.reply_text(quote=True, 'Você não tem permissão para acessar o menu /autorizar.')
 
 def usuario(bot, update):
   logger.debug('usuario handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
@@ -154,15 +154,15 @@ def usuario(bot, update):
       answer_string = subprocess.run(['python3', 'user_from_onu.py', '-i', '{0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
       logger.debug('usuario: answer_string: {0}'.format(answer_string))
       if 'None' in answer_string:
-        update.message.reply_text('{0} usuario: nenhum usuário associado à ONU foi encontrado.'.format(message_list[1]))
+        update.message.reply_text(quote=True, '{0} usuario: nenhum usuário associado à ONU foi encontrado.'.format(message_list[1]))
       elif 'ERR' in answer_string:
-        update.message.reply_text('{0} usuario: nenhuma ONU encontrada com este ID.'.format(message_list[1]))
+        update.message.reply_text(quote=True, '{0} usuario: nenhuma ONU encontrada com este ID.'.format(message_list[1]))
       else:
-        update.message.reply_text('{0} usuario: {1}'.format(message_list[1], answer_string))
+        update.message.reply_text(quote=True, '{0} usuario: {1}'.format(message_list[1], answer_string))
     else:
-      update.message.reply_text('ID da ONU inválido. O priméiro dígito do ID deve ser de 1 a 3 (número da placa), o segundo dígito deve ser de 1 a 8 (número da PON) e os dois últimos dígitos devem ser entre 01 e 99 (número da ONU).')
+      update.message.reply_text(quote=True, 'ID da ONU inválido. O priméiro dígito do ID deve ser de 1 a 3 (número da placa), o segundo dígito deve ser de 1 a 8 (número da PON) e os dois últimos dígitos devem ser entre 01 e 99 (número da ONU).')
   else:
-    update.message.reply_text('Você não tem permissão para acessar o menu /usuario.')
+    update.message.reply_text(quote=True, 'Você não tem permissão para acessar o menu /usuario.')
 
 def cto(bot, update):
   logger.debug('cto handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
@@ -172,9 +172,9 @@ def cto(bot, update):
       answer_string = subprocess.run(['python3', 'cto_info.py', '-c', '{0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
       logger.debug('cto: answer_string: {0}'.format(answer_string))
     else:
-      update.message.reply_text('ID da VLAN inválido. Um ID válido deve estar entre 1 e 4095.')
+      update.message.reply_text(quote=True, 'ID da VLAN inválido. Um ID válido deve estar entre 1 e 4095.')
   else:
-    update.message.reply_text('Você não tem permissão para acessar o menu /cto.')
+    update.message.reply_text(quote=True, 'Você não tem permissão para acessar o menu /cto.')
 
 def link(bot, update):
   logger.debug('link handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
@@ -185,20 +185,23 @@ def link(bot, update):
       logger.debug(command_list)
       answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
       logger.debug('link: answer_string: {0}'.format(answer_string))
+      update.message.reply_text(quote=True, 'Comando enviado para usar apenas o link SQUID.')      
     elif message_list[1] == 'we':
       command_list = create_link_changing_command_list('second-link')
       logger.debug(command_list)
       answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
       logger.debug('link: answer_string: {0}'.format(answer_string))
+      update.message.reply_text(quote=True, 'Comando enviado para usar apenas o link WE.')
     elif message_list[1] == 'ambos':
       command_list = create_link_changing_command_list('both-links')
       logger.debug(command_list)
       answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
       logger.debug('link: answer_string: {0}'.format(answer_string))
+      update.message.reply_text(quote=True, 'Comando enviado para usar ambos os links.')
     else:
-      update.message.reply_text('Comando inválido. Envie "/link nomedolink" para ativar apenas um link ou "/link ambos" para ativar os dois links.')
+      update.message.reply_text(quote=True, 'Comando inválido. Envie "/link nomedolink" para ativar apenas um link ou "/link ambos" para ativar os dois links.')
   else:
-    update.message.reply_text('Você não tem permissão para acessar o menu /link.')
+    update.message.reply_text(quote=True, 'Você não tem permissão para acessar o menu /link.')
 
 def error(bot, update, error):
   logger.warning('Update "%s" caused error "%s"', update, error)
@@ -206,7 +209,7 @@ def error(bot, update, error):
 
 def general(bot, update):
   logger.debug('general handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
-  update.message.reply_text('Não entendi. Utilize um dos menus para executar funções. Utilize o menu /help para mais informações.')
+  update.message.reply_text(quote=True, 'Não entendi. Utilize um dos menus para executar funções. Utilize o menu /help para mais informações.')
 
 def main():
   updater = Updater(bot_config.token)

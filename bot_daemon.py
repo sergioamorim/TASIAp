@@ -181,10 +181,10 @@ def cto(bot, update):
       answer_string = subprocess.run(['ssh', '-p', '{0}', '{1}@{2}', '/system', 'script', 'run', '{3}'.format(bot_config.mk_link['ssh']['port'], bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip'], bot_config.mk_link['script']['first-link'])], capture_output=True).stdout.decode('utf-8')
       logger.debug('link: answer_string: {0}'.format(answer_string))
     elif message_list[1] == 'we':
-      answer_string = subprocess.run(['ssh', '-p', '{0}', '{1}@{2}', '/system', 'script', 'run', '{3}'.format(bot_config..mk_link['ssh']['port'], bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip'], bot_config.mk_link['script']['second-link'])], capture_output=True).stdout.decode('utf-8')
+      answer_string = subprocess.run(['ssh', '-p', '{0}', '{1}@{2}', '/system', 'script', 'run', '{3}'.format(bot_config.mk_link['ssh']['port'], bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip'], bot_config.mk_link['script']['second-link'])], capture_output=True).stdout.decode('utf-8')
       logger.debug('link: answer_string: {0}'.format(answer_string))
     elif message_list[1] == 'ambos':
-      answer_string = subprocess.run(['ssh', '-p', '{0}', '{1}@{2}', '/system', 'script', 'run', '{3}'.format(bot_config..mk_link['ssh']['port'], bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip'], bot_config.mk_link['script']['both-links'])], capture_output=True).stdout.decode('utf-8')
+      answer_string = subprocess.run(['ssh', '-p', '{0}', '{1}@{2}', '/system', 'script', 'run', '{3}'.format(bot_config.mk_link['ssh']['port'], bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip'], bot_config.mk_link['script']['both-links'])], capture_output=True).stdout.decode('utf-8')
       logger.debug('link: answer_string: {0}'.format(answer_string))
     else:
       update.message.reply_text('Comando inválido. Envie "/link nomedolink" para ativar apenas um link ou "/link ambos" para ativar os dois links.')

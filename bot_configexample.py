@@ -5,7 +5,7 @@
 # and cto_info.py
 
 token = 'bOt-T0keN_ExaMplE'
-authorized_users = [01234567, 89012345]
+authorized_users = [1234567, 89012345]
 default_chat = '012345678'
 mk_link = {
   'ssh': { 

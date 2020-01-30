@@ -173,7 +173,7 @@ def cto(bot, update):
   else:
     update.message.reply_text('Você não tem permissão para acessar o menu /cto.')
 
-def cto(bot, update):
+def link(bot, update):
   logger.debug('link handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')

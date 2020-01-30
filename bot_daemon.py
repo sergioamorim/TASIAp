@@ -173,6 +173,24 @@ def cto(bot, update):
   else:
     update.message.reply_text('Você não tem permissão para acessar o menu /cto.')
 
+def cto(bot, update):
+  logger.debug('link handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
+  if is_user_authorized(update.message.from_user.id):
+    message_list = update.message.text.lower().split(' ')
+    if message_list[1] == 'squid':
+      answer_string = subprocess.run(['ssh', '-p', '{0}', '{1}@{2}', '/system', 'script', 'run', '{3}'.format(bot_config.mk_link['ssh']['port'], bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip'], bot_config.mk_link['script']['first-link'])], capture_output=True).stdout.decode('utf-8')
+      logger.debug('link: answer_string: {0}'.format(answer_string))
+    elif message_list[1] == 'we':
+      answer_string = subprocess.run(['ssh', '-p', '{0}', '{1}@{2}', '/system', 'script', 'run', '{3}'.format(bot_config..mk_link['ssh']['port'], bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip'], bot_config.mk_link['script']['second-link'])], capture_output=True).stdout.decode('utf-8')
+      logger.debug('link: answer_string: {0}'.format(answer_string))
+    elif message_list[1] == 'ambos':
+      answer_string = subprocess.run(['ssh', '-p', '{0}', '{1}@{2}', '/system', 'script', 'run', '{3}'.format(bot_config..mk_link['ssh']['port'], bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip'], bot_config.mk_link['script']['both-links'])], capture_output=True).stdout.decode('utf-8')
+      logger.debug('link: answer_string: {0}'.format(answer_string))
+    else:
+      update.message.reply_text('Comando inválido. Envie "/link nomedolink" para ativar apenas um link ou "/link ambos" para ativar os dois links.')
+  else:
+    update.message.reply_text('Você não tem permissão para acessar o menu /link.')
+
 def error(bot, update, error):
   logger.warning('Update "%s" caused error "%s"', update, error)
   logger.debug('error handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
@@ -192,6 +210,7 @@ def main():
   dp.add_handler(CommandHandler("reiniciar", reiniciar))
   dp.add_handler(CommandHandler("usuario", usuario))
   dp.add_handler(CommandHandler("cto", cto))
+  dp.add_handler(CommandHandler("link", link))
   dp.add_handler(CommandHandler("help", help))
 
   dp.add_handler(MessageHandler(Filters.text, general))

@@ -175,7 +175,7 @@ def cto(bot, update):
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
     if len(message_list) < 2:
-      update.message.reply_text('Comando inválido. Envie "/cto 1234" para receber o relatório da ONU de ID 1234.', quote=True)
+      update.message.reply_text('Comando inválido. Envie "/cto 1234" para receber o relatório da ONU de ID 1234. Envie "/cto 1234 tecnico" para receber o mesmo relatório, mas ordenado por endereço em vez de nome.', quote=True)
     if is_vlan_id_valid(message_list[1]):
       command_list = ['python3', 'cto_info.py', '-c', '{0}'.format(message_list[1])]
       if len(message_list) > 2 and message_list[2] == 'tecnico':

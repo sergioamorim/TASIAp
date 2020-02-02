@@ -287,14 +287,35 @@ def button(bot, update):
     answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a', '{0}'.format(serial)], capture_output=True).stdout.decode('utf-8')
     logger.debug('button: authorize: answer_string: {0}'.format(answer_string))
     if 'OnuDevice' in answer_string:
-      query.edit_message_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(answer_string)), quote=True)
+      serial = re.findall(".*phy_id\\=\\'([0-9A-Z]{4}[0-9A-Fa-f]{8}).*", answer_string)[0]
+      onu_id = get_onu_id_from_repr(answer_string)
+      callback_data = '#0#a=s#1#s={0}#2#i={1}#3#'.format(serial, onu_id)
+      keyboard = [[
+        InlineKeyboardButton(text='CTO', callback_data='{0}{1}'.format(callback_data, 'c=ct#4#')),
+        InlineKeyboardButton(text='Cliente', callback_data='{0}{1}'.format(callback_data, 'c=cl#4#'))
+      ]]
+      keyboard_markup = InlineKeyboardMarkup(keyboard)
+      query.edit_message_text('ONU de cliente ou CTO?', reply_markup=keyboard_markup, quote=True)
     elif 'ERR' in answer_string:
-      query.edit_message_text('A ONU informada não foi encontrada. Envie /autorizar para ver a lista de ONUs disponíveis.', quote=True)
+      query.edit_message_text('Tente novamente, não foi possivel encontrar a ONU informada agora. Envie /autorizar para ver a lista de ONUs disponíveis.', quote=True)
     elif 'None' in answer_string:
-      query.edit_message_text('Nenhuma ONU foi encontrada. Envie /autorizar para verificar novamente se há novas ONUs.', quote=True)
+      query.edit_message_text('Tente novamente, não foi possivel encontrar nenhuma ONU agora. Envie /autorizar para verificar novamente se há ONUs disponíveis.', quote=True)
+  elif action == 'c':
+    serial = re.findall('#1#s=(.*)#2#', query.data)[0]
+    onu_id = re.findall('#2#i=(.*)#3#', query.data)[0]
+    cvlan = re.findall('#3#c=(.*)#4#', query.data)[0]
+    if cvlan == 'ct':
+      command_list = ['python3', 'onu_set_cvlan.py', '-i', '{0}'.format(onu_id), '-c', 'cto']
+    else:
+      command_list = ['python3', 'onu_set_cvlan.py', '-i', '{0}'.format(onu_id)]
+    logger.debug('button: set_cvlan: command_list: {0}'. format(command_list))
+    answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
+    logger.debug('button: set_cvlan: answer_string: {0}'. format(answer_string))
+    onu_info_string = get_onu_info_string(onu_id=onu_id, cvlan=cvlan, serial=serial)
+    query.edit_message_text('ONU autorizada com sucesso!\n{0}'.format(onu_info_string), quote=True)
   elif action == 'aa':
     query.edit_message_text('Autorização cancelada.', quote=True)
-      
+
 def main():
   updater = Updater(bot_config.token)
 

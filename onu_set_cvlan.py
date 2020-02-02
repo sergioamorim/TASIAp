@@ -7,7 +7,7 @@ import snmp_configexample as snmp_config
 import subprocess
 
 logger = logging.getLogger('onu_set_cvlan')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 file_handler = logging.FileHandler('logs/onu_set_cvlan.log')
 file_handler.setFormatter(formatter)
@@ -53,6 +53,7 @@ def set_cvlan(ip, community, onu_id, cvlan):
   command = 'snmpset -v 2c -c {0} {1} 1.3.6.1.4.1.5875.91.1.8.1.1.1.5.1 x "42 47 4D 50 01 00 00 00 00 00 00 00 D7 AC FE 82 BB 34 00 00 00 00 00 00 00 00 CC CC CC CC 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 01 00 00 00 01 00 00 00 A3 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 A3 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 {2} 00 {3} 00 {4} 00 01 00 7A 01 01 01 01 01 00 00 01 00 52 00 00 01 81 00 {5} 00 00 81 00 FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 81 00 FF FF FF 00 00 00 00 00 00 00 01 00 00 00 00 00 00 00 00 00 00 02 80 00 0F 42 40 00 0F 42 40 00 00 FF FF FF 81 00 FF FF FF 81 00 00 00 00 00 00 00"'.format(community, ip, int_to_hexoctetstr(board_id), int_to_hexoctetstr(pon_id), int_to_hexoctetstr(onu_number), assure_two_octet_hexstr(int_to_hexoctetstr(cvlan)))
   logger.debug('set_cvlan: command: {0}'.format(command))
   subprocess.run(command, shell=True)
+  print('{0}_{1}'.format(onu_id, cvlan))
 
 def main():
   parser = argparse.ArgumentParser()

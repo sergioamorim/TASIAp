@@ -208,4 +208,6 @@ def main():
         authorize_onu(onu)
       else:
         print('ERR')
-  return 0
+
+if __name__ == '__main__':
+  main()

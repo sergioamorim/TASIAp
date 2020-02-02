@@ -229,3 +229,13 @@ else:
         print(repr(onu))
     if not authed:
       print('ERR')
+  else:
+    authed = False
+    for onu in onu_list:
+      if onu.phy_id == auth_onu:
+        authorize_onu(onu)
+        set_cvlan(telnet_config.ip, snmp_config.community, onu, predefined_cvlan)
+        authed = True
+        print(repr(onu))
+    if not authed:
+      print('ERR')

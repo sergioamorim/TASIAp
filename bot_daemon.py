@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ParseMode
 import logging
 import re
 import subprocess
@@ -30,11 +30,31 @@ def is_vlan_id_valid(vlan_id):
 def create_link_changing_command_list(link):
   return ['ssh', '-p', '{0}'.format(bot_config.mk_link['ssh']['port']), '{0}@{1}'.format(bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip']), '/system',  'script', 'run', '{0}'.format(bot_config.mk_link['script'][link])]
 
-def create_keyboard_markup(onu_list):
-  if len(onu_list) == 1:
-    keyboard = [[InlineKeyboardButton(text=onu_list[0], callback_data=onu_list[0])]]
-    keyboard_markup = InlineKeyboardMarkup(keyboard)
-    return keyboard_markup
+def create_keyboard_markup(onu_serials_list):
+  keyboard = []
+  for onu_serial in onu_serials_list:
+    onu_serial_regex_list = re.findall('(.*)_(.*)_(.*)', onu_serial)
+    board = onu_serial_regex_list[0][0]
+    pon = onu_serial_regex_list[0][1]
+    serial = onu_serial_regex_list[0][2]
+    callback_data = "#0#a=ca#1#s={0}#2#b={1}#3#p={2}#4#".format(serial, board, pon)
+    keyboard.append([InlineKeyboardButton(text='Serial: {0} Placa: {1} PON: {2}'.format(serial, board, pon), callback_data=callback_data)])
+  keyboard.append([InlineKeyboardButton(text='Cancelar', callback_data="#0#a=aa#1#")])
+  keyboard_markup = InlineKeyboardMarkup(keyboard)
+  return keyboard_markup
+
+def get_signal(onu_id):
+  command_list = ['python3', 'onu_signal_power.py', '-i', '{0}'.format(onu_id)]
+  logger.debug('get_signal: command_list: {0}'.format(command_list))
+  answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8').replace('\n', '')
+  logger.debug('get_signal: answer_string: {0}'.format(answer_string))
+  if answer_string == 'not found':
+    return 'não existe ONU autorizada com esse ID'
+  elif answer_string == 'off':
+    return 'sem sinal'
+  elif answer_string == 'error':
+    return 'erro não especificado'
+  return answer_string
 
 def is_int(s):
   try: 
@@ -49,7 +69,9 @@ def get_onu_info_string(onu_repr):
   pon = re.findall(".*pon_id\\=\\'([0-9]).*", onu_repr)[0]
   onu_number = re.findall(".*number\\=\\'([0-9]*)'.*", onu_repr)[0]
   cvlan = re.findall(".*cvlan\\=\\'([0-9]*)'.*", onu_repr)[0]
-  return '{0}{1}{2}{3} {4} {5}'.format('1' if board == '12' else '2', pon, '0' if int(onu_number) < 10 else '', onu_number, cvlan, phy_address)
+  onu_id = '{0}{1}{2}{3}'.format('1' if board == '12' else '2', pon, '0' if int(onu_number) < 10 else '', onu_number)
+  signal = get_signal(onu_id)
+  return 'ID: {0}\nVLAN: {1}\nSerial: {2}\nSinal: {3}'.format(onu_id, cvlan, phy_address, signal)
 
 def start(bot, update):
   logger.debug('start handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
@@ -67,18 +89,8 @@ def sinal(bot, update):
     if len(message_list) < 2:
       update.message.reply_text('Comando inválido. Envie "/sinal 1234" para verificar o sinal da ONU de ID 1234.', quote=True)
     if is_onu_id_valid(message_list[1]):
-      command_list = ['python3', 'onu_signal_power.py', '-i', '{0}'.format(message_list[1])]
-      logger.debug('sinal handler: valid id: command_list: {0}'.format(command_list))
-      answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8').replace('\n', '')
-      logger.debug('sinal handler: valid id: answer_string: {0}'.format(answer_string))
-      if answer_string == 'not found':
-        update.message.reply_text('{0} sinal: não existe ONU autorizada com esse ID'.format(message_list[1]), quote=True)
-      elif answer_string == 'off':
-        update.message.reply_text('{0}: sem sinal'.format(message_list[1]), quote=True)
-      elif answer_string == 'error':
-        update.message.reply_text('{0}: erro não especificado'.format(message_list[1]), quote=True)
-      else:
-        update.message.reply_text('{0} sinal: {1}'.format(message_list[1], answer_string), quote=True)
+      signal = get_signal(message_list[1])
+      update.message.reply_text(signal.capitalize(), quote=True)
     else:
       update.message.reply_text('ID da ONU inválido. O priméiro dígito do ID deve ser de 1 a 3 (número da placa), o segundo dígito deve ser de 1 a 8 (número da PON) e os dois últimos dígitos devem ser entre 01 e 99 (número da ONU).', quote=True)
   else:
@@ -117,45 +129,64 @@ def autorizar(bot, update):
       logger.debug('autorizar handler: /autorizar: answer_list: {0}'.format(answer_list))
       if '\n' in answer_list:
         answer_list.remove('\n')
-      if len(answer_list) is 1:
+      if len(answer_list) == 1 and 'None' in answer_list[0]:
+        update.message.reply_text('Nenhuma ONU foi encontrada. Envie /autorizar para verificar novamente se há novas ONUs.', quote=True)
+      else:
+        keyboard_markup = create_keyboard_markup(answer_list)
+        update.message.reply_text('Confirme os dados da ONU que deseja autorizar:', quote=True, reply_markup=keyboard_markup)
+    else:
+      update.message.reply_text('Para autorizar uma ONU envie /autorizar.', quote=True)
+  else:
+    update.message.reply_text('Você não tem permissão para acessar o menu /autorizar.', quote=True)
+
+def authorize(bot, update):
+  logger.debug('authorize handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
+  if is_user_authorized(update.message.from_user.id):
+    message_list = update.message.text.lower().split(' ')
+    if len(message_list) == 1:
+      answer_list = subprocess.run(['python3', 'authorize_onu.py'], capture_output=True).stdout.decode('utf-8').split(' ')
+      logger.debug('authorize handler: /authorize: answer_list: {0}'.format(answer_list))
+      if '\n' in answer_list:
+        answer_list.remove('\n')
+      if len(answer_list) == 1:
         if 'None' in answer_list[0]:
-          update.message.reply_text('Nenhuma ONU foi encontrada. Envie /autorizar para verificar novamente se há novas ONUs.', quote=True)
+          update.message.reply_text('Nenhuma ONU foi encontrada. Envie /authorize para verificar novamente se há novas ONUs.', quote=True)
         else:
-          update.message.reply_text('Uma ONU foi encontrada: '+answer_list[0]+'\nConfirma serial para autorizar?\nEnvie "/autorizar sim" para autorizar ou /autorizar para verificar novamente se há novas ONUs.', quote=True)
+          update.message.reply_text('Uma ONU foi encontrada: '+answer_list[0]+'\nConfirma serial para autorizar?\nEnvie "/authorize sim" para autorizar ou /authorize para verificar novamente se há novas ONUs.', quote=True)
       else:
         reply_list = []
         for i, answer in enumerate(answer_list):
           reply_list.append(str(i+1)+'. ')
           reply_list.append(answer+'\n')
-        update.message.reply_text('ONUs encontradas:\n'+''.join(reply_list)+'Envie o número da ONU que deseja autorizar (ex.: "/autorizar 1") ou /autorizar para verificar novamente se há novas ONUs.', quote=True)
+        update.message.reply_text('ONUs encontradas:\n'+''.join(reply_list)+'Envie o número da ONU que deseja autorizar (ex.: "/authorize 1") ou /authorize para verificar novamente se há novas ONUs.', quote=True)
     elif is_int(message_list[1]):
       if len(message_list) == 3 and is_int(message_list[2]) and int(message_list[2]) > 0 and int(message_list[2]) < 4096:
         answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a', '{0}'.format(message_list[1]), '-v', '{0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
       else:
         answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a', '{0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
-      logger.debug('autorizar: int: answer_string: {0}'.format(answer_string))
+      logger.debug('authorize: int: answer_string: {0}'.format(answer_string))
       if 'OnuDevice' in answer_string:
         update.message.reply_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(answer_string)), quote=True)
       elif 'ERR' in answer_string:
-        update.message.reply_text('A ONU informada não foi encontrada. Envie /autorizar para ver a lista de ONUs disponíveis.', quote=True)
+        update.message.reply_text('A ONU informada não foi encontrada. Envie /authorize para ver a lista de ONUs disponíveis.', quote=True)
       elif 'None' in answer_string:
-        update.message.reply_text('Nenhuma ONU foi encontrada. Envie /autorizar para verificar novamente se há novas ONUs.', quote=True)
+        update.message.reply_text('Nenhuma ONU foi encontrada. Envie /authorize para verificar novamente se há novas ONUs.', quote=True)
     elif 'sim' in message_list[1]:
       if len(message_list) == 3 and is_int(message_list[2]) and int(message_list[2]) > 0 and int(message_list[2]) < 4096:
         answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a', '1', '-v', '{0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
       else:
         answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a', '1'], capture_output=True).stdout.decode('utf-8')
-      logger.debug('autorizar: sim: answer_string: {0}'.format(answer_string))
+      logger.debug('authorize: sim: answer_string: {0}'.format(answer_string))
       if 'OnuDevice' in answer_string:
         update.message.reply_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(answer_string)), quote=True)
       elif 'ERR' in answer_string:
-        update.message.reply_text('A ONU não foi encontrada. Envie /autorizar para ver a lista de ONUs disponíveis.', quote=True)
+        update.message.reply_text('A ONU não foi encontrada. Envie /authorize para ver a lista de ONUs disponíveis.', quote=True)
       elif 'None' in answer_string:
-        update.message.reply_text('Nenhuma ONU foi encontrada. Envie /autorizar para verificar novamente.', quote=True)
+        update.message.reply_text('Nenhuma ONU foi encontrada. Envie /authorize para verificar novamente.', quote=True)
     else:
-      update.message.reply_text('Para autorizar uma ONU envie /autorizar.', quote=True)
+      update.message.reply_text('Para autorizar uma ONU envie /authorize.', quote=True)
   else:
-    update.message.reply_text('Você não tem permissão para acessar o menu /autorizar.', quote=True)
+    update.message.reply_text('Você não tem permissão para acessar o menu /authorize.', quote=True)
 
 def usuario(bot, update):
   logger.debug('usuario handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
@@ -232,9 +263,35 @@ def general(bot, update):
   update.message.reply_text('Não entendi. Utilize um dos menus para executar funções. Utilize o menu /help para mais informações.', quote=True)
 
 def button(bot, update):
-    query = update.callback_query
-    query.edit_message_text(text='{0}'.format(query.data))
-
+  query = update.callback_query
+  logger.debug('button handler: query from {0}{1}{2}({3}) received: {4}'.format(query.message.chat.first_name, ' {0}'.format(query.message.chat.last_name) if query.message.chat.last_name else '', ' - @{0} '.format(query.message.chat.username) if query.message.chat.username else '', query.message.chat.id, query.data))
+  action = re.findall('#0#a=(.*)#1#', query.data)[0]
+  logger.debug('action: {0}'.format(action))
+  if action == 'ca':
+    serial = re.findall('#1#s=(.*)#2#', query.data)[0]
+    board = re.findall('#2#b=(.*)#3#', query.data)[0]
+    pon = re.findall('#3#p=(.*)#4#', query.data)[0]
+    callback_data = '#0#a=a#1#s={0}#2#'.format(serial)
+    keyboard = [[
+      InlineKeyboardButton(text='Confirmar', callback_data=callback_data),
+      InlineKeyboardButton(text='Cancelar', callback_data='#0#a=aa#1#')
+    ]]
+    keyboard_markup = InlineKeyboardMarkup(keyboard)
+    logger.debug('keyboard_markup: {0}'.format(keyboard_markup))
+    query.edit_message_text('Tem certeza que deseja autorizar a ONU de serial *{0}* na *placa {1} PON {2}*?'.format(serial, board, pon), reply_markup=keyboard_markup, parse_mode=ParseMode.MARKDOWN, quote=True)
+  elif action == 'a':
+    serial = re.findall("#1#s=(.*)#2#", query.data)[0]
+    answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a', '{0}'.format(serial)], capture_output=True).stdout.decode('utf-8')
+    logger.debug('button: authorize: answer_string: {0}'.format(answer_string))
+    if 'OnuDevice' in answer_string:
+      query.edit_message_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(answer_string)), quote=True)
+    elif 'ERR' in answer_string:
+      query.edit_message_text('A ONU informada não foi encontrada. Envie /autorizar para ver a lista de ONUs disponíveis.', quote=True)
+    elif 'None' in answer_string:
+      query.edit_message_text('Nenhuma ONU foi encontrada. Envie /autorizar para verificar novamente se há novas ONUs.', quote=True)
+  elif action == 'aa':
+    query.edit_message_text('Autorização cancelada.', quote=True)
+      
 def main():
   updater = Updater(bot_config.token)
 
@@ -242,6 +299,7 @@ def main():
 
   dp.add_handler(CommandHandler("start", start))
   dp.add_handler(CommandHandler("autorizar", autorizar))
+  dp.add_handler(CommandHandler("authorize", authorize))
   dp.add_handler(CommandHandler("sinal", sinal))
   dp.add_handler(CommandHandler("reiniciar", reiniciar))
   dp.add_handler(CommandHandler("usuario", usuario))

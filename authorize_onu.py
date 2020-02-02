@@ -5,7 +5,6 @@ from telnetlib import Telnet
 import argparse
 import subprocess
 import logging
-import snmp_config
 import telnet_config
 
 logger = logging.getLogger('authorize_onu')

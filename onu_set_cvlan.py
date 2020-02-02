@@ -29,6 +29,14 @@ def is_onu_id_valid(onu_id):
 def is_vlan_id_valid(vlan_id):
   return is_int(vlan_id) and int(vlan_id) > 0 and int(vlan_id) < 4096
 
+def format_strhexoctet(strhexoctet):
+  return strhexoctet.zfill(2).upper()
+
+def hexstr_to_hexoctetstr(hexstr):
+  if len(hexstr) > 2:
+    return hexstr_to_hexoctetstr(hexstr[:-2])+' '+format_strhexoctet(hexstr[-2:])
+  return format_strhexoctet(hexstr[-2:])
+
 def int_to_hexoctetstr(intvalue):
   return hexstr_to_hexoctetstr(format(intvalue, 'x'))
 

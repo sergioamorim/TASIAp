@@ -57,21 +57,28 @@ def get_signal(onu_id):
   return answer_string
 
 def is_int(s):
-  try: 
+  try:
     int(s)
     return True
   except ValueError:
     return False
 
-def get_onu_info_string(onu_repr):
-  phy_address = re.findall(".*phy_id\\=\\'([0-9A-Z]{4}[0-9A-Fa-f]{8}).*", onu_repr)[0]
+def get_onu_info_string(onu_repr=None, onu_id=None, cvlan=None, serial=None):
+  signal = None
+  if onu_repr:
+    serial = re.findall(".*phy_id\\=\\'([0-9A-Z]{4}[0-9A-Fa-f]{8}).*", onu_repr)[0]
+    cvlan = re.findall(".*cvlan\\=\\'([0-9]*)'.*", onu_repr)[0]
+    onu_id = get_onu_id_from_repr(onu_repr)
+  else:
+    signal = get_signal(onu_id)
+  return 'ID: {0}\nVLAN: {1}\nSerial: {2}{3}'.format(onu_id, cvlan, serial, '\nSinal: {0}'.format(signal) if signal else '')
+
+def get_onu_id_from_repr(onu_repr):
   board = re.findall(".*board_id\\=\\'([0-9]{2}).*", onu_repr)[0]
   pon = re.findall(".*pon_id\\=\\'([0-9]).*", onu_repr)[0]
   onu_number = re.findall(".*number\\=\\'([0-9]*)'.*", onu_repr)[0]
-  cvlan = re.findall(".*cvlan\\=\\'([0-9]*)'.*", onu_repr)[0]
   onu_id = '{0}{1}{2}{3}'.format('1' if board == '12' else '2', pon, '0' if int(onu_number) < 10 else '', onu_number)
-  signal = get_signal(onu_id)
-  return 'ID: {0}\nVLAN: {1}\nSerial: {2}\nSinal: {3}'.format(onu_id, cvlan, phy_address, signal)
+  return onu_id
 
 def start(bot, update):
   logger.debug('start handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
@@ -166,7 +173,7 @@ def authorize(bot, update):
         answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a', '{0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
       logger.debug('authorize: int: answer_string: {0}'.format(answer_string))
       if 'OnuDevice' in answer_string:
-        update.message.reply_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(answer_string)), quote=True)
+        update.message.reply_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(onu_repr=answer_string)), quote=True)
       elif 'ERR' in answer_string:
         update.message.reply_text('A ONU informada não foi encontrada. Envie /authorize para ver a lista de ONUs disponíveis.', quote=True)
       elif 'None' in answer_string:
@@ -178,7 +185,7 @@ def authorize(bot, update):
         answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a', '1'], capture_output=True).stdout.decode('utf-8')
       logger.debug('authorize: sim: answer_string: {0}'.format(answer_string))
       if 'OnuDevice' in answer_string:
-        update.message.reply_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(answer_string)), quote=True)
+        update.message.reply_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(onu_repr=answer_string)), quote=True)
       elif 'ERR' in answer_string:
         update.message.reply_text('A ONU não foi encontrada. Envie /authorize para ver a lista de ONUs disponíveis.', quote=True)
       elif 'None' in answer_string:

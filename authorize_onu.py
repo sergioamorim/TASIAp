@@ -23,8 +23,7 @@ class OnuDevice:
   pon = None
   onu_type = None
   number = None
-  def setNumber(self, number):
-    self.number = number
+  cvlan = None
   def __init__(self, phy_id, pon, onu_type):
     self.phy_id = phy_id
     self.pon = pon
@@ -37,8 +36,6 @@ class Pon:
   pon_id = None
   board = None
   last_authorized_onu_number = None
-  def setLastAuthorizedOnuNumber(self, last_authorized_onu_number):
-    self.last_authorized_onu_number = last_authorized_onu_number
   def __init__(self, pon_id, board):
     self.pon_id = pon_id
     self.board = board
@@ -89,7 +86,7 @@ def get_next_value(tn):
   return value[:-1].decode('utf-8')
 
 def authorize_onu(onu, cvlan):
-  onu.setNumber(onu.pon.last_authorized_onu_number+1)
+  onu.number = onu.pon.last_authorized_onu_number+1
   with Telnet(telnet_config.ip, telnet_config.port) as tn:
     connect_gpononu(tn)
     tn.write(str_to_telnet('set whitelist phy_addr address '+onu.phy_id+' password null action delete'))
@@ -183,7 +180,7 @@ for pon in pon_list:
     onu_quantity = int(get_next_value(tn))
     tn.read_until(b' --------------------', timeout=10)
     last_authorized_onu_number = get_new_onu_number(tn, onu_quantity, pon)
-    pon.setLastAuthorizedOnuNumber(last_authorized_onu_number)
+      tn.read_until(b'PON=', timeout=10)
     tn.read_until(b'gpononu# ', timeout=10)
     disconnect_gpononu(tn)
 

@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 import logging
 import re
 import subprocess
@@ -28,6 +29,12 @@ def is_vlan_id_valid(vlan_id):
 
 def create_link_changing_command_list(link):
   return ['ssh', '-p', '{0}'.format(bot_config.mk_link['ssh']['port']), '{0}@{1}'.format(bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip']), '/system',  'script', 'run', '{0}'.format(bot_config.mk_link['script'][link])]
+
+def create_keyboard_markup(onu_list):
+  if len(onu_list) == 1:
+    keyboard = [[InlineKeyboardButton(text=onu_list[0], callback_data=onu_list[0])]]
+    keyboard_markup = InlineKeyboardMarkup(keyboard)
+    return keyboard_markup
 
 def is_int(s):
   try: 
@@ -221,6 +228,10 @@ def general(bot, update):
   logger.debug('general handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   update.message.reply_text('Não entendi. Utilize um dos menus para executar funções. Utilize o menu /help para mais informações.', quote=True)
 
+def button(bot, update):
+    query = update.callback_query
+    query.edit_message_text(text='{0}'.format(query.data))
+
 def main():
   updater = Updater(bot_config.token)
 
@@ -233,8 +244,8 @@ def main():
   dp.add_handler(CommandHandler("usuario", usuario))
   dp.add_handler(CommandHandler("cto", cto))
   dp.add_handler(CommandHandler("link", link))
+  dp.add_handler(CallbackQueryHandler(button))
   dp.add_handler(CommandHandler("help", help))
-
   dp.add_handler(MessageHandler(Filters.text, general))
 
   dp.add_error_handler(error)

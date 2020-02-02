@@ -168,7 +168,7 @@ def authorize(bot, update):
         update.message.reply_text('ONUs encontradas:\n'+''.join(reply_list)+'Envie o número da ONU que deseja autorizar (ex.: "/authorize 1") ou /authorize para verificar novamente se há novas ONUs.', quote=True)
     elif is_int(message_list[1]):
       if len(message_list) == 3 and is_int(message_list[2]) and int(message_list[2]) > 0 and int(message_list[2]) < 4096:
-        answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a', '{0}'.format(message_list[1]), '-v', '{0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
+        answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a', '{0}'.format(message_list[1]), '-c', '{0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
       else:
         answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a', '{0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
       logger.debug('authorize: int: answer_string: {0}'.format(answer_string))
@@ -180,7 +180,7 @@ def authorize(bot, update):
         update.message.reply_text('Nenhuma ONU foi encontrada. Envie /authorize para verificar novamente se há novas ONUs.', quote=True)
     elif 'sim' in message_list[1]:
       if len(message_list) == 3 and is_int(message_list[2]) and int(message_list[2]) > 0 and int(message_list[2]) < 4096:
-        answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a', '1', '-v', '{0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
+        answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a', '1', '-c', '{0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
       else:
         answer_string = subprocess.run(['python3', 'authorize_onu.py', '-a', '1'], capture_output=True).stdout.decode('utf-8')
       logger.debug('authorize: sim: answer_string: {0}'.format(answer_string))
@@ -243,7 +243,7 @@ def link(bot, update):
       logger.debug(command_list)
       answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
       logger.debug('link: answer_string: {0}'.format(answer_string))
-      update.message.reply_text('Comando enviado para usar apenas o link SQUID.', quote=True)      
+      update.message.reply_text('Comando enviado para usar apenas o link SQUID.', quote=True)
     elif message_list[1] == 'we':
       command_list = create_link_changing_command_list('second-link')
       logger.debug(command_list)

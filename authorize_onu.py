@@ -25,18 +25,6 @@ class OnuDevice:
   number = None
   def setNumber(self, number):
     self.number = number
-  def autoset_cvlan(self):
-    cvlan_list = ['','','','']
-    if self.pon.board.board_id is 12:
-      cvlan_list[0] = '1'
-    elif self.pon.board.board_id is 14:
-      cvlan_list[0] = '2'
-    cvlan_list[1] = str(self.pon.pon_id)[-1:]
-    #cvlan_list[2] = str(self.number)[-2:-1]
-    cvlan_list[2] = '0'
-    #cvlan_list[3] = str(self.number)[-1:]
-    cvlan_list[3] = '0'
-    self.cvlan = int(''.join(cvlan_list))
   def __init__(self, phy_id, pon, onu_type):
     self.phy_id = phy_id
     self.pon = pon
@@ -65,22 +53,8 @@ class Board:
     return "<Board(board_id='{0}')>".format(self.board_id)
 
 
-
-def format_strhexoctet(strhexoctet):
-  return strhexoctet.zfill(2).upper()
-
-def hexstr_to_hexoctetstr(hexstr):
-  if len(hexstr) > 2:
-    return hexstr_to_hexoctetstr(hexstr[:-2])+' '+format_strhexoctet(hexstr[-2:])
-  return format_strhexoctet(hexstr[-2:])
-
-def assure_two_octet_hexstr(hexstr):
-  if len(hexstr) is 2:
-    return '00 '+hexstr
-  return hexstr
-
-def int_to_hexoctetstr(intvalue):
-  return hexstr_to_hexoctetstr(format(intvalue, 'x'))
+def is_vlan_id_valid(vlan_id):
+  return is_int(vlan_id) and int(vlan_id) > 0 and int(vlan_id) < 4096
 
 def str_to_telnet(string):
   return string.encode('ascii')+b'\n'
@@ -114,7 +88,7 @@ def get_next_value(tn):
     value = tn.read_until(b' ', timeout=10)
   return value[:-1].decode('utf-8')
 
-def authorize_onu(onu):
+def authorize_onu(onu, cvlan):
   onu.setNumber(onu.pon.last_authorized_onu_number+1)
   with Telnet(telnet_config.ip, telnet_config.port) as tn:
     connect_gpononu(tn)
@@ -124,15 +98,16 @@ def authorize_onu(onu):
     tn.read_until(b'gpononu#', timeout=10)
     tn.write(str_to_telnet('set whitelist phy_addr address '+onu.phy_id+' password null action add slot '+str(onu.pon.board.board_id)+' link '+str(onu.pon.pon_id)+' onu '+str(onu.number)+' type '+onu.onu_type))
     disconnect_gpononu(tn)
+  if cvlan:
+    set_cvlan(onu, cvlan)
+  print(repr(onu))
 
-def set_cvlan(ip, community, onu, predefined_cvlan):
-  if predefined_cvlan:
-    onu.cvlan = predefined_cvlan
-  else:
-    onu.autoset_cvlan()
-  logger.debug('set_cvlan: onu.cvlan: {0}'.format(onu.cvlan))
-  command = 'snmpset -v 2c -c ' + community + ' ' + ip + ' 1.3.6.1.4.1.5875.91.1.8.1.1.1.5.1 x "42 47 4D 50 01 00 00 00 00 00 00 00 D7 AC FE 82 BB 34 00 00 00 00 00 00 00 00 CC CC CC CC 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 01 00 00 00 01 00 00 00 A3 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 A3 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ' + int_to_hexoctetstr(onu.pon.board.board_id) + ' 00 ' + int_to_hexoctetstr(onu.pon.pon_id) + ' 00 ' + int_to_hexoctetstr(onu.number) + ' 00 01 00 7A 01 01 01 01 01 00 00 01 00 52 00 00 01 81 00 ' + assure_two_octet_hexstr(int_to_hexoctetstr(onu.cvlan)) + ' 00 00 81 00 FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 81 00 FF FF FF 00 00 00 00 00 00 00 01 00 00 00 00 00 00 00 00 00 00 02 80 00 0F 42 40 00 0F 42 40 00 00 FF FF FF 81 00 FF FF FF 81 00 00 00 00 00 00 00"'
-  subprocess.run(command, shell=True)
+def set_cvlan(onu, cvlan):
+  onu_id = '{0}{1}{2}'.format('1' if onu.pon.board.board_id == 12 else '2', onu.pon.pon_id, onu.number)
+  if cvlan != 'cto':
+    onu.cvlan = int(cvlan)
+  command_list = ['python3', 'onu_set_cvlan.py', '-i', '{0}'.format(onu_id), '-c', '{0}'.format(cvlan)]
+  answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
 
 def get_new_onu_number(tn, onu_quantity, pon):
   last_authorized_onu_number = 0
@@ -163,12 +138,13 @@ args = parser.parse_args()
 
 auth_onu = str(args.a).replace(' ','') if args.a else None
 predefined_cvlan = int(args.v) if args.v else None
+  parser.add_argument("-c", "--cvlan", dest="c", help="CVLAN para configurar a ONU", default=None)
 
 onu_list = []
-pon_list = []
-board_list = []
-
-with Telnet(telnet_config.ip, telnet_config.port) as tn:
+  cvlan = None
+  if args.c:
+    if is_vlan_id_valid(args.c) or args.c == 'cto':
+      cvlan = str(args.c)
   connect_gpononu(tn)
   tn.write(str_to_telnet('show discovery slot all link all'))
   end_of_pon_list = False
@@ -196,7 +172,7 @@ with Telnet(telnet_config.ip, telnet_config.port) as tn:
     if '----- '.encode('ascii') in tn.read_until(b'----- ', timeout=1):
       end_of_pon_list = False
     else:
-      end_of_pon_list = True
+      logger.error('CVLAN invalida.')
   disconnect_gpononu(tn)
 
 for pon in pon_list:
@@ -234,7 +210,7 @@ else:
     for onu in onu_list:
       if onu.phy_id == auth_onu:
         authorize_onu(onu)
-        set_cvlan(telnet_config.ip, snmp_config.community, onu, predefined_cvlan)
+      else:
         authed = True
         print(repr(onu))
     if not authed:

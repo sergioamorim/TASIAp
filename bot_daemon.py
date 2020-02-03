@@ -169,7 +169,7 @@ def authorize(bot, update):
           reply_list.append(answer+'\n')
         update.message.reply_text('ONUs encontradas:\n'+''.join(reply_list)+'Envie o número da ONU que deseja autorizar (ex.: "/authorize 1") ou /authorize para verificar novamente se há novas ONUs.', quote=True)
     elif is_int(message_list[1]):
-      if len(message_list) == 3 and is_int(message_list[2]) and int(message_list[2]) > 0 and int(message_list[2]) < 4096:
+      if len(message_list) == 3 and (is_vlan_id_valid(message_list[2]) or message_list[2] == 'cto'):
         answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '{0}'.format(message_list[1]), '-c', '{0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
       else:
         answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '{0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
@@ -181,7 +181,7 @@ def authorize(bot, update):
       elif 'None' in answer_string:
         update.message.reply_text('Nenhuma ONU foi encontrada. Envie /authorize para verificar novamente se há novas ONUs.', quote=True)
     elif 'sim' in message_list[1]:
-      if len(message_list) == 3 and is_int(message_list[2]) and int(message_list[2]) > 0 and int(message_list[2]) < 4096:
+      if len(message_list) == 3 and (is_vlan_id_valid(message_list[2]) or message_list[2] == 'cto'):
         answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '1', '-c', '{0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
       else:
         answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '1'], capture_output=True).stdout.decode('utf-8')

@@ -317,7 +317,8 @@ def button(bot, update):
     logger.debug('button: set_cvlan: command_list: {0}'. format(command_list))
     answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
     logger.debug('button: set_cvlan: answer_string: {0}'. format(answer_string))
-    onu_info_string = get_onu_info_string(onu_id=onu_id, cvlan=cvlan, serial=serial)
+    cvlan_commited = re.findall('_([0-9]{4})', answer_string)[0]
+    onu_info_string = get_onu_info_string(onu_id=onu_id, cvlan=cvlan_commited, serial=serial)
     query.edit_message_text('ONU autorizada com sucesso!\n{0}'.format(onu_info_string), quote=True)
   elif action == 'aa':
     query.edit_message_text('Autorização cancelada.', quote=True)

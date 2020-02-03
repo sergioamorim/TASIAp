@@ -3,7 +3,7 @@
 
 import argparse
 import logging
-import snmp_configexample as snmp_config
+import snmp_config
 import subprocess
 
 logger = logging.getLogger('onu_set_cvlan')

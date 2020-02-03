@@ -6,6 +6,7 @@ import argparse
 import subprocess
 import logging
 import telnet_config
+import re
 
 logger = logging.getLogger('authorize_onu')
 logger.setLevel(logging.DEBUG)
@@ -105,10 +106,10 @@ def authorize_onu(onu, cvlan):
 
 def set_cvlan(onu, cvlan):
   onu_id = '{0}{1}{2}'.format('1' if onu.pon.board.board_id == 12 else '2', onu.pon.pon_id, onu.number)
-  if cvlan != 'cto':
-    onu.cvlan = int(cvlan)
   command_list = ['python3', 'onu_set_cvlan.py', '-i', '{0}'.format(onu_id), '-c', '{0}'.format(cvlan)]
   answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
+  cvlan_commited = re.findall('_([0-9]{4})', answer_string)[0]
+  onu.cvlan = int(cvlan_commited)
 
 def get_new_onu_number(tn, onu_quantity, pon):
   last_authorized_onu_number = 0

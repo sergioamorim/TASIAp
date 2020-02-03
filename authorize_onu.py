@@ -206,7 +206,7 @@ def main():
     else:
       onu = find_onu_in_list(onu_list, auth_onu)
       if onu:
-        authorize_onu(onu)
+        authorize_onu(onu, cvlan)
       else:
         print('ERR')
 

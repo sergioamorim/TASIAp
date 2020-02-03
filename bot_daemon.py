@@ -295,7 +295,7 @@ def button(bot, update):
     if 'OnuDevice' in answer_string:
       serial = re.findall(".*phy_id\\=\\'([0-9A-Z]{4}[0-9A-Fa-f]{8}).*", answer_string)[0]
       onu_id = get_onu_id_from_repr(answer_string)
-      callback_data = '#0#a=s#1#s={0}#2#i={1}#3#'.format(serial, onu_id)
+      callback_data = '#0#a=c#1#s={0}#2#i={1}#3#'.format(serial, onu_id)
       keyboard = [[
         InlineKeyboardButton(text='CTO', callback_data='{0}{1}'.format(callback_data, 'c=ct#4#')),
         InlineKeyboardButton(text='Cliente', callback_data='{0}{1}'.format(callback_data, 'c=cl#4#'))

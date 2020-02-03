@@ -136,6 +136,8 @@ def autorizar(bot, update):
     if len(message_list) == 1:
       answer_list = subprocess.run(['python3.7', 'authorize_onu.py'], capture_output=True).stdout.decode('utf-8').split(' ')
       logger.debug('autorizar handler: /autorizar: answer_list: {0}'.format(answer_list))
+      if '\n' in answer_list:
+        answer_list.remove('\n')
       if len(answer_list) == 1 and 'None' in answer_list[0]:
         update.message.reply_text('Nenhuma ONU foi encontrada. Envie /autorizar para verificar novamente se há novas ONUs.', quote=True)
       else:
@@ -153,6 +155,8 @@ def authorize(bot, update):
     if len(message_list) == 1:
       answer_list = subprocess.run(['python3.7', 'authorize_onu.py'], capture_output=True).stdout.decode('utf-8').split(' ')
       logger.debug('authorize handler: /authorize: answer_list: {0}'.format(answer_list))
+      if '\n' in answer_list:
+        answer_list.remove('\n')
       if len(answer_list) == 1:
         if 'None' in answer_list[0]:
           update.message.reply_text('Nenhuma ONU foi encontrada. Envie /authorize para verificar novamente se há novas ONUs.', quote=True)

@@ -67,11 +67,13 @@ def get_onu_info_string(onu_repr=None, onu_id=None, cvlan=None, serial=None):
   signal = None
   if onu_repr:
     serial = re.findall(".*phy_id\\=\\'([0-9A-Z]{4}[0-9A-Fa-f]{8}).*", onu_repr)[0]
-    cvlan = re.findall(".*cvlan\\=\\'([0-9]*)'.*", onu_repr)[0]
+    cvlan = re.findall(".*cvlan\\=\\'([0-9]*)'.*", onu_repr)
+    if cvlan:
+      cvlan = cvlan[0]
     onu_id = get_onu_id_from_repr(onu_repr)
   else:
     signal = get_signal(onu_id)
-  return 'ID: {0}\nVLAN: {1}\nSerial: {2}{3}'.format(onu_id, cvlan, serial, '\nSinal: {0}'.format(signal) if signal else '')
+  return 'ID: {0}{1}\nSerial: {2}{3}'.format(onu_id, '\nVLAN: {0}'.format(cvlan) if cvlan else '', serial, '\nSinal: {0}'.format(signal) if signal else '')
 
 def get_onu_id_from_repr(onu_repr):
   board = re.findall(".*board_id\\=\\'([0-9]{2}).*", onu_repr)[0]

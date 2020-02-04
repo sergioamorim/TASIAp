@@ -163,7 +163,7 @@ def authorize(update, context):
           reply_list.append(answer+'\n')
         update.message.reply_text('ONUs encontradas:\n'+''.join(reply_list)+'Envie o número da ONU que deseja autorizar (ex.: "/authorize 1") ou /authorize para verificar novamente se há novas ONUs.', quote=True)
     elif is_int(context.args[0]):
-      if args_len == 2 and (is_vlan_id_valid(context.args[1]) or (args_1_lower := context.args[1].lower()) == 'cto'):
+      if args_len == 2 and ((args_1_lower := context.args[1].lower()) == 'cto' or is_vlan_id_valid(context.args[1])):
         answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '{0}'.format(context.args[0]), '-c', '{0}'.format(args_1_lower)], capture_output=True).stdout.decode('utf-8')
       else:
         answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '{0}'.format(context.args[0])], capture_output=True).stdout.decode('utf-8')
@@ -175,7 +175,7 @@ def authorize(update, context):
       elif 'None' in answer_string:
         update.message.reply_text('Nenhuma ONU foi encontrada. Envie /authorize para verificar novamente se há novas ONUs.', quote=True)
     elif context.args[0] == 'sim':
-      if args_len == 2 and (is_vlan_id_valid(context.args[1]) or (args_1_lower := context.args[1].lower()) == 'cto'):
+      if args_len == 2 and ((args_1_lower := context.args[1].lower()) == 'cto' or is_vlan_id_valid(context.args[1])):
         answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '1', '-c', '{0}'.format(args_1_lower)], capture_output=True).stdout.decode('utf-8')
       else:
         answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '1'], capture_output=True).stdout.decode('utf-8')
@@ -232,7 +232,7 @@ def vlan(update, context):
     if len(context.args) != 2:
       update.message.reply_text('Envie "/vlan 1234 1200" para configurar como 1200 a CVLAN da ONU de ID 1234.', quote=True)
     elif is_onu_id_valid(context.args[0]):
-      if is_vlan_id_valid(context.args[1]) or (args_1_lower := context.arg[1].lower()) == 'cto':
+      if (args_1_lower := context.args[1].lower()) == 'cto' or is_vlan_id_valid(context.args[1]):
         command_list = ['python3.7', 'onu_set_cvlan.py', '-i', '{0}'.format(context.args[0]), '-c', '{0}'.format(args_1_lower)]
         answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
         logger.debug('vlan: answer_string: {0}'.format(answer_string))

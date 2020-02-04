@@ -94,11 +94,10 @@ def help(update, context):
 def sinal(update, context):
   logger.debug('sinal handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
-    message_list = update.message.text.lower().split(' ')
-    if len(message_list) < 2:
+    if not len(context.args):
       update.message.reply_text('Comando inválido. Envie "/sinal 1234" para verificar o sinal da ONU de ID 1234.', quote=True)
-    if is_onu_id_valid(message_list[1]):
-      signal = get_signal(message_list[1])
+    if is_onu_id_valid(context.args[0]):
+      signal = get_signal(context.args[0])
       update.message.reply_text(signal.capitalize(), quote=True)
     else:
       update.message.reply_text('ID da ONU inválido. O priméiro dígito do ID deve ser de 1 a 3 (número da placa), o segundo dígito deve ser de 1 a 8 (número da PON) e os dois últimos dígitos devem ser entre 01 e 99 (número da ONU).', quote=True)
@@ -108,11 +107,10 @@ def sinal(update, context):
 def reiniciar(update, context):
   logger.debug('reiniciar handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
-    message_list = update.message.text.lower().split(' ')
-    if len(message_list) < 2:
+    if not len(context.args):
       update.message.reply_text('Envie "/reiniciar 1234" para reiniciar a ONU de ID 1234.', quote=True)
-    elif is_onu_id_valid(message_list[1]):
-      command_list = ['python3.7', 'onu_restart.py', '-i', '{0}'.format(message_list[1])]
+    elif is_onu_id_valid(context.args[0]):
+      command_list = ['python3.7', 'onu_restart.py', '-i', '{0}'.format(context.args[0])]
       logger.debug('reiniciar handler: valid id: command_list: {0}'.format(command_list))
       answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8').replace('\n', '')
       logger.debug('reiniciar handler: valid id: answer_string: {0}'.format(answer_string))
@@ -132,8 +130,7 @@ def reiniciar(update, context):
 def autorizar(update, context):
   logger.debug('autorizar handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
-    message_list = update.message.text.lower().split(' ')
-    if len(message_list) == 1:
+    if not len(context.args):
       answer_list = subprocess.run(['python3.7', 'authorize_onu.py'], capture_output=True).stdout.decode('utf-8').split(' ')
       logger.debug('autorizar handler: /autorizar: answer_list: {0}'.format(answer_list))
       if '\n' in answer_list:
@@ -151,8 +148,7 @@ def autorizar(update, context):
 def authorize(update, context):
   logger.debug('authorize handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
-    message_list = update.message.text.lower().split(' ')
-    if len(message_list) == 1:
+    if not len(context.args):
       answer_list = subprocess.run(['python3.7', 'authorize_onu.py'], capture_output=True).stdout.decode('utf-8').split(' ')
       logger.debug('authorize handler: /authorize: answer_list: {0}'.format(answer_list))
       if '\n' in answer_list:
@@ -168,11 +164,11 @@ def authorize(update, context):
           reply_list.append(str(i+1)+'. ')
           reply_list.append(answer+'\n')
         update.message.reply_text('ONUs encontradas:\n'+''.join(reply_list)+'Envie o número da ONU que deseja autorizar (ex.: "/authorize 1") ou /authorize para verificar novamente se há novas ONUs.', quote=True)
-    elif is_int(message_list[1]):
-      if len(message_list) == 3 and (is_vlan_id_valid(message_list[2]) or message_list[2] == 'cto'):
-        answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '{0}'.format(message_list[1]), '-c', '{0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
+    elif is_int(context.args[0]):
+      if len(context.args) == 2 and (is_vlan_id_valid(context.args[1]) or context.args[1].lower() == 'cto'):
+        answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '{0}'.format(context.args[0]), '-c', '{0}'.format(context.args[1].lower())], capture_output=True).stdout.decode('utf-8')
       else:
-        answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '{0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
+        answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '{0}'.format(context.args[0])], capture_output=True).stdout.decode('utf-8')
       logger.debug('authorize: int: answer_string: {0}'.format(answer_string))
       if 'OnuDevice' in answer_string:
         update.message.reply_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(onu_repr=answer_string)), quote=True)
@@ -180,9 +176,9 @@ def authorize(update, context):
         update.message.reply_text('A ONU informada não foi encontrada. Envie /authorize para ver a lista de ONUs disponíveis.', quote=True)
       elif 'None' in answer_string:
         update.message.reply_text('Nenhuma ONU foi encontrada. Envie /authorize para verificar novamente se há novas ONUs.', quote=True)
-    elif 'sim' in message_list[1]:
-      if len(message_list) == 3 and (is_vlan_id_valid(message_list[2]) or message_list[2] == 'cto'):
-        answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '1', '-c', '{0}'.format(message_list[2])], capture_output=True).stdout.decode('utf-8')
+    elif context.args[0] == 'sim':
+      if len(context.args) == 2 and (is_vlan_id_valid(context.args[1]) or context.args[1].lower() == 'cto'):
+        answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '1', '-c', '{0}'.format(context.args[1].lower())], capture_output=True).stdout.decode('utf-8')
       else:
         answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '1'], capture_output=True).stdout.decode('utf-8')
       logger.debug('authorize: sim: answer_string: {0}'.format(answer_string))
@@ -200,11 +196,10 @@ def authorize(update, context):
 def usuario(update, context):
   logger.debug('usuario handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
-    message_list = update.message.text.lower().split(' ')
-    if len(message_list) < 2:
+    if not len(context.args):
       update.message.reply_text('Envie "/usuario 1234" para verificar o usuário da ONU de ID 1234.', quote=True)
-    elif is_onu_id_valid(message_list[1]):
-      answer_string = subprocess.run(['python3.7', 'user_from_onu.py', '-i', '{0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
+    elif is_onu_id_valid(context.args[0]):
+      answer_string = subprocess.run(['python3.7', 'user_from_onu.py', '-i', '{0}'.format(context.args[0])], capture_output=True).stdout.decode('utf-8')
       logger.debug('usuario: answer_string: {0}'.format(answer_string))
       if 'None' in answer_string:
         update.message.reply_text('Nenhum usuário associado à ONU foi encontrado.', quote=True)
@@ -220,12 +215,11 @@ def usuario(update, context):
 def cto(update, context):
   logger.debug('cto handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
-    message_list = update.message.text.lower().split(' ')
-    if len(message_list) < 2:
+    if not len(context.args):
       update.message.reply_text('Envie "/cto 1234" para receber o relatório da ONU de ID 1234. Envie "/cto 1234 tecnico" para receber o mesmo relatório, mas ordenado por endereço em vez de nome.', quote=True)
-    if is_vlan_id_valid(message_list[1]):
-      command_list = ['python3.7', 'cto_info.py', '-c', '{0}'.format(message_list[1])]
-      if len(message_list) > 2 and message_list[2] == 'tecnico':
+    if is_vlan_id_valid(context.args[0]):
+      command_list = ['python3.7', 'cto_info.py', '-c', '{0}'.format(context.args[0])]
+      if len(context.args) == 2 and context.args[1].lower() == 'tecnico':
         command_list.extend(['-t', '1'])
       answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
       logger.debug('cto: answer_string: {0}'.format(answer_string))
@@ -237,22 +231,21 @@ def cto(update, context):
 def link(update, context):
   logger.debug('link handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
-    message_list = update.message.text.lower().split(' ')
-    if len(message_list) < 2:
+    if not len(context.args):
       update.message.reply_text('Envie "/link nomedolink" para ativar apenas um link ou "/link ambos" para ativar os dois links.', quote=True)
-    elif message_list[1] == 'squid':
+    elif context.args[0] == 'squid':
       command_list = create_link_changing_command_list('first-link')
       logger.debug(command_list)
       answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
       logger.debug('link: answer_string: {0}'.format(answer_string))
       update.message.reply_text('Comando enviado para usar apenas o link SQUID.', quote=True)
-    elif message_list[1] == 'we':
+    elif context.args[0] == 'we':
       command_list = create_link_changing_command_list('second-link')
       logger.debug(command_list)
       answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
       logger.debug('link: answer_string: {0}'.format(answer_string))
       update.message.reply_text('Comando enviado para usar apenas o link WE.', quote=True)
-    elif message_list[1] == 'ambos':
+    elif context.args[0] == 'ambos':
       command_list = create_link_changing_command_list('both-links')
       logger.debug(command_list)
       answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')

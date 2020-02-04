@@ -110,20 +110,20 @@ def reiniciar(update, context):
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
     if len(message_list) < 2:
-      update.message.reply_text('Comando inválido. Envie "/reiniciar 1234" para reiniciar a ONU de ID 1234.', quote=True)
+      update.message.reply_text('Envie "/reiniciar 1234" para reiniciar a ONU de ID 1234.', quote=True)
     elif is_onu_id_valid(message_list[1]):
       command_list = ['python3.7', 'onu_restart.py', '-i', '{0}'.format(message_list[1])]
       logger.debug('reiniciar handler: valid id: command_list: {0}'.format(command_list))
       answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8').replace('\n', '')
       logger.debug('reiniciar handler: valid id: answer_string: {0}'.format(answer_string))
       if answer_string == 'not found':
-        update.message.reply_text('{0} reiniciar: sem sinal ou não existe ONU autorizada com esse ID'.format(message_list[1]), quote=True)
+        update.message.reply_text('Sem sinal ou não existe ONU autorizada com esse ID.', quote=True)
       elif answer_string == 'error':
-        update.message.reply_text('{0}: erro não especificado'.format(message_list[1]), quote=True)
+        update.message.reply_text('Erro não especificado.', quote=True)
       elif answer_string == 'done':
-        update.message.reply_text('{0}: comando enviado com sucesso. A ONU será reiniciada em até 2 minutos.'.format(message_list[1]), quote=True)
+        update.message.reply_text('Comando enviado com sucesso. A ONU será reiniciada em até 2 minutos.', quote=True)
       else:
-        update.message.reply_text('{0} reiniciar: resposta desconhecida: {1}'.format(message_list[1], answer_string), quote=True)
+        update.message.reply_text('Resposta desconhecida: {1}'.format(answer_string), quote=True)
     else:
       update.message.reply_text('ID da ONU inválido. O priméiro dígito do ID deve ser de 1 a 3 (número da placa), o segundo dígito deve ser de 1 a 8 (número da PON) e os dois últimos dígitos devem ser entre 01 e 99 (número da ONU).', quote=True)
   else:
@@ -202,16 +202,16 @@ def usuario(update, context):
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
     if len(message_list) < 2:
-      update.message.reply_text('Comando inválido. Envie "/usuario 1234" para verificar o usuário da ONU de ID 1234.', quote=True)
+      update.message.reply_text('Envie "/usuario 1234" para verificar o usuário da ONU de ID 1234.', quote=True)
     elif is_onu_id_valid(message_list[1]):
       answer_string = subprocess.run(['python3.7', 'user_from_onu.py', '-i', '{0}'.format(message_list[1])], capture_output=True).stdout.decode('utf-8')
       logger.debug('usuario: answer_string: {0}'.format(answer_string))
       if 'None' in answer_string:
-        update.message.reply_text('{0} usuario: nenhum usuário associado à ONU foi encontrado.'.format(message_list[1]), quote=True)
+        update.message.reply_text('Nenhum usuário associado à ONU foi encontrado.', quote=True)
       elif 'ERR' in answer_string:
-        update.message.reply_text('{0} usuario: nenhuma ONU encontrada com este ID.'.format(message_list[1]), quote=True)
+        update.message.reply_text('Nenhuma ONU encontrada com este ID.', quote=True)
       else:
-        update.message.reply_text('{0} usuario: {1}'.format(message_list[1], answer_string), quote=True)
+        update.message.reply_text('{1}'.format( answer_string), quote=True)
     else:
       update.message.reply_text('ID da ONU inválido. O priméiro dígito do ID deve ser de 1 a 3 (número da placa), o segundo dígito deve ser de 1 a 8 (número da PON) e os dois últimos dígitos devem ser entre 01 e 99 (número da ONU).', quote=True)
   else:
@@ -222,7 +222,7 @@ def cto(update, context):
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
     if len(message_list) < 2:
-      update.message.reply_text('Comando inválido. Envie "/cto 1234" para receber o relatório da ONU de ID 1234. Envie "/cto 1234 tecnico" para receber o mesmo relatório, mas ordenado por endereço em vez de nome.', quote=True)
+      update.message.reply_text('Envie "/cto 1234" para receber o relatório da ONU de ID 1234. Envie "/cto 1234 tecnico" para receber o mesmo relatório, mas ordenado por endereço em vez de nome.', quote=True)
     if is_vlan_id_valid(message_list[1]):
       command_list = ['python3.7', 'cto_info.py', '-c', '{0}'.format(message_list[1])]
       if len(message_list) > 2 and message_list[2] == 'tecnico':
@@ -239,7 +239,7 @@ def link(update, context):
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
     if len(message_list) < 2:
-      update.message.reply_text('Comando inválido. Envie "/link nomedolink" para ativar apenas um link ou "/link ambos" para ativar os dois links.', quote=True)
+      update.message.reply_text('Envie "/link nomedolink" para ativar apenas um link ou "/link ambos" para ativar os dois links.', quote=True)
     elif message_list[1] == 'squid':
       command_list = create_link_changing_command_list('first-link')
       logger.debug(command_list)

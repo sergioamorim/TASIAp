@@ -67,8 +67,7 @@ def get_onu_info_string(onu_repr=None, onu_id=None, cvlan=None, serial=None):
   signal = None
   if onu_repr:
     serial = re.findall(".*phy_id\\=\\'([0-9A-Z]{4}[0-9A-Fa-f]{8}).*", onu_repr)[0]
-    cvlan = re.findall(".*cvlan\\=\\'([0-9]*)'.*", onu_repr)
-    if cvlan:
+    if (cvlan := re.findall(".*cvlan\\=\\'([0-9]*)'.*", onu_repr)):
       cvlan = cvlan[0]
     onu_id = get_onu_id_from_repr(onu_repr)
   else:
@@ -85,7 +84,6 @@ def get_onu_id_from_repr(onu_repr):
 def start(update, context):
   logger.debug('start handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   update.message.reply_text('Menus disponíveis:\n/autorizar\n/sinal\n/reiniciar\n\nAjuda em /help', quote=True)
-
 
 def help(update, context):
   logger.debug('help handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
@@ -165,8 +163,8 @@ def authorize(update, context):
           reply_list.append(answer+'\n')
         update.message.reply_text('ONUs encontradas:\n'+''.join(reply_list)+'Envie o número da ONU que deseja autorizar (ex.: "/authorize 1") ou /authorize para verificar novamente se há novas ONUs.', quote=True)
     elif is_int(context.args[0]):
-      if len(context.args) == 2 and (is_vlan_id_valid(context.args[1]) or context.args[1].lower() == 'cto'):
-        answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '{0}'.format(context.args[0]), '-c', '{0}'.format(context.args[1].lower())], capture_output=True).stdout.decode('utf-8')
+      if len(context.args) == 2 and (is_vlan_id_valid(context.args[1]) or (args_1_lower := context.args[1].lower()) == 'cto'):
+        answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '{0}'.format(context.args[0]), '-c', '{0}'.format(args_1_lower)], capture_output=True).stdout.decode('utf-8')
       else:
         answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '{0}'.format(context.args[0])], capture_output=True).stdout.decode('utf-8')
       logger.debug('authorize: int: answer_string: {0}'.format(answer_string))
@@ -177,8 +175,8 @@ def authorize(update, context):
       elif 'None' in answer_string:
         update.message.reply_text('Nenhuma ONU foi encontrada. Envie /authorize para verificar novamente se há novas ONUs.', quote=True)
     elif context.args[0] == 'sim':
-      if len(context.args) == 2 and (is_vlan_id_valid(context.args[1]) or context.args[1].lower() == 'cto'):
-        answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '1', '-c', '{0}'.format(context.args[1].lower())], capture_output=True).stdout.decode('utf-8')
+      if len(context.args) == 2 and (is_vlan_id_valid(context.args[1]) or (args_1_lower := context.args[1].lower()) == 'cto'):
+        answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '1', '-c', '{0}'.format(args_1_lower)], capture_output=True).stdout.decode('utf-8')
       else:
         answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '1'], capture_output=True).stdout.decode('utf-8')
       logger.debug('authorize: sim: answer_string: {0}'.format(answer_string))

@@ -146,7 +146,7 @@ def autorizar(update, context):
 def authorize(update, context):
   logger.debug('authorize handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
-    if not len(context.args):
+    if not (args_len := len(context.args)):
       answer_list = subprocess.run(['python3.7', 'authorize_onu.py'], capture_output=True).stdout.decode('utf-8').split(' ')
       logger.debug('authorize handler: /authorize: answer_list: {0}'.format(answer_list))
       if '\n' in answer_list:
@@ -163,7 +163,7 @@ def authorize(update, context):
           reply_list.append(answer+'\n')
         update.message.reply_text('ONUs encontradas:\n'+''.join(reply_list)+'Envie o número da ONU que deseja autorizar (ex.: "/authorize 1") ou /authorize para verificar novamente se há novas ONUs.', quote=True)
     elif is_int(context.args[0]):
-      if len(context.args) == 2 and (is_vlan_id_valid(context.args[1]) or (args_1_lower := context.args[1].lower()) == 'cto'):
+      if args_len == 2 and (is_vlan_id_valid(context.args[1]) or (args_1_lower := context.args[1].lower()) == 'cto'):
         answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '{0}'.format(context.args[0]), '-c', '{0}'.format(args_1_lower)], capture_output=True).stdout.decode('utf-8')
       else:
         answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '{0}'.format(context.args[0])], capture_output=True).stdout.decode('utf-8')
@@ -175,7 +175,7 @@ def authorize(update, context):
       elif 'None' in answer_string:
         update.message.reply_text('Nenhuma ONU foi encontrada. Envie /authorize para verificar novamente se há novas ONUs.', quote=True)
     elif context.args[0] == 'sim':
-      if len(context.args) == 2 and (is_vlan_id_valid(context.args[1]) or (args_1_lower := context.args[1].lower()) == 'cto'):
+      if args_len == 2 and (is_vlan_id_valid(context.args[1]) or (args_1_lower := context.args[1].lower()) == 'cto'):
         answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '1', '-c', '{0}'.format(args_1_lower)], capture_output=True).stdout.decode('utf-8')
       else:
         answer_string = subprocess.run(['python3.7', 'authorize_onu.py', '-a', '1'], capture_output=True).stdout.decode('utf-8')
@@ -213,11 +213,11 @@ def usuario(update, context):
 def cto(update, context):
   logger.debug('cto handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
-    if not len(context.args):
+    if not (args_len := len(context.args)):
       update.message.reply_text('Envie "/cto 1234" para receber o relatório da ONU de ID 1234. Envie "/cto 1234 tecnico" para receber o mesmo relatório, mas ordenado por endereço em vez de nome.', quote=True)
-    if is_vlan_id_valid(context.args[0]):
+    elif is_vlan_id_valid(context.args[0]):
       command_list = ['python3.6', 'cto_info.py', '-c', '{0}'.format(context.args[0])]
-      if len(context.args) == 2 and context.args[1].lower() == 'tecnico':
+      if args_len == 2 and context.args[1].lower() == 'tecnico':
         command_list.extend(['-t', '1'])
       answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
       logger.debug('cto: answer_string: {0}'.format(answer_string))
@@ -225,6 +225,25 @@ def cto(update, context):
       update.message.reply_text('ID da VLAN inválido. Um ID válido deve estar entre 1 e 4095.', quote=True)
   else:
     update.message.reply_text('Você não tem permissão para acessar o menu /cto.', quote=True)
+
+def vlan(update, context):
+  logger.debug('vlan handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
+  if is_user_authorized(update.message.from_user.id):
+    if len(context.args) != 2:
+      update.message.reply_text('Envie "/vlan 1234 1200" para configurar como 1200 a CVLAN da ONU de ID 1234.', quote=True)
+    elif is_onu_id_valid(context.args[0]):
+      if is_vlan_id_valid(context.args[1]) or (args_1_lower := context.arg[1].lower()) == 'cto':
+        command_list = ['python3.7', 'onu_set_cvlan.py', '-i', '{0}'.format(context.args[0]), '-c', '{0}'.format(args_1_lower)]
+        answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
+        logger.debug('vlan: answer_string: {0}'.format(answer_string))
+        cvlan_commited = re.findall('_([0-9]{4})', answer_string)[0]
+        update.message.reply_text('CVLAN da ONU de ID {0} configurada com sucesso para {1}'.format(context.args[0], cvlan_commited), quote=True)
+      else:
+        update.message.reply_text('ID da VLAN inválido. Um ID válido deve estar entre 1 e 4095.', quote=True)
+    else:
+      update.message.reply_text('ID da ONU inválido. O priméiro dígito do ID deve ser de 1 a 3 (número da placa), o segundo dígito deve ser de 1 a 8 (número da PON) e os dois últimos dígitos devem ser entre 01 e 99 (número da ONU).', quote=True)
+  else:
+    update.message.reply_text('Você não tem permissão para acessar o menu /cto.', quote=True)  
 
 def link(update, context):
   logger.debug('link handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
@@ -324,6 +343,7 @@ def main():
   updater.dispatcher.add_handler(CommandHandler("reiniciar", reiniciar))
   updater.dispatcher.add_handler(CommandHandler("usuario", usuario))
   updater.dispatcher.add_handler(CommandHandler("cto", cto))
+  updater.dispatcher.add_handler(CommandHandler("vlan", vlan))
   updater.dispatcher.add_handler(CommandHandler("link", link))
   updater.dispatcher.add_handler(CallbackQueryHandler(button))
   updater.dispatcher.add_handler(CommandHandler("help", help))

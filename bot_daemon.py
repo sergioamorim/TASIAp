@@ -82,16 +82,16 @@ def get_onu_id_from_repr(onu_repr):
   onu_id = '{0}{1}{2}{3}'.format('1' if board == '12' else '2', pon, '0' if int(onu_number) < 10 else '', onu_number)
   return onu_id
 
-def start(bot, update):
+def start(update, context):
   logger.debug('start handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   update.message.reply_text('Menus disponíveis:\n/autorizar\n/sinal\n/reiniciar\n\nAjuda em /help', quote=True)
 
 
-def help(bot, update):
+def help(update, context):
   logger.debug('help handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   update.message.reply_text('Menus disponíveis: \n/autorizar\n/sinal\n/reiniciar', quote=True)
 
-def sinal(bot, update):
+def sinal(update, context):
   logger.debug('sinal handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
@@ -105,7 +105,7 @@ def sinal(bot, update):
   else:
     update.message.reply_text('Você não tem permissão para acessar o menu /sinal.', quote=True)
 
-def reiniciar(bot, update):
+def reiniciar(update, context):
   logger.debug('reiniciar handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
@@ -129,7 +129,7 @@ def reiniciar(bot, update):
   else:
     update.message.reply_text('Você não tem permissão para acessar o menu /reiniciar.', quote=True)
 
-def autorizar(bot, update):
+def autorizar(update, context):
   logger.debug('autorizar handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
@@ -148,7 +148,7 @@ def autorizar(bot, update):
   else:
     update.message.reply_text('Você não tem permissão para acessar o menu /autorizar.', quote=True)
 
-def authorize(bot, update):
+def authorize(update, context):
   logger.debug('authorize handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
@@ -197,7 +197,7 @@ def authorize(bot, update):
   else:
     update.message.reply_text('Você não tem permissão para acessar o menu /authorize.', quote=True)
 
-def usuario(bot, update):
+def usuario(update, context):
   logger.debug('usuario handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
@@ -217,7 +217,7 @@ def usuario(bot, update):
   else:
     update.message.reply_text('Você não tem permissão para acessar o menu /usuario.', quote=True)
 
-def cto(bot, update):
+def cto(update, context):
   logger.debug('cto handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
@@ -234,7 +234,7 @@ def cto(bot, update):
   else:
     update.message.reply_text('Você não tem permissão para acessar o menu /cto.', quote=True)
 
-def link(bot, update):
+def link(update, context):
   logger.debug('link handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
     message_list = update.message.text.lower().split(' ')
@@ -263,15 +263,15 @@ def link(bot, update):
   else:
     update.message.reply_text('Você não tem permissão para acessar o menu /link.', quote=True)
 
-def error(bot, update, error):
-  logger.warning('Update "%s" caused error "%s"', update, error)
+def error(update, context):
+  logger.warning('Update "%s" caused error "%s"', update, context.error)
   logger.debug('error handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
 
-def general(bot, update):
+def general(update, context):
   logger.debug('general handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   update.message.reply_text('Não entendi. Utilize um dos menus para executar funções. Utilize o menu /help para mais informações.', quote=True)
 
-def button(bot, update):
+def button(update, context):
   query = update.callback_query
   logger.debug('button handler: query from {0}{1}{2}({3}) received: {4}'.format(query.message.chat.first_name, ' {0}'.format(query.message.chat.last_name) if query.message.chat.last_name else '', ' - @{0} '.format(query.message.chat.username) if query.message.chat.username else '', query.message.chat.id, query.data))
   action = re.findall('#0#a=(.*)#1#', query.data)[0]
@@ -324,23 +324,21 @@ def button(bot, update):
     query.edit_message_text('Autorização cancelada.', quote=True)
 
 def main():
-  updater = Updater(bot_config.token)
+  updater = Updater(bot_config.token, use_context=True)
 
-  dp = updater.dispatcher
+  updater.dispatcher.add_handler(CommandHandler("start", start))
+  updater.dispatcher.add_handler(CommandHandler("autorizar", autorizar))
+  updater.dispatcher.add_handler(CommandHandler("authorize", authorize))
+  updater.dispatcher.add_handler(CommandHandler("sinal", sinal))
+  updater.dispatcher.add_handler(CommandHandler("reiniciar", reiniciar))
+  updater.dispatcher.add_handler(CommandHandler("usuario", usuario))
+  updater.dispatcher.add_handler(CommandHandler("cto", cto))
+  updater.dispatcher.add_handler(CommandHandler("link", link))
+  updater.dispatcher.add_handler(CallbackQueryHandler(button))
+  updater.dispatcher.add_handler(CommandHandler("help", help))
+  updater.dispatcher.add_handler(MessageHandler(Filters.text, general))
 
-  dp.add_handler(CommandHandler("start", start))
-  dp.add_handler(CommandHandler("autorizar", autorizar))
-  dp.add_handler(CommandHandler("authorize", authorize))
-  dp.add_handler(CommandHandler("sinal", sinal))
-  dp.add_handler(CommandHandler("reiniciar", reiniciar))
-  dp.add_handler(CommandHandler("usuario", usuario))
-  dp.add_handler(CommandHandler("cto", cto))
-  dp.add_handler(CommandHandler("link", link))
-  dp.add_handler(CallbackQueryHandler(button))
-  dp.add_handler(CommandHandler("help", help))
-  dp.add_handler(MessageHandler(Filters.text, general))
-
-  dp.add_error_handler(error)
+  updater.dispatcher.add_error_handler(error)
 
   logger.info('Starting...')
   updater.start_polling()

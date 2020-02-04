@@ -216,7 +216,7 @@ def cto(update, context):
     if not len(context.args):
       update.message.reply_text('Envie "/cto 1234" para receber o relatório da ONU de ID 1234. Envie "/cto 1234 tecnico" para receber o mesmo relatório, mas ordenado por endereço em vez de nome.', quote=True)
     if is_vlan_id_valid(context.args[0]):
-      command_list = ['python3.7', 'cto_info.py', '-c', '{0}'.format(context.args[0])]
+      command_list = ['python3.6', 'cto_info.py', '-c', '{0}'.format(context.args[0])]
       if len(context.args) == 2 and context.args[1].lower() == 'tecnico':
         command_list.extend(['-t', '1'])
       answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')

@@ -204,7 +204,7 @@ def usuario(update, context):
       elif 'ERR' in answer_string:
         update.message.reply_text('Nenhuma ONU encontrada com este ID.', quote=True)
       else:
-        update.message.reply_text('{1}'.format( answer_string), quote=True)
+        update.message.reply_text('{0}'.format(answer_string), quote=True)
     else:
       update.message.reply_text('ID da ONU inválido. O priméiro dígito do ID deve ser de 1 a 3 (número da placa), o segundo dígito deve ser de 1 a 8 (número da PON) e os dois últimos dígitos devem ser entre 01 e 99 (número da ONU).', quote=True)
   else:

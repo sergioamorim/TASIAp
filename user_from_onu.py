@@ -20,7 +20,7 @@ logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
 
 def is_int(s):
-  try: 
+  try:
     int(s)
     return True
   except ValueError:
@@ -60,7 +60,6 @@ def sanitize_cto_vlan_name(cto_vlan_name):
   if cto_vlan_name[7:9] == '12':
     board_id = '1'
   else:
-  # elif cto_vlan_name[7:9] == '14':
     board_id = '2'
   pon = cto_vlan_name[13:14]
   onu_number = cto_vlan_name[18:20]
@@ -77,7 +76,6 @@ def is_cto_id(session, onu_id):
   if onu_id[:1] == '1':
     board = '12'
   else:
-  # elif onu_id[:1] == '2':
     board = '14'
   pon = onu_id[1:2]
   onu_number = onu_id[2:]
@@ -95,7 +93,6 @@ def get_mac_list_from_onu_id(tn, onu_id):
   if onu_id[:1] == '1':
     board = '12'
   else:
-  # elif onu_id[:1] == '2':
     board = '14'
   pon = onu_id[1:2]
   onu_number = onu_id[2:] if int(onu_id[2:]) > 9 else onu_id[3:]

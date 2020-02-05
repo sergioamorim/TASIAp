@@ -320,10 +320,9 @@ def button(update, context):
     serial = re.findall('#1#s=(.*)#2#', query.data)[0]
     onu_id = re.findall('#2#i=(.*)#3#', query.data)[0]
     cvlan = re.findall('#3#c=(.*)#4#', query.data)[0]
+    command_list = ['python3.8', 'onu_set_cvlan.py', '-i', '{0}'.format(onu_id)]
     if cvlan == 'ct':
-      command_list = ['python3.7', 'onu_set_cvlan.py', '-i', '{0}'.format(onu_id), '-c', 'cto']
-    else:
-      command_list = ['python3.7', 'onu_set_cvlan.py', '-i', '{0}'.format(onu_id)]
+      command_list.extend(['-c', 'cto'])
     logger.debug('button: set_cvlan: command_list: {0}'. format(command_list))
     answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
     logger.debug('button: set_cvlan: answer_string: {0}'. format(answer_string))

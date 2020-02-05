@@ -70,8 +70,7 @@ def sanitize_cto_vlan_name(cto_vlan_name):
 
 def is_cto_id(session, onu_id):
   sql_query_string = "SELECT DISTINCT CalledStationID FROM {0} WHERE AcctStopTime = '0000-00-00 00:00:00' AND CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT 1;".format(mysqldb_config.radius_acct_table, onu_id)
-    mysqldb_config.radius_acct_table, onu_id)).scalar()
-  if cto_vlan_name:
+  if (cto_vlan_name := session.execute(sql_query_string).scalar()):
     return sanitize_cto_vlan_name(cto_vlan_name)
   if onu_id[:1] == '1':
     board = '12'
@@ -81,8 +80,8 @@ def is_cto_id(session, onu_id):
   onu_number = onu_id[2:]
   cto_like_name = 'P{0}-PON{1}-ONU{2}'.format(board, pon, onu_number)
   sql_query_string = "SELECT DISTINCT CalledStationID FROM {0} WHERE AcctStopTime = '0000-00-00 00:00:00' AND CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT 1;".format(
-    mysqldb_config.radius_acct_table, cto_like_name)).scalar()
-  if cto_vlan_name:
+    mysqldb_config.radius_acct_table, cto_like_name)
+  if (cto_vlan_name := session.execute(sql_query_string).scalar()):
     return sanitize_cto_vlan_name(cto_vlan_name)
   return None
 
@@ -170,13 +169,11 @@ def get_mac_list_from_onu_id(tn, onu_id):
   return associated_mac_list
 
 def get_username_by_onu_id(session, tn, onu_id):
-  mac_list = get_mac_list_from_onu_id(tn, onu_id)
-  if len(mac_list) > 0:
+  if len((mac_list := get_mac_list_from_onu_id(tn, onu_id))):
     username_list = []
     for mac in mac_list:
-      username = session.execute("SELECT DISTINCT UserName FROM {0} WHERE CallingStationID = :mac ORDER BY AcctStartTime DESC LIMIT 1;".format(
-      mysqldb_config.radius_acct_table), {'mac': mac}).scalar()
-      if username:
+      sql_query_string = "SELECT DISTINCT UserName FROM {0} WHERE CallingStationID = :mac ORDER BY AcctStartTime DESC LIMIT 1;".format(mysqldb_config.radius_acct_table)
+      if (username := session.execute(sql_query_string, {'mac': mac}).scalar()):
         username_list.append(username)
     if username_list:
       return ' '.join(username_list)
@@ -198,11 +195,10 @@ def main():
   engine = create_engine('mysql://{0}:{1}@{2}/{3}'.format(mysqldb_config.username, mysqldb_config.password, mysqldb_config.host, mysqldb_config.database), encoding='latin1')
   Session = sessionmaker(bind=engine)
   session = Session()
-  
+
   with Telnet(telnet_config.ip, telnet_config.port) as tn:
     connect_su(tn)
-    cto = is_cto_id(session, onu_id)
-    if cto:
+    if (cto := is_cto_id(session, onu_id)):
       print(cto)
     else:
       username = get_username_by_onu_id(session, tn, onu_id)

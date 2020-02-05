@@ -69,7 +69,7 @@ def sanitize_cto_vlan_name(cto_vlan_name):
   return cto_sanitized_name
 
 def is_cto_id(session, onu_id):
-  cto_vlan_name = session.execute("SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT 1;".format(
+  sql_query_string = "SELECT DISTINCT CalledStationID FROM {0} WHERE AcctStopTime = '0000-00-00 00:00:00' AND CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT 1;".format(mysqldb_config.radius_acct_table, onu_id)
     mysqldb_config.radius_acct_table, onu_id)).scalar()
   if cto_vlan_name:
     return sanitize_cto_vlan_name(cto_vlan_name)
@@ -80,7 +80,7 @@ def is_cto_id(session, onu_id):
   pon = onu_id[1:2]
   onu_number = onu_id[2:]
   cto_like_name = 'P{0}-PON{1}-ONU{2}'.format(board, pon, onu_number)
-  cto_vlan_name = session.execute("SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT 1;".format(
+  sql_query_string = "SELECT DISTINCT CalledStationID FROM {0} WHERE AcctStopTime = '0000-00-00 00:00:00' AND CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT 1;".format(
     mysqldb_config.radius_acct_table, cto_like_name)).scalar()
   if cto_vlan_name:
     return sanitize_cto_vlan_name(cto_vlan_name)

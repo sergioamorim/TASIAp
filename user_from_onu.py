@@ -196,11 +196,11 @@ def main():
   Session = sessionmaker(bind=engine)
   session = Session()
 
-  with Telnet(telnet_config.ip, telnet_config.port) as tn:
-    connect_su(tn)
-    if (cto := is_cto_id(session, onu_id)):
-      print(cto)
-    else:
+  if (cto := is_cto_id(session, onu_id)):
+    print(cto)
+  else:
+    with Telnet(telnet_config.ip, telnet_config.port) as tn:
+      connect_su(tn)
       username = get_username_by_onu_id(session, tn, onu_id)
       print(username)
 

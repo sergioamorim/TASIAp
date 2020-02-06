@@ -112,18 +112,13 @@ def reiniciar(update, context):
     if not len(context.args):
       update.message.reply_text('Envie "/reiniciar 1234" para reiniciar a ONU de ID 1234.', quote=True)
     elif is_onu_id_valid(context.args[0]):
-      command_list = ['python3.8', 'onu_restart.py', '-i', '{0}'.format(context.args[0])]
-      logger.debug('reiniciar handler: valid id: command_list: {0}'.format(command_list))
-      answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8').replace('\n', '')
-      logger.debug('reiniciar handler: valid id: answer_string: {0}'.format(answer_string))
-      if answer_string == 'not found':
-        update.message.reply_text('Sem sinal ou não existe ONU autorizada com esse ID.', quote=True)
-      elif answer_string == 'error':
-        update.message.reply_text('Erro não especificado.', quote=True)
-      elif answer_string == 'done':
-        update.message.reply_text('Comando enviado com sucesso. A ONU será reiniciada em até 2 minutos.', quote=True)
-      else:
-        update.message.reply_text('Resposta desconhecida: {1}'.format(answer_string), quote=True)
+      keyboard = [[
+        InlineKeyboardButton(text='Confirmar', callback_data="<a=r><i={0}>".format(context.args[0])),
+        InlineKeyboardButton(text='Cancelar', callback_data="<a=ar>")
+      ]]
+      keyboard_markup = InlineKeyboardMarkup(keyboard)
+      text = 'Tem certeza que deseja reiniciar a ONU de ID *{0}*?'.format(context.args[0])
+      update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, quote=True, reply_markup=keyboard_markup)
     else:
       update.message.reply_text('ID da ONU inválido. O priméiro dígito do ID deve ser de 1 a 3 (número da placa), o segundo dígito deve ser de 1 a 8 (número da PON) e os dois últimos dígitos devem ser entre 01 e 99 (número da ONU).', quote=True)
   else:
@@ -339,6 +334,22 @@ def button(update, context):
     query.edit_message_text('ONU autorizada com sucesso.\n{0}'.format(onu_info_string), quote=True)
   elif action == 'aa':
     query.edit_message_text('Autorização cancelada.', quote=True)
+  elif action == 'r':
+    onu_id = re.findall('<i=(.*?)>', query.data)[0]
+    command_list = ['python3.8', 'onu_restart.py', '-i', '{0}'.format(onu_id)]
+    logger.debug('button: reiniciar: valid id: command_list: {0}'.format(command_list))
+    answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8').replace('\n', '')
+    logger.debug('button: reiniciar: valid id: answer_string: {0}'.format(answer_string))
+    if answer_string == 'not found':
+      query.edit_message_text('Sem sinal ou não existe ONU autorizada com esse ID.', quote=True)
+    elif answer_string == 'error':
+      query.edit_message_text('Erro não especificado.', quote=True)
+    elif answer_string == 'done':
+      query.edit_message_text('Comando enviado com sucesso. A ONU será reiniciada em até 2 minutos.', quote=True)
+    else:
+      query.edit_message_text('Resposta desconhecida: {1}'.format(answer_string), quote=True)
+  elif action == 'ar':
+    query.edit_message_text('Reinicialização cancelada.', quote=True)
 
 def main():
   updater = Updater(bot_config.token, use_context=True)

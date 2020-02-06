@@ -232,11 +232,13 @@ def vlan(update, context):
       update.message.reply_text('Envie "/vlan 1234 1200" para configurar a ONU de ID 1234 com a CVLAN 1200.', quote=True)
     elif is_onu_id_valid(context.args[0]):
       if (args_1_lower := context.args[1].lower()) == 'cto' or is_vlan_id_valid(context.args[1]):
-        command_list = ['python3.8', 'onu_set_cvlan.py', '-i', '{0}'.format(context.args[0]), '-c', '{0}'.format(args_1_lower)]
-        answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
-        logger.debug('vlan: answer_string: {0}'.format(answer_string))
-        cvlan_commited = re.findall('_([0-9]{4})', answer_string)[0]
-        update.message.reply_text('CVLAN da ONU de ID {0} configurada com sucesso para {1}'.format(context.args[0], cvlan_commited), quote=True)
+        keyboard = [[
+          InlineKeyboardButton(text='Confirmar', callback_data="<a=v><i={0}><v={1}>".format(context.args[0], args_1_lower)),
+          InlineKeyboardButton(text='Cancelar', callback_data="<a=av>")
+        ]]
+        keyboard_markup = InlineKeyboardMarkup(keyboard)
+        text = 'Tem certeza que deseja configurar a ONU de ID *{0}* com a CVLAN *{1}*?'.format(context.args[0], context.args[1])
+        update.message.reply_text(text, parse_mode=ParseMode.MARKDOWN, quote=True, reply_markup=keyboard_markup)
       else:
         update.message.reply_text('ID da VLAN inválido. Um ID válido deve estar entre 1 e 4095.', quote=True)
     else:
@@ -350,6 +352,18 @@ def button(update, context):
       query.edit_message_text('Resposta desconhecida: {1}'.format(answer_string), quote=True)
   elif action == 'ar':
     query.edit_message_text('Reinicialização cancelada.', quote=True)
+  elif action == 'v':
+    data_pattern = '<i=(.*?)><v=(.*?)>'
+    regex_result = re.findall(data_pattern, query.data)
+    onu_id = regex_result[0][0]
+    cvlan = regex_result[0][1]
+    command_list = ['python3.8', 'onu_set_cvlan.py', '-i', '{0}'.format(onu_id), '-c', '{0}'.format(cvlan)]
+    answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
+    logger.debug('button: vlan: answer_string: {0}'.format(answer_string))
+    cvlan_commited = re.findall('_([0-9]{4})', answer_string)[0]
+    query.edit_message_text('ONU de ID {0} configurada com sucesso com a CVLAN {1}.'.format(onu_id, cvlan_commited), quote=True)
+  elif action == 'av':
+    query.edit_message_text('Configuração de CVLAN cancelada.', quote=True)
 
 def main():
   updater = Updater(bot_config.token, use_context=True)

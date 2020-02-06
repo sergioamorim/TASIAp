@@ -30,7 +30,7 @@ def is_vlan_id_valid(vlan_id):
 def create_link_changing_command_list(link):
   return ['ssh', '-p', '{0}'.format(bot_config.mk_link['ssh']['port']), '{0}@{1}'.format(bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip']), '/system',  'script', 'run', '{0}'.format(bot_config.mk_link['script'][link])]
 
-def create_keyboard_markup(onu_serials_list):
+def create_keyboard_markup_auth(onu_serials_list):
   keyboard = []
   for onu_serial in onu_serials_list:
     onu_serial_regex_list = re.findall('(.*)_(.*)_(.*)', onu_serial)
@@ -74,7 +74,7 @@ def get_onu_info_string(onu_repr=None, onu_id=None, cvlan=None, serial=None):
     onu_id = get_onu_id_from_repr(onu_repr)
   else:
     signal = get_signal(onu_id)
-  return 'ID: {0}{1}\nSerial: {2}{3}'.format(onu_id, '\nVLAN: {0}'.format(cvlan) if cvlan else '', serial, '\nSinal: {0}'.format(signal) if signal else '')
+  return 'ID: {0}{1}\nSerial: {2}{3}'.format(onu_id, '\nCVLAN: {0}'.format(cvlan) if cvlan else '', serial, '\nSinal: {0}'.format(signal) if signal else '')
 
 def get_onu_id_from_repr(onu_repr):
   onu_repr_pattern = "([0-9])',board='<Board\(board_id='([0-9]{2})'\)>',last_authorized_onu_number='[0-9]+'\)>',onu_type='.*',number='([0-9]+)"
@@ -140,7 +140,7 @@ def autorizar(update, context):
       if len(answer_list) == 1 and 'None' in answer_list[0]:
         update.message.reply_text('Nenhuma ONU foi encontrada. Envie /autorizar para verificar novamente se há novas ONUs.', quote=True)
       else:
-        keyboard_markup = create_keyboard_markup(answer_list)
+        keyboard_markup = create_keyboard_markup_auth(answer_list)
         update.message.reply_text('Confirme os dados da ONU que deseja autorizar:', quote=True, reply_markup=keyboard_markup)
     else:
       update.message.reply_text('Para autorizar uma ONU envie /autorizar.', quote=True)
@@ -234,7 +234,7 @@ def vlan(update, context):
   logger.debug('vlan handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
     if len(context.args) != 2:
-      update.message.reply_text('Envie "/vlan 1234 1200" para configurar como 1200 a CVLAN da ONU de ID 1234.', quote=True)
+      update.message.reply_text('Envie "/vlan 1234 1200" para configurar a ONU de ID 1234 com a CVLAN 1200.', quote=True)
     elif is_onu_id_valid(context.args[0]):
       if (args_1_lower := context.args[1].lower()) == 'cto' or is_vlan_id_valid(context.args[1]):
         command_list = ['python3.8', 'onu_set_cvlan.py', '-i', '{0}'.format(context.args[0]), '-c', '{0}'.format(args_1_lower)]
@@ -318,9 +318,9 @@ def button(update, context):
       ]]
       keyboard_markup = InlineKeyboardMarkup(keyboard)
       query.edit_message_text('ONU de cliente ou CTO?', reply_markup=keyboard_markup, quote=True)
-    elif 'ERR' in answer_string:
+    elif answer_string == 'ERR':
       query.edit_message_text('Tente novamente, não foi possivel encontrar a ONU informada agora. Envie /autorizar para ver a lista de ONUs disponíveis.', quote=True)
-    elif 'None' in answer_string:
+    elif answer_string == 'None':
       query.edit_message_text('Tente novamente, não foi possivel encontrar nenhuma ONU agora. Envie /autorizar para verificar novamente se há ONUs disponíveis.', quote=True)
   elif action == 'c':
     data_pattern = '<s=(.*?)><i=(.*?)><c=(.*?)>'
@@ -336,7 +336,7 @@ def button(update, context):
     logger.debug('button: set_cvlan: answer_string: {0}'. format(answer_string))
     cvlan_commited = re.findall('_([0-9]{4})', answer_string)[0]
     onu_info_string = get_onu_info_string(onu_id=onu_id, cvlan=cvlan_commited, serial=serial)
-    query.edit_message_text('ONU autorizada com sucesso!\n{0}'.format(onu_info_string), quote=True)
+    query.edit_message_text('ONU autorizada com sucesso.\n{0}'.format(onu_info_string), quote=True)
   elif action == 'aa':
     query.edit_message_text('Autorização cancelada.', quote=True)
 

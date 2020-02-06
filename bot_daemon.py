@@ -37,9 +37,9 @@ def create_keyboard_markup(onu_serials_list):
     board = onu_serial_regex_list[0][0]
     pon = onu_serial_regex_list[0][1]
     serial = onu_serial_regex_list[0][2]
-    callback_data = "#0#a=ca#1#s={0}#2#b={1}#3#p={2}#4#".format(serial, board, pon)
+    callback_data = "<a=ca><s={0}><b={1}><p={2}>".format(serial, board, pon)
     keyboard.append([InlineKeyboardButton(text='Serial: {0} Placa: {1} PON: {2}'.format(serial, board, pon), callback_data=callback_data)])
-  keyboard.append([InlineKeyboardButton(text='Cancelar', callback_data="#0#a=aa#1#")])
+  keyboard.append([InlineKeyboardButton(text='Cancelar', callback_data="<a=aa>")])
   keyboard_markup = InlineKeyboardMarkup(keyboard)
   return keyboard_markup
 
@@ -288,31 +288,33 @@ def general(update, context):
 def button(update, context):
   query = update.callback_query
   logger.debug('button handler: query from {0}{1}{2}({3}) received: {4}'.format(query.message.chat.first_name, ' {0}'.format(query.message.chat.last_name) if query.message.chat.last_name else '', ' - @{0} '.format(query.message.chat.username) if query.message.chat.username else '', query.message.chat.id, query.data))
-  action = re.findall('#0#a=(.*)#1#', query.data)[0]
+  action = re.findall('<a=(.*?)>', query.data)[0]
   logger.debug('action: {0}'.format(action))
   if action == 'ca':
-    serial = re.findall('#1#s=(.*)#2#', query.data)[0]
-    board = re.findall('#2#b=(.*)#3#', query.data)[0]
-    pon = re.findall('#3#p=(.*)#4#', query.data)[0]
-    callback_data = '#0#a=a#1#s={0}#2#'.format(serial)
+    data_pattern = '<s=(.*?)><b=(.*?)><p=(.*?)>'
+    regex_result = re.findall(data_pattern, query.data)
+    serial = regex_result[0][0]
+    board = regex_result[0][1]
+    pon = regex_result[0][2]
+    callback_data = '<a=a><s={0}>'.format(serial)
     keyboard = [[
       InlineKeyboardButton(text='Confirmar', callback_data=callback_data),
-      InlineKeyboardButton(text='Cancelar', callback_data='#0#a=aa#1#')
+      InlineKeyboardButton(text='Cancelar', callback_data='<a=aa>')
     ]]
     keyboard_markup = InlineKeyboardMarkup(keyboard)
     logger.debug('keyboard_markup: {0}'.format(keyboard_markup))
     query.edit_message_text('Tem certeza que deseja autorizar a ONU de serial *{0}* na *placa {1} PON {2}*?'.format(serial, board, pon), reply_markup=keyboard_markup, parse_mode=ParseMode.MARKDOWN, quote=True)
   elif action == 'a':
-    serial = re.findall("#1#s=(.*)#2#", query.data)[0]
+    serial = re.findall('<s=(.*?)>', query.data)[0]
     answer_string = subprocess.run(['python3.8', 'authorize_onu.py', '-a', '{0}'.format(serial)], capture_output=True).stdout.decode('utf-8')
     logger.debug('button: authorize: answer_string: {0}'.format(answer_string))
     if 'OnuDevice' in answer_string:
       serial = re.findall("([0-9A-Z]{4}[0-9A-Fa-f]{8})", answer_string)[0]
       onu_id = get_onu_id_from_repr(answer_string)
-      callback_data = '#0#a=c#1#s={0}#2#i={1}#3#'.format(serial, onu_id)
+      callback_data = '<a=c><s={0}><i={1}>'.format(serial, onu_id)
       keyboard = [[
-        InlineKeyboardButton(text='CTO', callback_data='{0}{1}'.format(callback_data, 'c=ct#4#')),
-        InlineKeyboardButton(text='Cliente', callback_data='{0}{1}'.format(callback_data, 'c=cl#4#'))
+        InlineKeyboardButton(text='CTO', callback_data='{0}{1}'.format(callback_data, '<c=ct>')),
+        InlineKeyboardButton(text='Cliente', callback_data='{0}{1}'.format(callback_data, '<c=cl>'))
       ]]
       keyboard_markup = InlineKeyboardMarkup(keyboard)
       query.edit_message_text('ONU de cliente ou CTO?', reply_markup=keyboard_markup, quote=True)
@@ -321,9 +323,11 @@ def button(update, context):
     elif 'None' in answer_string:
       query.edit_message_text('Tente novamente, não foi possivel encontrar nenhuma ONU agora. Envie /autorizar para verificar novamente se há ONUs disponíveis.', quote=True)
   elif action == 'c':
-    serial = re.findall('#1#s=(.*)#2#', query.data)[0]
-    onu_id = re.findall('#2#i=(.*)#3#', query.data)[0]
-    cvlan = re.findall('#3#c=(.*)#4#', query.data)[0]
+    data_pattern = '<s=(.*?)><i=(.*?)><c=(.*?)>'
+    regex_result = re.findall(data_pattern, query.data)
+    serial = regex_result[0][0]
+    onu_id = regex_result[0][1]
+    cvlan = regex_result[0][2]
     command_list = ['python3.8', 'onu_set_cvlan.py', '-i', '{0}'.format(onu_id)]
     if cvlan == 'ct':
       command_list.extend(['-c', 'cto'])

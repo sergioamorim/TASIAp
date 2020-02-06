@@ -66,8 +66,10 @@ def is_int(s):
 def get_onu_info_string(onu_repr=None, onu_id=None, cvlan=None, serial=None):
   signal = None
   if onu_repr:
-    serial = re.findall(".*phy_id\\=\\'([0-9A-Z]{4}[0-9A-Fa-f]{8}).*", onu_repr)[0]
-    if (cvlan := re.findall(".*cvlan\\=\\'([0-9]*)'.*", onu_repr)):
+    onu_repr_pattern = "([0-9A-Z]{4}[0-9A-Fa-f]{8})',pon='<Pon\(pon_id='[0-9]',board='<Board\(board_id='[0-9]{2}'\)>',last_authorized_onu_number='[0-9]+'\)>',onu_type='.*',number='[0-9]+',cvlan='(N?o?n?e?[0-9]{0,4})"
+    regex_result = re.findall(onu_repr_pattern, onu_repr)
+    serial = regex_result[0][0]
+    if (cvlan := regex_result[0][1]) != 'None':
       cvlan = cvlan[0]
     onu_id = get_onu_id_from_repr(onu_repr)
   else:
@@ -75,9 +77,11 @@ def get_onu_info_string(onu_repr=None, onu_id=None, cvlan=None, serial=None):
   return 'ID: {0}{1}\nSerial: {2}{3}'.format(onu_id, '\nVLAN: {0}'.format(cvlan) if cvlan else '', serial, '\nSinal: {0}'.format(signal) if signal else '')
 
 def get_onu_id_from_repr(onu_repr):
-  board = re.findall(".*board_id\\=\\'([0-9]{2}).*", onu_repr)[0]
-  pon = re.findall(".*pon_id\\=\\'([0-9]).*", onu_repr)[0]
-  onu_number = re.findall(".*number\\=\\'([0-9]*)'.*", onu_repr)[0]
+  onu_repr_pattern = "([0-9])',board='<Board\(board_id='([0-9]{2})'\)>',last_authorized_onu_number='[0-9]+'\)>',onu_type='.*',number='([0-9]+)"
+  regex_result = re.findall(onu_repr_pattern, onu_repr)
+  board = regex_result[0][1]
+  pon = regex_result[0][0]
+  onu_number = regex_result[0][2]
   onu_id = '{0}{1}{2}{3}'.format('1' if board == '12' else '2', pon, '0' if int(onu_number) < 10 else '', onu_number)
   return onu_id
 
@@ -303,7 +307,7 @@ def button(update, context):
     answer_string = subprocess.run(['python3.8', 'authorize_onu.py', '-a', '{0}'.format(serial)], capture_output=True).stdout.decode('utf-8')
     logger.debug('button: authorize: answer_string: {0}'.format(answer_string))
     if 'OnuDevice' in answer_string:
-      serial = re.findall(".*phy_id\\=\\'([0-9A-Z]{4}[0-9A-Fa-f]{8}).*", answer_string)[0]
+      serial = re.findall("([0-9A-Z]{4}[0-9A-Fa-f]{8})", answer_string)[0]
       onu_id = get_onu_id_from_repr(answer_string)
       callback_data = '#0#a=c#1#s={0}#2#i={1}#3#'.format(serial, onu_id)
       keyboard = [[

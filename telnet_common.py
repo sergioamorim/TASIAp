@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import logging
+import telnet_config
 
 logger = logging.getLogger('telnet_common')
 logger.setLevel(logging.INFO)

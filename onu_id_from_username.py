@@ -21,57 +21,49 @@ logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
 
 def get_onu_id_by_mac(mac):
-  board = None
-  pon_number = None
-  onu_number = None
   with Telnet(telnet_config.ip, telnet_config.port) as tn:
     connect_su(tn)
     pon_list = get_pon_list(tn)
     tn.write(str_to_telnet('cd gponline'))
     tn.read_until(b'gponline# ', timeout=1)
     logger.debug('get_onu_id_by_mac: starting find mac: {0}'.format(mac))
-    found = False
     for pon in pon_list:
-      if not found:
-        tn.write(str_to_telnet('show pon_mac {0}'.format(pon)))
-        remove_header_value = tn.read_until(b'-----\n\r001\t', timeout=1)
-        logger.debug('get_onu_id_by_mac: remove_header: {0}'.format(remove_header_value))
-        end_of_list = False
-        if 'gponline#' in remove_header_value.decode('utf-8'):
-          end_of_list = True
-        while not found and not end_of_list:
+      tn.write(str_to_telnet('show pon_mac {0}'.format(pon)))
+      remove_header_value = tn.read_until(b'-----\n\r001\t', timeout=1)
+      logger.debug('get_onu_id_by_mac: remove_header: {0}'.format(remove_header_value))
+      end_of_list = False
+      if 'gponline#' in remove_header_value.decode('utf-8'):
+        end_of_list = True
+      while not end_of_list:
+        value = get_next_value(tn, '\t')
+        if '--Press' in value:
+          logger.debug('get_onu_id_by_mac: while not found: catch --Press: value: {0}'.format(value))
+          tn.write(str_to_telnet('\n'))
+          tn.read_until(b'Master', timeout=1)
           value = get_next_value(tn, '\t')
-          if '--Press' in value:
-            logger.debug('get_onu_id_by_mac: while not found: catch --Press: value: {0}'.format(value))
-            tn.write(str_to_telnet('\n'))
-            tn.read_until(b'Master', timeout=1)
-            value = get_next_value(tn, '\t')
-          current_mac = value
-          logger.debug('get_onu_id_by_mac: while not found: current_mac: {0}'.format(current_mac))
-          get_next_value(tn, ' ')
-          current_onu_number = get_next_value(tn, '\n')[6:]
-          logger.debug('get_onu_id_by_mac: while not found: current_onu_number: {0}'.format(current_onu_number))
-          if current_mac == mac:
-            logger.debug('get_onu_id_by_mac: catch right mac: {0} == {1}'.format(current_mac, mac))
-            onu_number = current_onu_number
-            logger.debug('get_onu_id_by_mac: catch right mac: onu_number: {0}'.format(onu_number))
-            pon_number = pon[13:15].replace(' ','')
-            logger.debug('get_onu_id_by_mac: catch right mac: pon: {0}'.format(pon))
-            board = pon[5:7]
-            logger.debug('get_onu_id_by_mac: catch right mac: board: {0}'.format(board))
-            found = True
+        current_mac = value
+        logger.debug('get_onu_id_by_mac: while not found: current_mac: {0}'.format(current_mac))
+        get_next_value(tn, ' ')
+        current_onu_number = get_next_value(tn, '\n')[6:]
+        logger.debug('get_onu_id_by_mac: while not found: current_onu_number: {0}'.format(current_onu_number))
+        if current_mac == mac:
+          logger.debug('get_onu_id_by_mac: catch right mac: {0} == {1}'.format(current_mac, mac))
+          onu_number = current_onu_number
+          logger.debug('get_onu_id_by_mac: catch right mac: onu_number: {0}'.format(onu_number))
+          pon_number = pon[13:15].replace(' ','')
+          logger.debug('get_onu_id_by_mac: catch right mac: pon: {0}'.format(pon))
+          board_id = '1' if pon[5:7] == '12' else '2'
+          logger.debug('get_onu_id_by_mac: catch right mac: board: {0}'.format(board))
+          return '{0}{1}{2}{3}'.format(board_id, pon_number, '0' if int(onu_number) < 10 else '', onu_number)
+        waste_value = get_next_value(tn, '\t')
+        logger.debug('get_onu_id_by_mac: while not found: waste_value: {0}'.format(waste_value.replace('\r','')))
+        if 'gponline#' in waste_value:
+          end_of_list = True
+        elif 'stop--' in waste_value:
+          logger.debug('get_onu_id_by_mac: while same_onu: catch --Press')
+          tn.write(str_to_telnet('\n'))
+          tn.read_until(b'Master', timeout=1)
           waste_value = get_next_value(tn, '\t')
-          logger.debug('get_onu_id_by_mac: while not found: waste_value: {0}'.format(waste_value.replace('\r','')))
-          if 'gponline#' in waste_value:
-            end_of_list = True
-          elif 'stop--' in waste_value:
-            logger.debug('get_onu_id_by_mac: while same_onu: catch --Press')
-            tn.write(str_to_telnet('\n'))
-            tn.read_until(b'Master', timeout=1)
-            waste_value = get_next_value(tn, '\t')
-  logger.debug('get_onu_id_by_mac: finalizing: catch Admin#: {0}'.format(waste_value.replace('\r','')))
-  if found:
-    return '{0}{1}{2}{3}'.format('1' if board == '12' else '2', pon_number, '0' if int(onu_number) < 10 else '', onu_number)
   return None
 
 def get_pon_list(tn):

@@ -78,7 +78,11 @@ def find_onu_by_user(username):
     mac = query_result['CallingStationId']
     vlan_name = query_result['CalledStationId']
     pon = format_pon_name(vlan_name)
-    return get_onu_id_by_mac(mac, pon)
+    if (onu_id := get_onu_id_by_mac(mac, pon)):
+      return onu_id
+    if pon:
+      return 'offline - vlan: {0}'.format(vlan_name[1:5])
+    return 'no pon - vlan: {0}'.format(vlan_name[1:5])
   return None
 
 def main():

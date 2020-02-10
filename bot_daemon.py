@@ -7,6 +7,7 @@ import logging
 import re
 import subprocess
 import bot_config
+from onu_id_from_username import find_onu_by_user
 
 logger = logging.getLogger('bot_daemon')
 logger.setLevel(logging.DEBUG)
@@ -246,6 +247,19 @@ def vlan(update, context):
   else:
     update.message.reply_text('Você não tem permissão para acessar o menu /cto.', quote=True)
 
+def onuid(update, context):
+  logger.debug('onuid handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
+  if is_user_authorized(update.message.from_user.id):
+    if len(context.args) != 1:
+      update.message.reply_text('Envie "/onuid usuariologin" para verificar o ID da ONU do usuario "usuariologin".', quote=True)
+    else:
+      if (onu_id := find_onu_by_user(context.args[0])):
+        update.message.reply_text('{0}'.format(onu_id), quote=True)
+      else:
+        update.message.reply_text('Não há log de conexão para este usuário.'.format(onu_id), quote=True)
+  else:
+    update.message.reply_text('Você não tem permissão para acessar o menu /cto.', quote=True)
+
 def link(update, context):
   logger.debug('link handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
@@ -374,6 +388,7 @@ def main():
   updater.dispatcher.add_handler(CommandHandler("sinal", sinal))
   updater.dispatcher.add_handler(CommandHandler("reiniciar", reiniciar))
   updater.dispatcher.add_handler(CommandHandler("usuario", usuario))
+  updater.dispatcher.add_handler(CommandHandler("onuid", onuid))
   updater.dispatcher.add_handler(CommandHandler("cto", cto))
   updater.dispatcher.add_handler(CommandHandler("vlan", vlan))
   updater.dispatcher.add_handler(CommandHandler("link", link))

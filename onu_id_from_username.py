@@ -1,4 +1,4 @@
-#!/usr/bin/python3.8
+#!/usr/bin/env python
 # coding=utf-8
 
 import argparse
@@ -26,7 +26,7 @@ def get_onu_id_by_mac_and_pon(tn, mac, pon):
   tn.write(str_to_telnet('show pon_mac {0} lookup {1}'.format(pon, mac.replace(':', ''))))
   tn.read_until(b'-----\n\r', timeout=1)
   value = get_next_value(tn, '\t')
-  if 'gponline#' in value:
+  if value == 'Admin\\gponline#':
     return None
   tn.read_until(b'OnuId:', timeout=1)
   onu_number = get_next_value(tn, '\n')

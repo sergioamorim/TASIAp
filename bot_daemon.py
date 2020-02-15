@@ -329,6 +329,8 @@ def button(update, context):
         InlineKeyboardButton(text='Cliente', callback_data='{0}{1}'.format(callback_data, '<c=cl>'))
       ]]
       keyboard_markup = InlineKeyboardMarkup(keyboard)
+      if query.message.chat.id != int(bot_config.default_chat):
+        context.bot.send_message(int(bot_config.default_chat), '{0} autorizando {1} {2}'.format(query.message.chat.id, onu_id, serial))
       query.edit_message_text('ONU de cliente ou CTO?', reply_markup=keyboard_markup, quote=True)
     elif answer_string == 'ERR':
       query.edit_message_text('Tente novamente, não foi possivel encontrar a ONU informada agora. Envie /autorizar para ver a lista de ONUs disponíveis.', quote=True)
@@ -348,6 +350,8 @@ def button(update, context):
     logger.debug('button: set_cvlan: answer_string: {0}'. format(answer_string))
     cvlan_commited = re.findall('_([0-9]{4})', answer_string)[0]
     onu_info_string = get_onu_info_string(onu_id=onu_id, cvlan=cvlan_commited, serial=serial)
+    if query.message.chat.id != int(bot_config.default_chat):
+      context.bot.send_message(int(bot_config.default_chat), '{0} autorizou\n{1}'.format(query.message.chat.id, onu_info_string))
     query.edit_message_text('ONU autorizada com sucesso.\n{0}'.format(onu_info_string), quote=True)
   elif action == 'aa':
     query.edit_message_text('Autorização cancelada.', quote=True)

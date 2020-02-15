@@ -5,10 +5,20 @@
 # and cto_info.py
 
 token = 'bOt-T0keN_ExaMplE'
-authorized_users = [1234567, 89012345]
 default_chat = '012345678'
+permissions = {
+  'autorizar': [1234567, 89012345],
+  'authorize': [1234567],
+  'sinal': [1234567],
+  'reiniciar': [89012345],
+  'onuid': [1234567],
+  'usuario': [1234567],
+  'link': [1234567],
+  'cto': [1234567],
+  'vlan': [1234567]
+}
 mk_link = {
-  'ssh': { 
+  'ssh': {
     'port': '22',
     'user': 'admin',
     'ip': '255.255.255.255'

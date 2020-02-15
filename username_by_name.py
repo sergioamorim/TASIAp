@@ -47,24 +47,16 @@ def find_username_by_name(name):
   engine = create_engine('mysql://{0}:{1}@{2}/{3}'.format(mysqldb_config.username, mysqldb_config.password, mysqldb_config.host, mysqldb_config.database), encoding='latin1')
   Session = sessionmaker(bind=engine)
   session = Session()
+  name = remove_accents(name.lower())
   query_string = "SELECT nome, endereco, numero, complemento, referencia, observacao, status, user, pass, enable, groupname FROM {0} INNER JOIN {1} ON {0}.id = {1}.cliente_id WHERE ((status = 1 OR status = 2) AND enable = 1) AND nome LIKE '%{2}%' OR endereco LIKE '%{2}%' OR complemento LIKE '%{2}%' OR referencia LIKE '%{2}%' OR observacao LIKE '%{2}%' OR user LIKE '%{2}%' ORDER BY nome ASC;".format(mysqldb_config.clientes_table, mysqldb_config.login_table, name)
   if (query_result := session.execute(query_string)):
     clients = []
     related_clients = []
     for client in make_dict(query_result):
-      clients.append(client)
-      print('Nome: {0}\nEndereço: {1}, {2}\nUsuario: {3}'.format(client['nome'], client['endereco'], client['numero'], client['user']))
-      if name not in client['nome'].lower() and name not in client['user'].lower() and name not in client['endereco'].lower():
+      if name in client['nome'].lower() or name in client['user'].lower() or name in client['endereco'].lower():
+        clients.append(client)
+      else:
         related_clients.append(client)
-    for client in related_clients:
-      print('Nome: {0}\nEndereço: {1}, {2}'.format(client['nome'], client['endereco'], client['numero']))
-      if name in client['complemento'].lower():
-        print('Complemento: {0}'.format(sanitize_dumb(client['complemento'])))
-      if name in client['referencia'].lower():
-        print('Referencia: {0}'.format(sanitize_dumb(client['referencia'])))
-      if name in client['observacao'].lower():
-        print('Observacao: {0}'.format(sanitize_dumb(client['observacao'])))
-      print('Usuario: {0}'.format(client['user']))
     final_result = {'direct': clients, 'related': related_clients}
   return final_result
 
@@ -74,7 +66,19 @@ def main():
   args = parser.parse_args()
 
   if (name := args.n):
-    print(find_username_by_name(remove_accents(name.lower())))
+    result = find_username_by_name(name)
+    for client in result['direct']:
+      print('Nome: {0}\nEndereço: {1}, {2}\nUsuario: {3}'.format(client['nome'], client['endereco'], client['numero'], client['user']))
+    for client in result['related']:
+      print('Nome: {0}\nEndereço: {1}, {2}'.format(client['nome'], client['endereco'], client['numero']))
+      name = remove_accents(name.lower())
+      if name in client['complemento'].lower():
+        print('Complemento: {0}'.format(sanitize_dumb(client['complemento'])))
+      if name in client['referencia'].lower():
+        print('Referencia: {0}'.format(sanitize_dumb(client['referencia'])))
+      if name in client['observacao'].lower():
+        print('Observacao: {0}'.format(sanitize_dumb(client['observacao'])))
+      print('Usuario: {0}'.format(client['user']))
     return 0
 
   print('Informe o nome do cliente.')

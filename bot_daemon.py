@@ -54,7 +54,7 @@ def create_keyboard_markup_auth(onu_serials_list):
 def get_signal(onu_id):
   with Telnet(telnet_config.ip, telnet_config.port) as tn:
     connect_su(tn)
-    signal = get_onu_power_signal_by_id(tn, onuid)
+    signal = get_onu_power_signal_by_id(tn, onu_id)
   if signal == 'not found':
     return 'não existe ONU autorizada com esse ID.'
   elif signal == 'off':

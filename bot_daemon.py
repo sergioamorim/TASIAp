@@ -9,6 +9,7 @@ import subprocess
 import bot_config
 from onu_id_from_username import find_onu_by_user
 import inspect
+from onu_signal_power import get_onu_power_signal_by_id
 
 logger = logging.getLogger('bot_daemon')
 logger.setLevel(logging.DEBUG)
@@ -46,17 +47,14 @@ def create_keyboard_markup_auth(onu_serials_list):
   return keyboard_markup
 
 def get_signal(onu_id):
-  command_list = ['python3.8', 'onu_signal_power.py', '-i', '{0}'.format(onu_id)]
-  logger.debug('get_signal: command_list: {0}'.format(command_list))
-  answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8').replace('\n', '')
-  logger.debug('get_signal: answer_string: {0}'.format(answer_string))
-  if answer_string == 'not found':
-    return 'não existe ONU autorizada com esse ID'
-  elif answer_string == 'off':
-    return 'sem sinal'
-  elif answer_string == 'error':
-    return 'erro não especificado'
-  return answer_string
+  signal = get_onu_power_signal_by_id(onuid)
+  if signal == 'not found':
+    return 'não existe ONU autorizada com esse ID.'
+  elif signal == 'off':
+    return 'sem sinal.'
+  elif signal == 'error':
+    return 'erro não especificado.'
+  return signal
 
 def is_int(s):
   try:

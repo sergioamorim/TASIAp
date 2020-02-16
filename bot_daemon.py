@@ -12,6 +12,9 @@ import inspect
 from user_from_onu import is_cto_id
 from onu_signal_power import get_onu_power_signal_by_id
 from mysql_common import get_mysql_session, user_exists
+from telnetlib import Telnet
+import telnet_config
+from telnet_common import connect_su
 
 logger = logging.getLogger('bot_daemon')
 logger.setLevel(logging.DEBUG)
@@ -49,7 +52,9 @@ def create_keyboard_markup_auth(onu_serials_list):
   return keyboard_markup
 
 def get_signal(onu_id):
-  signal = get_onu_power_signal_by_id(onuid)
+  with Telnet(telnet_config.ip, telnet_config.port) as tn:
+    connect_su(tn)
+    signal = get_onu_power_signal_by_id(tn, onuid)
   if signal == 'not found':
     return 'não existe ONU autorizada com esse ID.'
   elif signal == 'off':
@@ -105,7 +110,8 @@ def sinal(update, context):
       cto_string = is_cto_id(session, context.args[0])
       signal = get_signal(context.args[0]).capitalize()
       update.message.reply_text('{0}{1}'.format('{0}\n'.format(cto_string) if cto_string else '', signal), quote=True)
-    elif (serial := re.findall("([0-9A-Z]{4}[0-9A-Fa-f]{8})", context.args[0])[0]):
+    elif (serial := re.findall("([0-9A-Z]{4}[0-9A-Fa-f]{8})", context.args[0])):
+      serial = serial[0]
       update.message.reply_text('Ainda não é possível verificar o sinal pelo serial da ONU.', quote=True)
     elif user_exists(session, context.args[0]):
       onu_id = find_onu_by_user(context.args[0])

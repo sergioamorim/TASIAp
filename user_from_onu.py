@@ -4,10 +4,9 @@
 import argparse
 import logging
 from telnetlib import Telnet
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 import telnet_config
 import mysqldb_config
+from mysql_common import get_mysql_session
 
 logger = logging.getLogger('user_from_onu')
 logger.setLevel(logging.INFO)
@@ -65,7 +64,7 @@ def sanitize_cto_vlan_name(cto_vlan_name):
   onu_number = cto_vlan_name[18:20]
   onu_id = '{0}{1}{2}'.format(board_id, pon, onu_number)
   cto_actual_name = cto_vlan_name[31:].replace('-',' ')
-  cto_sanitized_name = 'CTO {0}{1}{2}'.format(onu_id, ' ({0}) '.format(vlan) if vlan[1:] != onu_id else ' ', cto_actual_name)
+  cto_sanitized_name = 'CTO {0}{1}{2}'.format(onu_id, ' (v{0}) '.format(vlan) if vlan[1:] != onu_id else ' ', cto_actual_name)
   return cto_sanitized_name
 
 def is_cto_id(session, onu_id):
@@ -192,10 +191,7 @@ def main():
     if not is_onu_id_valid(onu_id):
       raise ValueError('The given onu id is invalid. The first digit of the id must be between 1 to 3 (board id), the second digit must be between 1 to 8 (pon number) and the last 2 digits must be between 01 and 99 (onu number).')
 
-  engine = create_engine('mysql://{0}:{1}@{2}/{3}'.format(mysqldb_config.username, mysqldb_config.password, mysqldb_config.host, mysqldb_config.database), encoding='latin1')
-  Session = sessionmaker(bind=engine)
-  session = Session()
-
+  session = get_mysql_session()
   if (cto := is_cto_id(session, onu_id)):
     print(cto)
   else:
@@ -203,6 +199,7 @@ def main():
       connect_su(tn)
       username = get_username_by_onu_id(session, tn, onu_id)
       print(username)
+  session.close()
 
 if __name__ == '__main__':
   main()

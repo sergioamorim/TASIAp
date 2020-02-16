@@ -64,7 +64,7 @@ def sanitize_cto_vlan_name(cto_vlan_name):
   onu_number = cto_vlan_name[18:20]
   onu_id = '{0}{1}{2}'.format(board_id, pon, onu_number)
   cto_actual_name = cto_vlan_name[31:].replace('-',' ')
-  cto_sanitized_name = 'CTO {0}{1}{2}'.format(onu_id, ' (v{0}) '.format(vlan) if vlan[1:] != onu_id else ' ', cto_actual_name)
+  cto_sanitized_name = 'CTO {0}{1}{2}'.format(onu_id, ' ({0}) '.format(vlan) if vlan[1:] != onu_id else ' ', cto_actual_name)
   return cto_sanitized_name
 
 def is_cto_id(session, onu_id):

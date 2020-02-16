@@ -81,8 +81,8 @@ def find_onu_by_user(username):
     if (onu_id := get_onu_id_by_mac(mac, pon)):
       return onu_id
     if pon:
-      return 'offline - vlan: {0}'.format(vlan_name[1:5])
-    return 'no pon - vlan: {0}'.format(vlan_name[1:5])
+      return '{0}Possíveis problemas:\n- roteador desligado ou desconectado da ONU;\n- ONU travada, sem sinal ou desligada.\nVLAN do usuário: {0}'.format('Cliente FIBRA na Placa {0} PON {1}\n'.format('12' if vlan_name[1:2] == '1' else '14', vlan_name[2:3]) if vlan_name[3:5] == '00' else '', vlan_name[1:5])
+    return 'Usuário não conecta por ONU - vlan: {0}'.format(vlan_name[1:5])
   return None
 
 def main():

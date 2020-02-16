@@ -9,7 +9,9 @@ import subprocess
 import bot_config
 from onu_id_from_username import find_onu_by_user
 import inspect
+from user_from_onu import is_cto_id
 from onu_signal_power import get_onu_power_signal_by_id
+from mysql_common import get_mysql_session, user_exists
 
 logger = logging.getLogger('bot_daemon')
 logger.setLevel(logging.DEBUG)
@@ -97,12 +99,25 @@ def sinal(update, context):
   logger.debug('sinal handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
     if not len(context.args):
-      update.message.reply_text('Comando inválido. Envie "/sinal 1234" para verificar o sinal da ONU de ID 1234.', quote=True)
+      update.message.reply_text('Envie "/sinal 1234" para verificar o sinal da ONU de ID 1234, "/sinal maria" para verificar o sinal da ONU do usuário maria ou "/sinal FHTT0fab320e" para verificar o sinal da ONU com serial FHTT0fab320e.', quote=True)
+    session = get_mysql_session()
     if is_onu_id_valid(context.args[0]):
-      signal = get_signal(context.args[0])
-      update.message.reply_text(signal.capitalize(), quote=True)
+      cto_string = is_cto_id(session, context.args[0])
+      signal = get_signal(context.args[0]).capitalize()
+      update.message.reply_text('{0}{1}'.format('{0}\n'.format(cto_string) if cto_string else '', signal), quote=True)
+    elif (serial := re.findall("([0-9A-Z]{4}[0-9A-Fa-f]{8})", context.args[0])[0]):
+      update.message.reply_text('Ainda não é possível verificar o sinal pelo serial da ONU.', quote=True)
+    elif user_exists(session, context.args[0]):
+      onu_id = find_onu_by_user(context.args[0])
+      if is_onu_id_valid(onu_id):
+        cto_string = is_cto_id(session, onu_id)
+        signal = get_signal(onu_id).capitalize()
+        update.message.reply_text('{0}{1}'.format('{0}\n'.format(cto_string) if cto_string else '', signal), quote=True)
+      else:
+        update.message.reply_text('{0}\nTente novamente informando o ID ou serial da ONU.'.format(onu_id), quote=True)
     else:
-      update.message.reply_text('ID da ONU inválido. O priméiro dígito do ID deve ser de 1 a 3 (número da placa), o segundo dígito deve ser de 1 a 8 (número da PON) e os dois últimos dígitos devem ser entre 01 e 99 (número da ONU).', quote=True)
+      update.message.reply_text('ID da ONU, usuário ou serial inválido ou não encontrado.', quote=True)
+    session.close()
   else:
     update.message.reply_text('Você não tem permissão para acessar o menu /sinal.', quote=True)
 
@@ -253,7 +268,7 @@ def onuid(update, context):
       update.message.reply_text('Envie "/onuid usuariologin" para verificar o ID da ONU do usuario "usuariologin".', quote=True)
     else:
       if (onu_id := find_onu_by_user(context.args[0])):
-        update.message.reply_text('{0}'.format(onu_id), quote=True)
+        update.message.reply_text(onu_id, quote=True)
       else:
         update.message.reply_text('Não há log de conexão para este usuário.'.format(onu_id), quote=True)
   else:

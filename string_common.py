@@ -19,19 +19,6 @@ def is_int(s):
   except ValueError:
     return False
 
-def get_onu_info_string(onu_repr=None, onu_id=None, cvlan=None, serial=None):
-  signal = None
-  if onu_repr:
-    onu_repr_pattern = "([0-9A-Z]{4}[0-9A-Fa-f]{8})',pon='<Pon\(pon_id='[0-9]',board='<Board\(board_id='[0-9]{2}'\)>',last_authorized_onu_number='[0-9]+'\)>',onu_type='.*',number='[0-9]+',cvlan='(N?o?n?e?[0-9]{0,4})"
-    regex_result = re.findall(onu_repr_pattern, onu_repr)
-    serial = regex_result[0][0]
-    if (cvlan := regex_result[0][1]) != 'None':
-      cvlan = cvlan[0]
-    onu_id = get_onu_id_from_repr(onu_repr)
-  else:
-    signal = get_signal(onu_id)
-  return 'ID: {0}{1}\nSerial: {2}{3}'.format(onu_id, '\nCVLAN: {0}'.format(cvlan) if cvlan else '', serial, '\nSinal: {0}'.format(signal) if signal else '')
-
 def get_onu_id_from_repr(onu_repr):
   onu_repr_pattern = "([0-9])',board='<Board\(board_id='([0-9]{2})'\)>',last_authorized_onu_number='[0-9]+'\)>',onu_type='.*',number='([0-9]+)"
   regex_result = re.findall(onu_repr_pattern, onu_repr)

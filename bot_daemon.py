@@ -15,7 +15,7 @@ from mysql_common import get_mysql_session, user_exists
 from telnetlib import Telnet
 import telnet_config
 from telnet_common import connect_su
-from string_common import is_onu_id_valid, is_vlan_id_valid, is_serial_valid, is_int, get_onu_info_string, get_onu_id_from_repr
+from string_common import is_onu_id_valid, is_vlan_id_valid, is_serial_valid, is_int, get_onu_id_from_repr
 from onu_id_from_serial import find_onu_by_serial
 from user_from_onu import find_user_by_onu
 
@@ -59,6 +59,30 @@ def get_signal(onu_id):
   elif signal == 'error':
     return 'erro não especificado.'
   return signal
+
+def callback_signal_job(context):
+  context.bot.send_message(context.job.context['chat_id'], 'Sinal: {0}'.format(get_signal(context.job.context['onu_id'])), reply_to_message_id=context.job.context['message_id'])
+
+def signal_job_caller(update, onu_id)
+  job_context = {'chat_id': update.message.chat_id, 'onu_id': onu_id, 'message_id': update.message.message_id}
+  context.job_queue.run_once(partial(callback_signal_job, onu_id), 10, context=job_context)
+  return 'ainda em processo de autorização, o sinal será enviado em 10 segundos.'
+
+def get_onu_info_string(update, onu_repr=None, onu_id=None, cvlan=None, serial=None):
+  signal = None
+  if onu_repr:
+    onu_repr_pattern = "([0-9A-Z]{4}[0-9A-Fa-f]{8})',pon='<Pon\(pon_id='[0-9]',board='<Board\(board_id='[0-9]{2}'\)>',last_authorized_onu_number='[0-9]+'\)>',onu_type='.*',number='[0-9]+',cvlan='(N?o?n?e?[0-9]{0,4})"
+    regex_result = re.findall(onu_repr_pattern, onu_repr)
+    serial = regex_result[0][0]
+    if (cvlan := regex_result[0][1]) != 'None':
+      cvlan = cvlan[0]
+    onu_id = get_onu_id_from_repr(onu_repr)
+    signal = signal_job_caller(update, onu_id)
+  else:
+    signal = get_signal(onu_id)
+    if signal == 'sem sinal.':
+      signal = signal_job_caller(update, onu_id)
+  return 'ID: {0}{1}\nSerial: {2}{3}'.format(onu_id, '\nCVLAN: {0}'.format(cvlan) if cvlan else '', serial, '\nSinal: {0}'.format(signal))
 
 def start(update, context):
   logger.debug('start handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
@@ -164,7 +188,7 @@ def authorize(update, context):
         answer_string = subprocess.run(['python3.8', 'authorize_onu.py', '-a', '{0}'.format(context.args[0])], capture_output=True).stdout.decode('utf-8')
       logger.debug('authorize: int: answer_string: {0}'.format(answer_string))
       if 'OnuDevice' in answer_string:
-        update.message.reply_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(onu_repr=answer_string)), quote=True)
+        update.message.reply_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(update, onu_repr=answer_string)), quote=True)
       elif 'ERR' in answer_string:
         update.message.reply_text('A ONU informada não foi encontrada. Envie /authorize para ver a lista de ONUs disponíveis.', quote=True)
       elif 'None' in answer_string:
@@ -176,7 +200,7 @@ def authorize(update, context):
         answer_string = subprocess.run(['python3.8', 'authorize_onu.py', '-a', '1'], capture_output=True).stdout.decode('utf-8')
       logger.debug('authorize: sim: answer_string: {0}'.format(answer_string))
       if 'OnuDevice' in answer_string:
-        update.message.reply_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(onu_repr=answer_string)), quote=True)
+        update.message.reply_text('ONU autorizada com sucesso!\n{0}'.format(get_onu_info_string(update, onu_repr=answer_string)), quote=True)
       elif 'ERR' in answer_string:
         update.message.reply_text('A ONU não foi encontrada. Envie /authorize para ver a lista de ONUs disponíveis.', quote=True)
       elif 'None' in answer_string:
@@ -364,7 +388,7 @@ def button(update, context):
     answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
     logger.debug('button: set_cvlan: answer_string: {0}'. format(answer_string))
     cvlan_commited = re.findall('_([0-9]{4})', answer_string)[0]
-    onu_info_string = get_onu_info_string(onu_id=onu_id, cvlan=cvlan_commited, serial=serial)
+    onu_info_string = get_onu_info_string(update, onu_id=onu_id, cvlan=cvlan_commited, serial=serial)
     if query.message.chat.id != int(bot_config.default_chat):
       context.bot.send_message(int(bot_config.default_chat), '{0} autorizou\n{1}'.format(query.message.chat.id, onu_info_string))
     query.edit_message_text('ONU autorizada com sucesso.\n{0}'.format(onu_info_string), quote=True)

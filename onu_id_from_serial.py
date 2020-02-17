@@ -8,7 +8,7 @@ from telnet_common import connect_su, str_to_telnet
 from string_common import is_serial_valid
 import telnet_config
 
-def get_onu_id_from_serial(serial):
+def find_onu_by_serial(serial):
   with Telnet(telnet_config.ip, telnet_config.port) as tn:
     connect_su(tn)
     tn.write(str_to_telnet('cd gpononu'))
@@ -29,7 +29,7 @@ def main():
 
   if (serial := args.s):
     if is_serial_valid(serial):
-      print(get_onu_id_from_serial(serial))
+      print(find_onu_by_serial(serial))
       return 0
     print('Serial inválido.')
     return 1

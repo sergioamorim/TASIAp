@@ -15,7 +15,9 @@ from mysql_common import get_mysql_session, user_exists
 from telnetlib import Telnet
 import telnet_config
 from telnet_common import connect_su
-from string_common import is_onu_id_valid, is_vlan_id_valid, is_int, get_onu_info_string, get_onu_id_from_repr
+from string_common import is_onu_id_valid, is_vlan_id_valid, is_serial_valid, is_int, get_onu_info_string, get_onu_id_from_repr
+from onu_id_from_serial import find_onu_by_serial
+from user_from_onu import find_user_by_onu
 
 logger = logging.getLogger('bot_daemon')
 logger.setLevel(logging.DEBUG)
@@ -77,8 +79,13 @@ def sinal(update, context):
       signal = get_signal(context.args[0]).capitalize()
       update.message.reply_text('{0}{1}'.format('{0}\n'.format(cto_string) if cto_string else '', signal), quote=True)
     elif (serial := re.findall("([0-9A-Z]{4}[0-9A-Fa-f]{8})", context.args[0])):
-      serial = serial[0]
-      update.message.reply_text('Ainda não é possível verificar o sinal pelo serial da ONU.', quote=True)
+      onu = find_onu_by_serial(serial[0])
+      cto_string = is_cto_id(session, onu['onuid'])
+      if onu['state'] == 'dn':
+        update.message.reply_text('{0}ONU ID: {1}\nSem sinal.'.format('{0}\n'.format(cto_string) if cto_string else '', onu['onuid']), quote=True)
+      else:
+        signal = get_signal(onu_id).capitalize()
+        update.message.reply_text('{0}ONU ID: {1}\n{2}'.format('{0}\n'.format(cto_string) if cto_string else '', onu['onuid'], signal), quote=True)
     elif user_exists(session, context.args[0]):
       onu_id = find_onu_by_user(context.args[0])
       if is_onu_id_valid(onu_id):
@@ -181,18 +188,32 @@ def usuario(update, context):
   logger.debug('usuario handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
   if is_user_authorized(update.message.from_user.id):
     if not len(context.args):
-      update.message.reply_text('Envie "/usuario 1234" para verificar o usuário da ONU de ID 1234.', quote=True)
-    elif is_onu_id_valid(context.args[0]):
-      answer_string = subprocess.run(['python3.8', 'user_from_onu.py', '-i', '{0}'.format(context.args[0])], capture_output=True).stdout.decode('utf-8')
-      logger.debug('usuario: answer_string: {0}'.format(answer_string))
-      if 'None' in answer_string:
-        update.message.reply_text('Nenhum usuário associado à ONU foi encontrado.', quote=True)
-      elif 'ERR' in answer_string:
-        update.message.reply_text('Nenhuma ONU encontrada com este ID.', quote=True)
-      else:
-        update.message.reply_text('{0}'.format(answer_string), quote=True)
+      update.message.reply_text('Envie "/usuario 1234" para verificar o usuário da ONU de ID 1234 ou "/usuario FHTT0fab320e" para verificar o usuário da ONU de serial FHTT0fab320e.', quote=True)
     else:
-      update.message.reply_text('ID da ONU inválido. O priméiro dígito do ID deve ser de 1 a 3 (número da placa), o segundo dígito deve ser de 1 a 8 (número da PON) e os dois últimos dígitos devem ser entre 01 e 99 (número da ONU).', quote=True)
+      session = get_mysql_session()
+      if is_onu_id_valid(context.args[0]):
+        if (user := find_user_by_onu(session, context.args[0])):
+          if user == 'ERR':
+            update.message.reply_text('Nenhuma ONU encontrada com esse ID.', quote=True)
+          else:
+            update.message.reply_text(user, quote=True)
+        else:
+          update.message.reply_text('Nenhum usuário associado à ONU foi encontrado.', quote=True)
+      elif is_serial_valid(context.args[0]):
+        if (onu := find_onu_by_serial(context.args[0])):
+          cto_string = is_cto_id(session, context.args[0])
+          if onu['state'] == 'dn':
+            update.message.reply_text('ONU ID: {0}\nSem sinal.{1}'.format(onu['onuid'], '\n{0}'.format(cto_string) if cto_string else ''), quote=True)
+          else:
+            if (user := find_user_by_onu(session, onu['onuid'])):
+              update.message.reply_text('ONU ID: {0}\n{1}'.format(onu['id'], user), quote=True)
+            else:
+              update.message.reply_text('ONU ID: {0}\nNenhum usuário associado à ONU foi encontrado.'.format(onu['onuid']), quote=True)
+        else:
+          update.message.reply_text('Nenhuma ONU encontrada com o serial informado.', quote=True)
+      else:
+        update.message.reply_text('ID ou serial da ONU inválido.', quote=True)
+      session.close()
   else:
     update.message.reply_text('Você não tem permissão para acessar o menu /usuario.', quote=True)
 
@@ -239,10 +260,17 @@ def onuid(update, context):
     if len(context.args) != 1:
       update.message.reply_text('Envie "/onuid usuariologin" para verificar o ID da ONU do usuario "usuariologin".', quote=True)
     else:
-      if (onu_id := find_onu_by_user(context.args[0])):
+      session = get_mysql_session()
+      if is_serial_valid(context.args[0]):
+        if (onu := find_onu_by_serial(context.args[0])):
+          update.message.reply_text(onu['id'], quote=True)
+        else:
+          update.message.reply_text('Nenhuma ONU encontrada com o serial informado.', quote=True)
+      elif (onu_id := find_onu_by_user(context.args[0])):
         update.message.reply_text(onu_id, quote=True)
       else:
-        update.message.reply_text('Não há log de conexão para este usuário.'.format(onu_id), quote=True)
+        update.message.reply_text('Não há log de conexão para este usuário ou o serial da ONU é inválido.'.format(onu_id), quote=True)
+      session.close()
   else:
     update.message.reply_text('Você não tem permissão para acessar o menu /cto.', quote=True)
 

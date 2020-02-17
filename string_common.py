@@ -40,3 +40,16 @@ def get_onu_id_from_repr(onu_repr):
   onu_number = regex_result[0][2]
   onu_id = '{0}{1}{2}{3}'.format('1' if board == '12' else '2', pon, '0' if int(onu_number) < 10 else '', onu_number)
   return onu_id
+
+def sanitize_cto_vlan_name(cto_vlan_name):
+  vlan = cto_vlan_name[:5]
+  if cto_vlan_name[7:9] == '12':
+    board_id = '1'
+  else:
+    board_id = '2'
+  pon = cto_vlan_name[13:14]
+  onu_number = cto_vlan_name[18:20]
+  onu_id = '{0}{1}{2}'.format(board_id, pon, onu_number)
+  cto_actual_name = cto_vlan_name[31:].replace('-',' ')
+  cto_sanitized_name = 'CTO {0}{1}{2}'.format(onu_id, ' ({0}) '.format(vlan) if vlan[1:] != onu_id else ' ', cto_actual_name)
+  return cto_sanitized_name

@@ -10,7 +10,7 @@ def is_vlan_id_valid(vlan_id):
   return is_int(vlan_id) and int(vlan_id) > 0 and int(vlan_id) < 4096
 
 def is_serial_valid(serial):
-  return if re.findall('([0-9A-Z]{4}[0-9A-Fa-f]{8})', serial)
+  return re.search('([0-9A-Z]{4}[0-9A-Fa-f]{8})', serial) != None
 
 def is_int(s):
   try:

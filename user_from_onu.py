@@ -119,7 +119,11 @@ def get_mac_list_from_onu_id(onu_id):
     logger.debug('get_mac_list_from_onu_id: stoped...')
     return associated_mac_list
 
-def find_user_by_onu(session, onu_id):
+def find_user_by_onu(onu_id):
+  session = get_mysql_session()
+  if (cto := is_cto_id(session, onu_id)):
+    session.close()
+    return cto
   if len((mac_list := get_mac_list_from_onu_id(onu_id))):
     username_list = []
     for mac in mac_list:
@@ -127,9 +131,12 @@ def find_user_by_onu(session, onu_id):
       if (username := session.execute(sql_query_string, {'mac': mac}).scalar()):
         username_list.append(username)
     if username_list:
+      session.close()
       return ' '.join(username_list)
   elif 'ERR' in mac_list:
+    session.close()
     return 'ERR'
+  session.close()
   return None
 
 def main():
@@ -140,12 +147,7 @@ def main():
   onu_id = None
   if (onu_id := args.i):
     if is_onu_id_valid(onu_id):
-      session = get_mysql_session()
-      if (cto := is_cto_id(session, onu_id)):
-        print(cto)
-      else:
-        print(find_user_by_onu(session, onu_id))
-      session.close()
+      print(find_user_by_onu(onu_id))
       return 0
     print('ID da ONU inválido.')
     return 1

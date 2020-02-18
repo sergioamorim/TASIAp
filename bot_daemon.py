@@ -18,6 +18,7 @@ from telnet_common import connect_su
 from string_common import is_onu_id_valid, is_vlan_id_valid, is_serial_valid, is_int, get_onu_id_from_repr
 from onu_id_from_serial import find_onu_by_serial
 from user_from_onu import find_user_by_onu
+from find_next_onu_connection import find_onu_connection
 
 logger = logging.getLogger('bot_daemon')
 logger.setLevel(logging.DEBUG)
@@ -76,20 +77,33 @@ def signal_job_caller(context, update, onu_id):
   context.job_queue.run_once(callback_signal_job, 10, context=job_context)
   return 'ainda em processo de autorização, o sinal será enviado em 10 segundos.'
 
+def find_onu_connection_job(context, update, onu_id):
+  if is_update_from_message(update):
+    chat_id = update.message.chat.id
+    message_id = update.message.message_id
+  else:
+    chat_id = update.callback_query.message.chat.id
+    message_id = update.callback_query.message.message_id
+  if (connection_info := find_onu_connection(onu_id)):
+    message_text = 'Roteador conectado na ONU ID: {0}\nUsuário: {1}\nSenha: {2}\nStatus da conexão: {3}'.format(onu_id, connection_info['username'], connection_info['password'], connection_info['diagnostic'])
+    context.bot.send_message(chat_id, message_text, reply_to_message_id=message_id)
+
 def get_onu_info_string(context, update, onu_repr=None, onu_id=None, cvlan=None, serial=None):
   signal = None
   if onu_repr:
     onu_repr_pattern = "([0-9A-Z]{4}[0-9A-Fa-f]{8})',pon='<Pon\(pon_id='[0-9]',board='<Board\(board_id='[0-9]{2}'\)>',last_authorized_onu_number='[0-9]+'\)>',onu_type='.*',number='[0-9]+',cvlan='(N?o?n?e?[0-9]{0,4})"
     regex_result = re.findall(onu_repr_pattern, onu_repr)
     serial = regex_result[0][0]
-    if (cvlan := regex_result[0][1]) != 'None':
-      cvlan = cvlan
+    if regex_result[0][1] != 'None':
+      cvlan = regex_result[0][1]
     onu_id = get_onu_id_from_repr(onu_repr)
     signal = signal_job_caller(context, update, onu_id)
   else:
     signal = get_signal(onu_id)
     if signal == 'sem sinal.':
       signal = signal_job_caller(context, update, onu_id)
+  if cvlan and cvlan[2:] == '00':
+    find_onu_connection_job(context, update, onu_id, _bg=True)
   return 'ID: {0}{1}\nSerial: {2}{3}'.format(onu_id, '\nCVLAN: {0}'.format(cvlan) if cvlan else '', serial, '\nSinal: {0}'.format(signal))
 
 def start(update, context):

@@ -53,7 +53,7 @@ def diagnose_connection(session, user):
         return 'bloqueada, o usúario não existe.'
     else:
       if connection_info['AcctStopTime'] == '0000-00-00 00:00:00':
-        return 'normal.'
+        return 'normal.\nIP: {0}'.format(connection_info['FramedIPAddress'])
       return 'conectou normalmente e em seguida desconectou.'
   return None
 

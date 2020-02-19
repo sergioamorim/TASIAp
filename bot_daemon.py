@@ -70,7 +70,10 @@ def get_message_from_update(update):
     return update.callback_query.message
 
 def callback_signal_job(context):
-  context.bot.send_message(context.job.context['chat_id'], 'Sinal: {0}'.format(get_signal(context.job.context['onu_id'])), reply_to_message_id=context.job.context['message_id'])
+  signal = get_signal(context.job.context['onu_id'])
+  context.bot.send_message(context.job.context['chat_id'], 'Sinal: {0}'.format(signal), reply_to_message_id=context.job.context['message_id'])
+  if context.job.context['chat_id'] != int(bot_config.default_chat):
+    context.bot.send_message(int(bot_config.default_chat), 'ONU ID: {0}\nSinal: {1}'.format(context.job.context['onu_id'], signal))
 
 def signal_job_caller(context, update, onu_id):
   message = get_message_from_update(update)
@@ -85,6 +88,8 @@ def find_onu_connection_trigger(bot, update, onu_id):
   else:
     message_text = 'Nenhum roteador foi conectado na ONU ID {0}.'.format(onu_id)
   bot.send_message(message.chat.id, message_text, reply_to_message_id=message.message_id)
+  if message.chat.id != int(bot_config.default_chat):
+    bot.send_message(int(bot_config.default_chat), message_text)
 
 def get_onu_info_string(context, update, onu_repr=None, onu_id=None, cvlan=None, serial=None):
   signal = None

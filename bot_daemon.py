@@ -137,7 +137,7 @@ def sinal(update, context):
       if is_onu_id_valid(onu_id):
         cto_string = is_cto_id(session, onu_id)
         signal = get_signal(onu_id).capitalize()
-        update.message.reply_text('{0}{1}'.format('{0}\n'.format(cto_string) if cto_string else '', signal), quote=True)
+        update.message.reply_text('{0}\n{1}'.format('{0}'.format(cto_string) if cto_string else 'ONU ID: {0}'.format(onu_id), signal), quote=True)
       else:
         update.message.reply_text('{0}\nTente novamente informando o ID ou serial da ONU.'.format(onu_id), quote=True)
     else:

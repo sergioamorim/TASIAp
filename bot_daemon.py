@@ -100,7 +100,7 @@ def get_onu_info_string(context, update, onu_repr=None, onu_id=None, cvlan=None,
     signal = get_signal(onu_id)
     if signal == 'sem sinal.':
       signal = signal_job_caller(context, update, onu_id)
-  if cvlan and cvlan[2:] == '00':
+  if cvlan and cvlan[2:] == '00' and cvlan != '4000':
     Thread(target=find_onu_connection_trigger, args=(context.bot, update, onu_id)).start()
   return 'ID: {0}{1}\nSerial: {2}{3}'.format(onu_id, '\nCVLAN: {0}'.format(cvlan) if cvlan else '', serial, '\nSinal: {0}'.format(signal))
 

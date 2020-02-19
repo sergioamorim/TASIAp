@@ -19,6 +19,7 @@ from string_common import is_onu_id_valid, is_vlan_id_valid, is_serial_valid, is
 from onu_id_from_serial import find_onu_by_serial
 from user_from_onu import find_user_by_onu
 from find_next_onu_connection import find_onu_connection
+from threading import Thread
 
 logger = logging.getLogger('bot_daemon')
 logger.setLevel(logging.DEBUG)
@@ -61,32 +62,29 @@ def get_signal(onu_id):
     return 'erro não especificado.'
   return signal
 
-def is_update_from_message(update):
+def get_message_from_update(update):
   try:
     update.message.chat
-    return True
+    return update.message
   except:
-    return False
+    return update.callback_query.message
 
 def callback_signal_job(context):
   context.bot.send_message(context.job.context['chat_id'], 'Sinal: {0}'.format(get_signal(context.job.context['onu_id'])), reply_to_message_id=context.job.context['message_id'])
 
 def signal_job_caller(context, update, onu_id):
-  update_from_message = is_update_from_message(update)
-  job_context = {'chat_id': update.message.chat.id if update_from_message else update.callback_query.message.chat.id, 'onu_id': onu_id, 'message_id': update.message.message_id if update_from_message else update.callback_query.message.message_id}
+  message = get_message_from_update(update)
+  job_context = {'chat_id': message.chat.id, 'onu_id': onu_id, 'message_id': message.message_id}
   context.job_queue.run_once(callback_signal_job, 10, context=job_context)
   return 'ainda em processo de autorização, o sinal será enviado em 10 segundos.'
 
-def find_onu_connection_job(context, update, onu_id):
-  if is_update_from_message(update):
-    chat_id = update.message.chat.id
-    message_id = update.message.message_id
-  else:
-    chat_id = update.callback_query.message.chat.id
-    message_id = update.callback_query.message.message_id
+def find_onu_connection_trigger(bot, update, onu_id):
+  message = get_message_from_update(update)
   if (connection_info := find_onu_connection(onu_id)):
-    message_text = 'Roteador conectado na ONU ID: {0}\nUsuário: {1}\nSenha: {2}\nStatus da conexão: {3}'.format(onu_id, connection_info['username'], connection_info['password'], connection_info['diagnostic'])
-    context.bot.send_message(chat_id, message_text, reply_to_message_id=message_id)
+    message_text = 'Roteador conectado na ONU ID {0}.\nUsuário: {1}\nSenha: {2}\nStatus da conexão: {3}'.format(onu_id, connection_info['username'], connection_info['password'], connection_info['diagnostic'])
+  else:
+    message_text = 'Nenhum roteador foi conectado na ONU ID {0}.'.format(onu_id)
+  bot.send_message(message.chat.id, message_text, reply_to_message_id=message.message_id)
 
 def get_onu_info_string(context, update, onu_repr=None, onu_id=None, cvlan=None, serial=None):
   signal = None
@@ -103,7 +101,7 @@ def get_onu_info_string(context, update, onu_repr=None, onu_id=None, cvlan=None,
     if signal == 'sem sinal.':
       signal = signal_job_caller(context, update, onu_id)
   if cvlan and cvlan[2:] == '00':
-    find_onu_connection_job(context, update, onu_id, _bg=True)
+    Thread(target=find_onu_connection_trigger, args=(context.bot, update, onu_id)).start()
   return 'ID: {0}{1}\nSerial: {2}{3}'.format(onu_id, '\nCVLAN: {0}'.format(cvlan) if cvlan else '', serial, '\nSinal: {0}'.format(signal))
 
 def start(update, context):

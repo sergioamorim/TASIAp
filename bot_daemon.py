@@ -144,11 +144,11 @@ def sinal(update, context):
           signal = get_signal(onu_id).capitalize()
           update.message.reply_text('{0}\n{1}'.format('{0}'.format(cto_string) if cto_string else 'ONU ID: {0}'.format(onu_id), signal), quote=True)
         else:
-          if is_onu_id_valid(onu_id[-4:]):
-            if (cto_name := re.findall(':\n(.*?)\nP', onu_id)):
-              update.message.reply_text('Sinal da ONU da {0}:\n{1}'.format(cto_name, get_signal(onu_id[-4:]).capitalize()))
+          if is_onu_id_valid(onu_id[-6:-2]):
+            if (cto_name := re.findall('ONU da (.*?)\.', onu_id)):
+              update.message.reply_text('{0}\nSinal da ONU da {1}:\n{2}'.format(onu_id, cto_name[0], get_signal(onu_id[-6:-2]).capitalize()))
             else:
-              update.message.reply_text('Sinal da ONU ID {0}:\n{1}'.format(onu_id[-4:], get_signal(onu_id[-4:]).capitalize()))
+              update.message.reply_text('{0}\nSinal da ONU ID {1}:\n{2}'.format(onu_id, onu_id[-6:-2], get_signal(onu_id[-6:-2]).capitalize()))
           else:
             update.message.reply_text('{0}\nTente novamente informando o ID ou serial da ONU.'.format(onu_id), quote=True)
       else:

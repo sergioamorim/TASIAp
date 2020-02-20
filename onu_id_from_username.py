@@ -9,6 +9,7 @@ from telnetlib import Telnet
 import mysqldb_config
 import telnet_config
 from telnet_common import connect_su, str_to_telnet, get_next_value
+from string_common import sanitize_cto_vlan_name
 
 logger = logging.getLogger('onu_id_from_username')
 logger.setLevel(logging.INFO)
@@ -80,8 +81,11 @@ def find_onu_by_user(username):
     pon = format_pon_name(vlan_name)
     if (onu_id := get_onu_id_by_mac(mac, pon)):
       return onu_id
+    if vlan_name[3:5] != '00':
+      return 'Usuário está desconectado, última conexão através da ONU da CTO:\n{0}\nPossíveis problemas:\n- roteador desligado, travado ou desconectado da ONU;\n- ONU travada, sem sinal ou desligada. Verifique o sinal da ONU com o comando "/sinal {1}".'.format(sanitize_cto_vlan_name(vlan_name), vlan_name[1:5])
     if pon:
-      return '{0}Possíveis problemas:\n- roteador desligado ou desconectado da ONU;\n- ONU travada, sem sinal ou desligada.\nVLAN do usuário: {1}'.format('Cliente FIBRA na Placa {0} PON {1}\n'.format('12' if vlan_name[1:2] == '1' else '14', vlan_name[2:3]) if vlan_name[3:5] == '00' else '', vlan_name[1:5])
+      board_number = '12' if vlan_name[1:2] == '1' else '14'
+      return 'Cliente FIBRA na Placa {0} PON {1}\nPossíveis problemas:\n- roteador desligado ou desconectado da ONU;\n- ONU travada, sem sinal ou desligada.\nVLAN do usuário: {2}'.format(board_number, vlan_name[2:3], vlan_name[1:5])
     return 'Usuário não conecta por ONU - vlan: {0}'.format(vlan_name[1:5])
   return None
 

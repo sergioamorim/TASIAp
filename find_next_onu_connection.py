@@ -6,7 +6,7 @@ from time import sleep
 from telnetlib import Telnet
 from datetime import datetime, timedelta
 from onu_id_from_username import get_onu_id_by_mac_and_pon, format_pon_name
-from mysql_common import get_mysql_session
+from mysql_common import get_mysql_session, reauthorize_user
 from string_common import is_int
 from telnet_common import connect_su
 import telnet_config
@@ -33,14 +33,6 @@ def insert_into_radius_login(session, rtype, username, attribute, op, value):
     query_string = query_string + "'{5}'"
   query_string = query_string + ', 1);'
   session.execute(query_string.format(MYSQL['radius_login_table'], rtype, username, attribute, op, value))
-
-def reauthorize_user(session, username, password):
-  session.execute('DELETE FROM {0} WHERE user = :username;'.format(mysqldb_config.login_radius_table), {'username': username})
-  login_info = session.execute('SELECT ip, pass FROM {0} WHERE user = :username'.format(mysqldb_config.login_table), {'username': username}).first()
-  insert_into_radius_login(session, 'C', username, 'Simultaneous-Use', ':=', 1)
-  insert_into_radius_login(session, 'C', username, 'User-Password', ':=', login_info['pass'])
-  if login_info['ip'] != '':
-    insert_into_radius_login(session, 'R', username, 'Framed-IP-Address', '==', reserved_ip)
 
 def diagnose_connection(session, user):
   query_string = 'SELECT FramedIPAddress, AcctStopTime FROM {0} WHERE UserName = :username ORDER BY AcctStartTime DESC;'.format(mysqldb_config.radius_acct_table)

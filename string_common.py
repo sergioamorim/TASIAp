@@ -29,14 +29,11 @@ def get_onu_id_from_repr(onu_repr):
   return onu_id
 
 def sanitize_cto_vlan_name(cto_vlan_name):
-  vlan = cto_vlan_name[:5]
-  if cto_vlan_name[7:9] == '12':
-    board_id = '1'
-  else:
-    board_id = '2'
-  pon = cto_vlan_name[13:14]
-  onu_number = cto_vlan_name[18:20]
-  onu_id = '{0}{1}{2}'.format(board_id, pon, onu_number)
-  cto_actual_name = cto_vlan_name[31:].replace('-',' ')
-  cto_sanitized_name = 'CTO {0}{1}{2}'.format(onu_id, ' ({0}) '.format(vlan) if vlan[1:] != onu_id else ' ', cto_actual_name)
-  return cto_sanitized_name
+  if len(cto_vlan_name) > 32:
+    board_id = '1' if cto_vlan_name[7:9] == '12' else '2'
+    onu_id = '{0}{1}{2}'.format(board_id, cto_vlan_name[13:14], cto_vlan_name[18:20])
+    cto_actual_name = cto_vlan_name[31:].replace('-',' ')
+    vlan = '({0}) '.format(cto_vlan_name[:5]) if cto_vlan_name[1:5] != onu_id else ''
+    cto_sanitized_name = 'CTO {0} {1}{2}'.format(onu_id, vlan, cto_actual_name)
+    return cto_sanitized_name
+  return None

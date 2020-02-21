@@ -140,8 +140,8 @@ def sinal(update, context):
     elif user_exists(session, context.args[0]):
       onu_id = find_onu_by_user(context.args[0])
       if onu_id['onu_id']:
-        signal = get_signal(onu_id).capitalize()
-        onu_reference = 'ONU da {0}:'.format(onu_id['cto_name']) if onu_id['cto_name'] else 'ONU ID {0}:'.format(onu_id['onu_id'])
+        signal = get_signal(onu_id['onu_id']).capitalize()
+        onu_reference = 'ONU da {0}: '.format(onu_id['cto_name']) if onu_id['cto_name'] else 'ONU ID {0}: '.format(onu_id['onu_id'])
         update.message.reply_text('{0}{1}\nSinal da {2}{3}'.format(onu_reference, onu_id['diagnostic'], onu_reference, signal), quote=True)
       elif onu_id['diagnostic']:
         update.message.reply_text('{0}\nTente novamente informando o ID ou serial da ONU.'.format(onu_id['diagnostic']), quote=True)
@@ -325,7 +325,7 @@ def onuid(update, context):
           onu_reference = 'ONU da {0}'.format(onu_id['cto_name']) if onu_id['cto_name'] else 'ONU ID {0}'.format(onu_id['onu_id'])
           update.message.reply_text('{0}{1}'.format(onu_reference, onu_id['diagnostic']), quote=True)
         elif onu_id['diagnostic']:
-          update.message.reply_text('{0}\nTente novamente informando o ID ou serial da ONU.'.format(onu_id['diagnostic']), quote=True)
+          update.message.reply_text('{0}\nTente novamente informando o serial da ONU.'.format(onu_id['diagnostic']), quote=True)
         else:
           update.message.reply_text('Nenhuma conexão do usuário informado foi encontrada.\nTente novamente informando o serial da ONU.', quote=True)
       session.close()

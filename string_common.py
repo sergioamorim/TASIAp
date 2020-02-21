@@ -36,4 +36,4 @@ def sanitize_cto_vlan_name(cto_vlan_name):
     vlan = '({0}) '.format(cto_vlan_name[:5]) if cto_vlan_name[1:5] != onu_id else ''
     cto_sanitized_name = 'CTO {0} {1}{2}'.format(onu_id, vlan, cto_actual_name)
     return cto_sanitized_name
-  return None
+  return ''

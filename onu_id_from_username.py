@@ -9,7 +9,7 @@ from telnetlib import Telnet
 import mysqldb_config
 import telnet_config
 from telnet_common import connect_su, str_to_telnet, get_next_value
-from string_common import sanitize_cto_vlan_name
+from string_common import sanitize_cto_vlan_name, is_int, is_onu_id_valid
 from mysql_common import get_mysql_session, reauthorize_user
 
 logger = logging.getLogger('onu_id_from_username')
@@ -47,7 +47,7 @@ def get_onu_id_by_mac(mac, pon):
     for pon in pon_list:
       if (onu_id := get_onu_id_by_mac_and_pon(tn, mac, pon)):
         return onu_id
-  return None
+  return ''
 
 def get_pon_list(tn):
   tn.write(str_to_telnet('cd gponline'))
@@ -72,13 +72,13 @@ def format_pon_name(vlan_name):
   return None
 
 def diagnose_onu_not_found(pon, query_result, cto_name):
-  if query_result['CalledStationId'][3:5] != '00':
+  if query_result['CalledStationId'][3:5] != '00' and is_int(query_result['CalledStationId'][3:5]):
     return '\nUsuário está desconectado. Última conexão através da ONU da {0}.\nPossíveis problemas:\n- roteador desligado, travado ou desconectado da ONU;\n- ONU travada, sem sinal ou desligada. Verifique o sinal da ONU com o comando "/sinal {1}".'.format(cto_name, query_result['CalledStationId'][1:5])
   elif pon:
     board_number = '12' if query_result['CalledStationId'][1:2] == '1' else '14'
-    return '\nUsuário está desconectado. Última conexão através de FIBRA na Placa {0} PON {1}.\nPossíveis problemas:\n- roteador desligado ou desconectado da ONU;\n- ONU travada, sem sinal ou desligada.'.format(board_number, query_result['CalledStationId'][2:3])
+    return 'Usuário está desconectado. Última conexão através de FIBRA na Placa {0} PON {1}.\nPossíveis problemas:\n- roteador desligado ou desconectado da ONU;\n- ONU travada, sem sinal ou desligada.'.format(board_number, query_result['CalledStationId'][2:3])
   else:
-    return '\nUsuário não conecta por ONU - vlan: {0}'.format(query_result['CalledStationId'][1:5])
+    return 'Usuário não conecta por ONU.\nRede: {0}'.format(query_result['CalledStationId'])
 
 def diagnose_login(session, query_result, username):
   if query_result['sucess'] == 0:
@@ -109,6 +109,8 @@ def find_onu_by_user(username):
     pon = format_pon_name(query_result['CalledStationId'])
     cto_name = sanitize_cto_vlan_name(query_result['CalledStationId'])
     if not (onu_id := get_onu_id_by_mac(query_result['CallingStationId'], pon)):
+      if is_onu_id_valid(query_result['CalledStationId'][1:5]):
+        onu_id = query_result['CalledStationId'][1:5]
       diagnostic = diagnose_onu_not_found(pon, query_result, cto_name)
   elif (query_result := session.execute(query_postauth, {'username': username}).first()):
     pon = format_pon_name(query_result['CalledStationId'])
@@ -116,6 +118,8 @@ def find_onu_by_user(username):
     if (onu_id := get_onu_id_by_mac(query_result['CallingStationId'], pon)):
       diagnostic = diagnose_login(session, query_result, username)
     else:
+      if is_onu_id_valid(query_result['CalledStationId'][1:5]):
+        onu_id = query_result['CalledStationId'][1:5]
       diagnostic = diagnose_onu_not_found(pon, query_result, cto_name)
   session.close()
   return {'onu_id': onu_id, 'cto_name': cto_name, 'diagnostic': diagnostic}

@@ -138,19 +138,13 @@ def sinal(update, context):
       else:
         update.message.reply_text('Nenhuma ONU encontrada com o serial informado.', quote=True)
     elif user_exists(session, context.args[0]):
-      if (onu_id := find_onu_by_user(context.args[0])):
-        if is_onu_id_valid(onu_id):
-          cto_string = is_cto_id(session, onu_id)
-          signal = get_signal(onu_id).capitalize()
-          update.message.reply_text('{0}\n{1}'.format('{0}'.format(cto_string) if cto_string else 'ONU ID: {0}'.format(onu_id), signal), quote=True)
-        else:
-          if is_onu_id_valid(onu_id[-6:-2]):
-            if (cto_name := re.findall('ONU da (.*?)\.', onu_id)):
-              update.message.reply_text('{0}\nSinal da ONU da {1}:\n{2}'.format(onu_id, cto_name[0], get_signal(onu_id[-6:-2]).capitalize()))
-            else:
-              update.message.reply_text('{0}\nSinal da ONU ID {1}:\n{2}'.format(onu_id, onu_id[-6:-2], get_signal(onu_id[-6:-2]).capitalize()))
-          else:
-            update.message.reply_text('{0}\nTente novamente informando o ID ou serial da ONU.'.format(onu_id), quote=True)
+      onu_id = find_onu_by_user(context.args[0])
+      if onu_id['onu_id']:
+        signal = get_signal(onu_id).capitalize()
+        onu_reference = 'ONU da {0}:'.format(onu_id['cto_name']) if onu_id['cto_name'] else 'ONU ID {0}:'.format(onu_id['onu_id'])
+        update.message.reply_text('{0}{1}\nSinal da {2}{3}'.format(onu_reference, onu_id['diagnostic'], onu_reference, signal), quote=True)
+      elif onu_id['diagnostic']:
+        update.message.reply_text('{0}\nTente novamente informando o ID ou serial da ONU.'.format(onu_id['diagnostic']), quote=True)
       else:
         update.message.reply_text('Nenhuma conexão do usuário informado foi encontrada.\nTente novamente informando o ID ou serial da ONU.', quote=True)
     else:
@@ -325,10 +319,15 @@ def onuid(update, context):
           update.message.reply_text(onu['id'], quote=True)
         else:
           update.message.reply_text('Nenhuma ONU encontrada com o serial informado.', quote=True)
-      elif (onu_id := find_onu_by_user(context.args[0])):
-        update.message.reply_text(onu_id, quote=True)
       else:
-        update.message.reply_text('Não há log de conexão para este usuário ou o serial da ONU é inválido.'.format(onu_id), quote=True)
+        onu_id = find_onu_by_user(context.args[0])
+        if onu_id['onu_id']:
+          onu_reference = 'ONU da {0}'.format(onu_id['cto_name']) if onu_id['cto_name'] else 'ONU ID {0}'.format(onu_id['onu_id'])
+          update.message.reply_text('{0}{1}'.format(onu_reference, onu_id['diagnostic']), quote=True)
+        elif onu_id['diagnostic']:
+          update.message.reply_text('{0}\nTente novamente informando o ID ou serial da ONU.'.format(onu_id['diagnostic']), quote=True)
+        else:
+          update.message.reply_text('Nenhuma conexão do usuário informado foi encontrada.\nTente novamente informando o serial da ONU.', quote=True)
       session.close()
   else:
     update.message.reply_text('Você não tem permissão para acessar o menu /cto.', quote=True)

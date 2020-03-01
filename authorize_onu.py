@@ -7,6 +7,8 @@ import subprocess
 import logging
 import telnet_config
 import re
+from string_common import is_int, is_vlan_id_valid
+from telnet_common import str_to_telnet, connect_su, get_next_value
 
 logger = logging.getLogger('authorize_onu')
 logger.setLevel(logging.DEBUG)
@@ -48,47 +50,10 @@ class Board:
   def __repr__(self):
     return "<Board(board_id='{0}')>".format(self.board_id)
 
-def is_int(s):
-  try:
-    int(s)
-    return True
-  except ValueError:
-    return False
-
-def is_vlan_id_valid(vlan_id):
-  return is_int(vlan_id) and int(vlan_id) > 0 and int(vlan_id) < 4096
-
-def str_to_telnet(string):
-  return string.encode('ascii')+b'\n'
-
 def connect_gpononu(tn):
-  tn.read_until(b'Login: ', timeout=10)
-  tn.write(str_to_telnet(telnet_config.username))
-  tn.read_until(b'Password: ', timeout=10)
-  tn.write(str_to_telnet(telnet_config.password))
-  tn.read_until(b'User> ', timeout=10)
-  tn.write(str_to_telnet('enable'))
-  tn.read_until(b'Password: ', timeout=10)
-  tn.write(str_to_telnet(telnet_config.password_sudo))
-  tn.read_until(b'Admin# ', timeout=10)
-  tn.write(str_to_telnet('cd service'))
-  tn.read_until(b'service# ', timeout=10)
-  tn.write(str_to_telnet('terminal length 512'))
-  tn.read_until(b'service# ', timeout=10)
+  connect_su(tn)
   tn.write(str_to_telnet('cd gpononu'))
   tn.read_until(b'gpononu# ', timeout=10)
-
-def disconnect_gpononu(tn):
-  tn.write(str_to_telnet('cd ..'))
-  tn.read_until(b'Admin# ', timeout=10)
-  tn.write(str_to_telnet('quit'))
-  tn.close()
-
-def get_next_value(tn):
-  value = tn.read_until(b' ', timeout=10)
-  while ' '.encode('ascii') in value[:-1] or ' '.encode('ascii') is value or '\n'.encode('ascii') in value[:-1]:
-    value = tn.read_until(b' ', timeout=10)
-  return value[:-1].decode('utf-8')
 
 def authorize_onu(onu, cvlan):
   onu.number = onu.pon.last_authorized_onu_number+1
@@ -99,10 +64,9 @@ def authorize_onu(onu, cvlan):
     tn.write(str_to_telnet('set authorization slot '+str(onu.pon.board.board_id)+' link '+str(onu.pon.pon_id)+' type '+onu.onu_type+' onuid '+str(onu.number)+' phy_id '+onu.phy_id))
     tn.read_until(b'gpononu#', timeout=10)
     tn.write(str_to_telnet('set whitelist phy_addr address '+onu.phy_id+' password null action add slot '+str(onu.pon.board.board_id)+' link '+str(onu.pon.pon_id)+' onu '+str(onu.number)+' type '+onu.onu_type))
-    disconnect_gpononu(tn)
   if cvlan:
     set_cvlan(onu, cvlan)
-  print(repr(onu))
+  return onu
 
 def set_cvlan(onu, cvlan):
   onu_id = '{0}{1}{2}'.format('1' if onu.pon.board.board_id == 12 else '2', onu.pon.pon_id, onu.number)
@@ -116,7 +80,7 @@ def get_new_onu_number(tn, onu_quantity, pon):
   for i in range(0,onu_quantity):
     tn.read_until(str(pon.board.board_id).encode('ascii'), timeout=10)
     tn.read_until(str(pon.pon_id).encode('ascii'), timeout=10)
-    current_onu_number = int(get_next_value(tn))
+    current_onu_number = int(get_next_value(tn, ' '))
     if current_onu_number == last_authorized_onu_number + 1:
       last_authorized_onu_number = current_onu_number
     else:
@@ -152,49 +116,45 @@ def main():
 
   onu_list = []
   pon_list = []
-  board_list = []
   with Telnet(telnet_config.ip, telnet_config.port) as tn:
     connect_gpononu(tn)
     tn.write(str_to_telnet('show discovery slot all link all'))
     end_of_pon_list = False
     while not end_of_pon_list:
       tn.read_until(b' ONU Unauth Table ,SLOT=', timeout=10)
-      board_id = int(get_next_value(tn))
+      board_id = int(get_next_value(tn, ' '))
       tn.read_until(b'PON=', timeout=10)
-      pon_id = int(get_next_value(tn))
+      pon_id = int(get_next_value(tn, ' '))
       tn.read_until(b',ITEM=', timeout=10)
       unauthorized_onu_quantity = int(tn.read_until(b'-', timeout=10)[:-1])
       tn.read_until(b'----', timeout=10)
       if unauthorized_onu_quantity:
         board = Board(board_id)
-        board_list.append(board)
         pon = Pon(pon_id,board)
         pon_list.append(pon)
         tn.read_until(b'  --------------------------', timeout=10)
         for i in range(0,unauthorized_onu_quantity):
-          onu_type = get_next_value(tn).lower()
+          onu_type = get_next_value(tn, ' ').lower()
           if 'an' in onu_type[:2]:
             onu_type = onu_type[2:]
-          phy_id = get_next_value(tn)
+          phy_id = get_next_value(tn, ' ')
           onu_list.append(OnuDevice(phy_id,pon,onu_type))
           tn.read_until(b',', timeout=10)
       if '----- '.encode('ascii') in tn.read_until(b'----- ', timeout=1):
         end_of_pon_list = False
       else:
         end_of_pon_list = True
-    disconnect_gpononu(tn)
 
   for pon in pon_list:
     with Telnet(telnet_config.ip, telnet_config.port) as tn:
       connect_gpononu(tn)
       tn.write(str_to_telnet('show authorization slot '+str(pon.board.board_id)+' link '+str(pon.pon_id)))
       tn.read_until(b'ITEM=', timeout=10)
-      onu_quantity = int(get_next_value(tn))
+      onu_quantity = int(get_next_value(tn, ' '))
       tn.read_until(b' --------------------', timeout=10)
       last_authorized_onu_number = get_new_onu_number(tn, onu_quantity, pon)
       pon.last_authorized_onu_number = last_authorized_onu_number
       tn.read_until(b'gpononu# ', timeout=10)
-      disconnect_gpononu(tn)
 
   if not len(onu_list):
     print('None')
@@ -206,7 +166,7 @@ def main():
     else:
       onu = find_onu_in_list(onu_list, auth_onu)
       if onu:
-        authorize_onu(onu, cvlan)
+        print(repr(authorize_onu(onu, cvlan)))
       else:
         print('ERR')
 

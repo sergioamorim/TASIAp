@@ -12,6 +12,9 @@ def is_vlan_id_valid(vlan_id):
 def is_serial_valid(serial):
   return re.search('([0-9A-Z]{4}[0-9A-Fa-f]{8})', serial) != None
 
+def remove_accents(string):
+  return str(unicodedata.normalize('NFD', string).encode('ascii', 'ignore').decode('utf-8'))
+
 def is_int(s):
   try:
     int(s)

@@ -7,6 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import mysqldb_config
 import unicodedata
+from string_common import remove_accents
 
 logger = logging.getLogger('username_by_name')
 logger.setLevel(logging.INFO)
@@ -17,9 +18,6 @@ stream_handler = logging.StreamHandler()
 stream_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
-
-def remove_accents(string):
-  return str(unicodedata.normalize('NFD', string).encode('ascii', 'ignore').decode('utf-8'))
 
 def sanitize_name(name):
   if (dirty_prefix_pos := name.find('-')) != -1 and dirty_prefix_pos < 4:

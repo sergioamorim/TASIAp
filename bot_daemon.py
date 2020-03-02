@@ -3,6 +3,7 @@
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton, ParseMode
+from telegram.constants import MAX_MESSAGE_LENGTH
 import logging
 import re
 import subprocess
@@ -15,7 +16,7 @@ from mysql_common import get_mysql_session, user_exists
 from telnetlib import Telnet
 import telnet_config
 from telnet_common import connect_su
-from string_common import is_onu_id_valid, is_vlan_id_valid, is_serial_valid, is_int, get_onu_id_from_repr
+from string_common import is_onu_id_valid, is_vlan_id_valid, is_serial_valid, is_int, get_onu_id_from_repr, remove_accents, sanitize_dumb
 from onu_id_from_serial import find_onu_by_serial
 from user_from_onu import find_user_by_onu
 from find_next_onu_connection import find_onu_connection
@@ -51,13 +52,13 @@ def create_keyboard_markup_auth(onu_serials_list):
   keyboard_markup = InlineKeyboardMarkup(keyboard)
   return keyboard_markup
 
-def format_clients_message(result):
+def format_clients_message(name, result):
   message = ''
   for client in result['direct']:
-    message = message+'Nome: {0}\nEndereço: {1}, {2}\nUsuario: {3}\n'.format(client['nome'], client['endereco'], client['numero'], client['user'])
+    message = message+'Nome: <u>{0}</u>\nEndereço: {1}, {2}\n<b>Usuário:</b> <code>{3}</code>\n'.format(client['nome'], client['endereco'], client['numero'], client['user'])
   message = message+'\n'
   for client in result['related']:
-    message = message+'Nome: {0}\nEndereço: {1}, {2}\n'.format(client['nome'], client['endereco'], client['numero'])
+    message = message+'Nome: <u>{0}</u>\nEndereço: {1}, {2}\n'.format(client['nome'], client['endereco'], client['numero'])
     name = remove_accents(name.lower())
     if name in client['complemento'].lower():
       message = message+'Complemento: {0}\n'.format(sanitize_dumb(client['complemento']))
@@ -65,8 +66,12 @@ def format_clients_message(result):
       message = message+'Referencia: {0}\n'.format(sanitize_dumb(client['referencia']))
     if name in client['observacao'].lower():
       message = message+'Observacao: {0}\n'.format(sanitize_dumb(client['observacao']))
-    message = message+'Usuario: {0}\n'.format(client['user'])
-  return message
+    message = message+'<b>Usuário:</b> <code>{0}</code>\n'.format(client['user'])
+  if (message_len := len(message)) > 1:
+    if message_len > MAX_MESSAGE_LENGTH:
+      message = message[:MAX_MESSAGE_LENGTH-18]+'\n\n<b>CROPED!</b>'
+    return message
+  return 'Nenhum cliente encontrado com o termo informado.'
 
 def get_signal(onu_id):
   with Telnet(telnet_config.ip, telnet_config.port) as tn:
@@ -261,7 +266,8 @@ def procurar(update, context):
     if not len(context.args):
       update.message.reply_text('Envie "/procurar maria" para receber a lista de clientes que contenham maria no nome, endereço, login ou observações.', quote=True)
     else:
-      update.message.reply_text(format_clients_message(find_username_by_name(' '.join(context.args))))
+      name = ' '.join(context.args)
+      update.message.reply_text(format_clients_message(name, find_username_by_name(name)), parse_mode=ParseMode.HTML, quote=True)
   else:
     update.message.reply_text('Você não tem permissão para acessar o menu /procurar.', quote=True)
 

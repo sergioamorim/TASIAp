@@ -20,6 +20,7 @@ from onu_id_from_serial import find_onu_by_serial
 from user_from_onu import find_user_by_onu
 from find_next_onu_connection import find_onu_connection
 from threading import Thread
+from username_by_name import find_username_by_name
 
 logger = logging.getLogger('bot_daemon')
 logger.setLevel(logging.DEBUG)
@@ -49,6 +50,23 @@ def create_keyboard_markup_auth(onu_serials_list):
   keyboard.append([InlineKeyboardButton(text='Cancelar', callback_data="<a=aa>")])
   keyboard_markup = InlineKeyboardMarkup(keyboard)
   return keyboard_markup
+
+def format_clients_message(result):
+  message = ''
+  for client in result['direct']:
+    message = message+'Nome: {0}\nEndereço: {1}, {2}\nUsuario: {3}\n'.format(client['nome'], client['endereco'], client['numero'], client['user'])
+  message = message+'\n'
+  for client in result['related']:
+    message = message+'Nome: {0}\nEndereço: {1}, {2}\n'.format(client['nome'], client['endereco'], client['numero'])
+    name = remove_accents(name.lower())
+    if name in client['complemento'].lower():
+      message = message+'Complemento: {0}\n'.format(sanitize_dumb(client['complemento']))
+    if name in client['referencia'].lower():
+      message = message+'Referencia: {0}\n'.format(sanitize_dumb(client['referencia']))
+    if name in client['observacao'].lower():
+      message = message+'Observacao: {0}\n'.format(sanitize_dumb(client['observacao']))
+    message = message+'Usuario: {0}\n'.format(client['user'])
+  return message
 
 def get_signal(onu_id):
   with Telnet(telnet_config.ip, telnet_config.port) as tn:
@@ -236,6 +254,16 @@ def authorize(update, context):
       update.message.reply_text('Para autorizar uma ONU envie /authorize.', quote=True)
   else:
     update.message.reply_text('Você não tem permissão para acessar o menu /authorize.', quote=True)
+
+def procurar(update, context):
+  logger.debug('procurar handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
+  if is_user_authorized(update.message.from_user.id):
+    if not len(context.args):
+      update.message.reply_text('Envie "/procurar maria" para receber a lista de clientes que contenham maria no nome, endereço, login ou observações.', quote=True)
+    else:
+      update.message.reply_text(format_clients_message(find_username_by_name(' '.join(context.args))))
+  else:
+    update.message.reply_text('Você não tem permissão para acessar o menu /procurar.', quote=True)
 
 def usuario(update, context):
   logger.debug('usuario handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name, ' {0}'.format(update.message.from_user.last_name) if update.message.from_user.last_name else '', ' - @{0} '.format(update.message.from_user.username) if update.message.from_user.username else '', update.message.from_user.id, update.message.text))
@@ -463,6 +491,7 @@ def main():
   updater.dispatcher.add_handler(CommandHandler("authorize", authorize))
   updater.dispatcher.add_handler(CommandHandler("sinal", sinal))
   updater.dispatcher.add_handler(CommandHandler("reiniciar", reiniciar))
+  updater.dispatcher.add_handler(CommandHandler("procurar", procurar))
   updater.dispatcher.add_handler(CommandHandler("usuario", usuario))
   updater.dispatcher.add_handler(CommandHandler("onuid", onuid))
   updater.dispatcher.add_handler(CommandHandler("cto", cto))

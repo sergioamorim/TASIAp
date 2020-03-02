@@ -12,6 +12,7 @@ permissions = {
   'sinal': [1234567],
   'reiniciar': [89012345],
   'onuid': [1234567],
+  'procurar': [1234567],
   'usuario': [1234567],
   'link': [1234567],
   'cto': [1234567],

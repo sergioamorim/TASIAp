@@ -8,7 +8,7 @@ import logging
 import telnet_config
 import re
 from string_common import is_int, is_vlan_id_valid
-from telnet_common import str_to_telnet, connect_su, get_next_value
+from telnet_common import str_to_telnet, connect_su
 
 logger = logging.getLogger('authorize_onu')
 logger.setLevel(logging.DEBUG)
@@ -49,6 +49,12 @@ class Board:
     self.board_id = board_id
   def __repr__(self):
     return "<Board(board_id='{0}')>".format(self.board_id)
+
+def get_next_value(tn):
+  value = tn.read_until(b' ', timeout=10)
+  while ' '.encode('ascii') in value[:-1] or ' '.encode('ascii') is value or '\n'.encode('ascii') in value[:-1]:
+    value = tn.read_until(b' ', timeout=10)
+  return value[:-1].decode('utf-8')
 
 def connect_gpononu(tn):
   connect_su(tn)

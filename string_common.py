@@ -2,6 +2,7 @@
 # coding=utf-8
 
 import re
+import unicodedata
 
 def is_onu_id_valid(onu_id):
   return is_int(onu_id) and int(onu_id) > 1100 and int(onu_id) < 3900 and int(onu_id[2:]) > 0 and int(onu_id[1:2]) > 0 and int(onu_id[1:2]) < 9
@@ -14,6 +15,9 @@ def is_serial_valid(serial):
 
 def remove_accents(string):
   return str(unicodedata.normalize('NFD', string).encode('ascii', 'ignore').decode('utf-8'))
+
+def sanitize_dumb(string):
+  return string.replace(',',', ').replace('//','').replace(' /',', ').replace('\t','').replace(' ,',',').replace(' / ',', ').replace('  ',' ')
 
 def is_int(s):
   try:

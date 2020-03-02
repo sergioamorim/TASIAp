@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 import mysqldb_config
 import unicodedata
-from string_common import remove_accents
+from string_common import remove_accents, sanitize_dumb
 
 logger = logging.getLogger('username_by_name')
 logger.setLevel(logging.INFO)
@@ -28,9 +28,6 @@ def sanitize_name(name):
   if name[0] == ' ':
     name = name[1:]
   return remove_accents(name).upper()
-
-def sanitize_dumb(string):
-  return string.replace(',',', ').replace('//','').replace(' /',', ').replace('\t','').replace(' ,',',').replace(' / ',', ').replace('  ',' ')
 
 def make_dict(clients):
   clients_dict = []

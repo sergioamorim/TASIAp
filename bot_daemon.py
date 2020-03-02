@@ -55,21 +55,43 @@ def create_keyboard_markup_auth(onu_serials_list):
 def format_clients_message(name, result):
   message = ''
   for client in result['direct']:
-    message = message+'Nome: <u>{0}</u>\nEndereço: {1}, {2}\n<b>Usuário:</b> <code>{3}</code>\n'.format(client['nome'], client['endereco'], client['numero'], client['user'])
+    message_addition = 'Nome: <u>{0}</u>\nEndereço: {1}, {2}\n<b>Usuário:</b> <code>{3}</code>\n'.format(client['nome'], client['endereco'], client['numero'], client['user'])
+    if len(message)+len(message_addition) < MAX_MESSAGE_LENGTH-18:
+      message = message+message_addition
+    else:
+      return message+'\n\n<b>CROPED!</b>'
   message = message+'\n'
   for client in result['related']:
-    message = message+'Nome: <u>{0}</u>\nEndereço: {1}, {2}\n'.format(client['nome'], client['endereco'], client['numero'])
+    message_addition = 'Nome: <u>{0}</u>\nEndereço: {1}, {2}\n'.format(client['nome'], client['endereco'], client['numero'])
+    if len(message)+len(message_addition) < MAX_MESSAGE_LENGTH-18:
+      message = message+message_addition
+    else:
+      return message+'\n\n<b>CROPED!</b>'
     name = remove_accents(name.lower())
     if name in client['complemento'].lower():
-      message = message+'Complemento: {0}\n'.format(sanitize_dumb(client['complemento']))
+      message_addition = 'Complemento: {0}\n'.format(sanitize_dumb(client['complemento']))
+      if len(message)+len(message_addition) < MAX_MESSAGE_LENGTH-18:
+        message = message+message_addition
+      else:
+        return message+'\n\n<b>CROPED!</b>'
     if name in client['referencia'].lower():
-      message = message+'Referencia: {0}\n'.format(sanitize_dumb(client['referencia']))
+      message_addition = 'Referencia: {0}\n'.format(sanitize_dumb(client['referencia']))
+      if len(message)+len(message_addition) < MAX_MESSAGE_LENGTH-18:
+        message = message+message_addition
+      else:
+        return message+'\n\n<b>CROPED!</b>'
     if name in client['observacao'].lower():
-      message = message+'Observacao: {0}\n'.format(sanitize_dumb(client['observacao']))
-    message = message+'<b>Usuário:</b> <code>{0}</code>\n'.format(client['user'])
+      message_addition = 'Observacao: {0}\n'.format(sanitize_dumb(client['observacao']))
+      if len(message)+len(message_addition) < MAX_MESSAGE_LENGTH-18:
+        message = message+message_addition
+      else:
+        return message+'\n\n<b>CROPED!</b>'
+    message_addition = '<b>Usuário:</b> <code>{0}</code>\n'.format(client['user'])
+    if len(message)+len(message_addition) < MAX_MESSAGE_LENGTH-18:
+      message = message+message_addition
+    else:
+      return message+'\n\n<b>CROPED!</b>'
   if (message_len := len(message)) > 1:
-    if message_len > MAX_MESSAGE_LENGTH:
-      message = message[:MAX_MESSAGE_LENGTH-18]+'\n\n<b>CROPED!</b>'
     return message
   return 'Nenhum cliente encontrado com o termo informado.'
 

@@ -30,3 +30,4 @@ mk_link = {
     'both-links': 'bothlinksrsc'
   }
 }
+sqlite_db_path = '/path/to/bot.db'

@@ -3,3 +3,4 @@ screenlog.*
 __pycache__
 logs
 .vscode
+*.db

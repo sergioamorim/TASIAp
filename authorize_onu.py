@@ -86,7 +86,7 @@ def get_new_onu_number(tn, onu_quantity, pon):
   for i in range(0,onu_quantity):
     tn.read_until(str(pon.board.board_id).encode('ascii'), timeout=10)
     tn.read_until(str(pon.pon_id).encode('ascii'), timeout=10)
-    current_onu_number = int(get_next_value(tn, ' '))
+    current_onu_number = int(get_next_value(tn))
     if current_onu_number == last_authorized_onu_number + 1:
       last_authorized_onu_number = current_onu_number
     else:
@@ -128,9 +128,9 @@ def main():
     end_of_pon_list = False
     while not end_of_pon_list:
       tn.read_until(b' ONU Unauth Table ,SLOT=', timeout=10)
-      board_id = int(get_next_value(tn, ' '))
+      board_id = int(get_next_value(tn))
       tn.read_until(b'PON=', timeout=10)
-      pon_id = int(get_next_value(tn, ' '))
+      pon_id = int(get_next_value(tn))
       tn.read_until(b',ITEM=', timeout=10)
       unauthorized_onu_quantity = int(tn.read_until(b'-', timeout=10)[:-1])
       tn.read_until(b'----', timeout=10)
@@ -140,10 +140,10 @@ def main():
         pon_list.append(pon)
         tn.read_until(b'  --------------------------', timeout=10)
         for i in range(0,unauthorized_onu_quantity):
-          onu_type = get_next_value(tn, ' ').lower()
+          onu_type = get_next_value(tn).lower()
           if 'an' in onu_type[:2]:
             onu_type = onu_type[2:]
-          phy_id = get_next_value(tn, ' ')
+          phy_id = get_next_value(tn)
           onu_list.append(OnuDevice(phy_id,pon,onu_type))
           tn.read_until(b',', timeout=10)
       if '----- '.encode('ascii') in tn.read_until(b'----- ', timeout=1):
@@ -156,7 +156,7 @@ def main():
       connect_gpononu(tn)
       tn.write(str_to_telnet('show authorization slot '+str(pon.board.board_id)+' link '+str(pon.pon_id)))
       tn.read_until(b'ITEM=', timeout=10)
-      onu_quantity = int(get_next_value(tn, ' '))
+      onu_quantity = int(get_next_value(tn))
       tn.read_until(b' --------------------', timeout=10)
       last_authorized_onu_number = get_new_onu_number(tn, onu_quantity, pon)
       pon.last_authorized_onu_number = last_authorized_onu_number

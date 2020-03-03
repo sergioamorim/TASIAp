@@ -52,17 +52,29 @@ def create_keyboard_markup_auth(onu_serials_list):
   keyboard_markup = InlineKeyboardMarkup(keyboard)
   return keyboard_markup
 
+def get_enable_emoji(enable):
+  return '✅' if enable else '❌'
+
+def get_status_emoji(status):
+  if status == 1:
+    return '🔹'
+  if status == 2:
+    return '💲'
+  if status == 0:
+    return '🚫'
+  return '🔴'
+
 def format_clients_message(name, result):
   message = ''
   for client in result['direct']:
-    message_addition = 'Nome: <u>{0}</u>\nEndereço: {1}, {2}\n<b>Usuário:</b> <code>{3}</code>\n'.format(client['nome'], client['endereco'], client['numero'], client['user'])
+    message_addition = '{0} Nome: <u>{1}</u>\nEndereço: {2}, {3}\nPlano: {4}\n{5} <b>Usuário:</b> <code>{6}</code>\n'.format(get_status_emoji(client['status']), client['nome'], client['endereco'], client['numero'], client['groupname'], get_enable_emoji(client['enable']), client['user'])
     if len(message)+len(message_addition) < MAX_MESSAGE_LENGTH-18:
       message = message+message_addition
     else:
       return message+'\n\n<b>CROPED!</b>'
   message = message+'\n'
   for client in result['related']:
-    message_addition = 'Nome: <u>{0}</u>\nEndereço: {1}, {2}\n'.format(client['nome'], client['endereco'], client['numero'])
+    message_addition = '{0} Nome: <u>{1}</u>\nEndereço: {2}, {3}\n'.format(get_status_emoji(client['status']), client['nome'], client['endereco'], client['numero'])
     if len(message)+len(message_addition) < MAX_MESSAGE_LENGTH-18:
       message = message+message_addition
     else:
@@ -86,7 +98,7 @@ def format_clients_message(name, result):
         message = message+message_addition
       else:
         return message+'\n\n<b>CROPED!</b>'
-    message_addition = '<b>Usuário:</b> <code>{0}</code>\n'.format(client['user'])
+    message_addition = 'Plano: {0}\n{1} <b>Usuário:</b> <code>{2}</code>\n'.format(client['groupname'], get_enable_emoji(client['enable']), client['user'])
     if len(message)+len(message_addition) < MAX_MESSAGE_LENGTH-18:
       message = message+message_addition
     else:

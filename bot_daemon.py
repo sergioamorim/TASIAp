@@ -22,6 +22,7 @@ from user_from_onu import find_user_by_onu
 from find_next_onu_connection import find_onu_connection
 from threading import Thread
 from username_by_name import find_username_by_name
+from sqlite_common import update_onu_info
 
 logger = logging.getLogger('bot_daemon')
 logger.setLevel(logging.DEBUG)
@@ -141,6 +142,7 @@ def signal_job_caller(context, update, onu_id):
 def find_onu_connection_trigger(bot, update, onu_id):
   message = get_message_from_update(update)
   if (connection_info := find_onu_connection(onu_id)):
+    update_onu_info(int(onu_id), username=connection_info['username'])
     message_text = 'Roteador conectado na ONU ID {0}.\nUsuário: {1}\nSenha: {2}\nStatus da conexão: {3}'.format(onu_id, connection_info['username'], connection_info['password'], connection_info['diagnostic'])
   else:
     message_text = 'Nenhum roteador foi conectado na ONU ID {0}.'.format(onu_id)
@@ -462,6 +464,7 @@ def button(update, context):
     if 'OnuDevice' in answer_string:
       serial = re.findall("([0-9A-Z]{4}[0-9A-Fa-f]{8})", answer_string)[0]
       onu_id = get_onu_id_from_repr(answer_string)
+      update_onu_info(int(onu_id), serial=serial)
       callback_data = '<a=c><s={0}><i={1}>'.format(serial, onu_id)
       keyboard = [[
         InlineKeyboardButton(text='CTO', callback_data='{0}{1}'.format(callback_data, '<c=ct>')),

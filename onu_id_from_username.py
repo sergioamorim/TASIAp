@@ -11,7 +11,7 @@ import telnet_config
 from telnet_common import connect_su, str_to_telnet, get_next_value
 from string_common import sanitize_cto_vlan_name, is_int, is_onu_id_valid, format_datetime, format_onu_state
 from mysql_common import get_mysql_session, reauthorize_user
-from sqlite_common import find_onu_info
+from sqlite_common import find_onu_info, update_onu_info
 from onu_id_from_serial import find_onu_by_serial
 from user_from_onu import find_user_by_onu
 
@@ -76,8 +76,9 @@ def format_pon_name(vlan_name):
 
 def check_connection_by_onu_id_same_serial(onu_info, onu_state):
   if (user_from_onu_id := find_user_by_onu(str(onu_info['onu_id']))):
+    update_onu_info(onu_info['onu_id'], username=user_from_onu_id)
     return 'Informação pode estar incorreta pois o usuário {0} está conectado através da ONU ID {1} com serial {2} e a ONU está {3}.'.format(user_from_onu_id, onu_info['onu_id'], onu_info['serial'], format_onu_state(onu_state))
-  return 'Nenhum usuário foi encontrado conectado à ONU ID {0}, o serial dessa ONU continua sendo o mesmo ({1}) e ela está {2}.'.format(onu_info['onu_id'], onu_info['serial'], format_onu_state(onu_state))
+  return 'Nenhum usuário foi encontrado conectado à ONU ID {0}, o serial continua sendo o mesmo ({1}) e ela está {2}.'.format(onu_info['onu_id'], onu_info['serial'], format_onu_state(onu_state))
 
 def diagnose_onu_not_found(pon, query_result, cto_name, onu_id, onu_info):
   diagnostic_addition = ''
@@ -85,22 +86,27 @@ def diagnose_onu_not_found(pon, query_result, cto_name, onu_id, onu_info):
     return '\nUsuário está desconectado. Última conexão através da ONU da {0}.\nPossíveis problemas:\n- roteador desligado, travado ou desconectado da ONU;\n- ONU travada, sem sinal ou desligada. Verifique o sinal da ONU com o comando "/sinal {1}".'.format(cto_name, onu_id)
   elif pon:
     if onu_info:
-      if (onu_id_from_serial := find_onu_by_serial(onu_info['serial'])):
-        if onu_id_from_serial['onuid'] == str(onu_info['onu_id']):
-          diagnostic_second_addition = check_connection_by_onu_id_same_serial(onu_info, onu_id_from_serial['state'])
+      checked_id = False
+      if (onu_id_by_serial := find_onu_by_serial(onu_info['serial'])):
+        if onu_id_by_serial['onuid'] == str(onu_info['onu_id']):
+          diagnostic_second_addition = check_connection_by_onu_id_same_serial(onu_info, onu_id_by_serial['state'])
+          checked_id = True
         else:
-          if (user_from_onu_id := find_user_by_onu(onu_id_from_serial['onuid'])):
-            diagnostic_fourth_addition = 'O usuário {0} está conectado na ONU ID {1} de serial {2}.'.format(user_from_onu_id, onu_id_from_serial['onuid'], onu_info['serial'])
+          if (user_from_onu_id := find_user_by_onu(onu_id_by_serial['onuid'])):
+            update_onu_info(int(onu_id_by_serial['onuid']), serial=onu_info['serial'], username=user_from_onu_id)
+            diagnostic_fourth_addition = 'O usuário {0} está conectado na ONU ID {1} de serial {2}.'.format(user_from_onu_id, onu_id_by_serial['onuid'], onu_info['serial'])
           else:
-            diagnostic_fourth_addition = 'Nenhum usuário foi encontrado conectado através da ONU ID {0} (serial {1}).'.format(onu_id_from_serial['onuid'], onu_info['serial'])
-          diagnostic_second_addition = 'A ONU de serial {0} agora está com o ID {1} e está {2}.\n{3}'.format(onu_info['serial'], onu_id_from_serial['onuid'], format_onu_state(onu_id_from_serial['state']), diagnostic_fourth_addition)
+            diagnostic_fourth_addition = 'Nenhum usuário foi encontrado conectado através da ONU ID {0} (serial {1}).'.format(onu_id_by_serial['onuid'], onu_info['serial'])
+          diagnostic_second_addition = 'A ONU de serial {0} agora está com o ID {1} e está {2}.\n{3}'.format(onu_info['serial'], onu_id_by_serial['onuid'], format_onu_state(onu_id_by_serial['state']), diagnostic_fourth_addition)
       else:
         diagnostic_second_addition = 'A ONU de serial {0} não está autorizada.'
-      if (user_from_onu_id := find_user_by_onu(str(onu_info['onu_id']))):
-        diagnostic_third_addition = 'Informação pode estar incorreta pois o usuário {0} está conectado através da ONU ID {1}.'.format(user_from_onu_id, onu_info['onu_id'])
-      else:
-        diagnostic_third_addition = 'Nenhum usuário foi encontrado conectado através da ONU ID {0}.'.format(onu_info['onu_id'])
-      diagnostic_addition = '\nONU utilizada anteriormente (informação de {0}):\n - Serial: {1}\n - ONU ID: {2}\n{3}\n{4}'.format(format_datetime(onu_info['last_update']), onu_info['serial'], onu_info['onu_id'], diagnostic_second_addition, diagnostic_third_addition)
+      diagnostic_addition = '\nONU utilizada anteriormente (informação de {0}):\n - Serial: {1}\n - ONU ID: {2}\n{3}'.format(format_datetime(onu_info['last_update']), onu_info['serial'], onu_info['onu_id'], diagnostic_second_addition)
+      if not checked_id:
+        if (user_from_onu_id := find_user_by_onu(str(onu_info['onu_id']))):
+          update_onu_info(onu_info['onu_id'], username=user_from_onu_id)
+          diagnostic_addition = diagnostic_addition+'\nInformação pode estar incorreta pois o usuário {0} está conectado através da ONU ID {1}.'.format(user_from_onu_id, onu_info['onu_id'])
+        else:
+          diagnostic_addition = diagnostic_addition+'\nNenhum usuário foi encontrado conectado através da ONU ID {0}.'.format(onu_info['onu_id'])
     board_number = '12' if query_result['CalledStationId'][1:2] == '1' else '14'
     return 'Usuário está desconectado. Última conexão através de FIBRA na Placa {0} PON {1}.\nPossíveis problemas:\n- roteador desligado ou desconectado da ONU;\n- ONU travada, sem sinal ou desligada.{2}'.format(board_number, query_result['CalledStationId'][2:3], diagnostic_addition)
   else:
@@ -126,33 +132,32 @@ def diagnose_login(session, query_result, username):
     return '\nErro. Login não encontrado. Verifique o usuário e senha no roteador.'
   return '\nErro. Conexão do usuário não encontrada. Reinicie o roteador.'
 
+def get_onu_from_connection(session, query_result, username, do_diagnose_login=False):
+  pon = format_pon_name(query_result['CalledStationId'])
+  cto_name = sanitize_cto_vlan_name(query_result['CalledStationId'])
+  if (onu_id := get_onu_id_by_mac(query_result['CallingStationId'], pon)):
+    if not cto_name:
+      update_onu_info(int(onu_id), username=username)
+    if do_diagnose_login:
+      diagnostic = diagnose_login(session, query_result, username)
+  else:
+    if cto_name:
+      onu_id = query_result['CalledStationId'][1:5]
+    elif (onu_info := find_onu_info(username=username)):
+      onu_id = str(onu_info['onu_id'])
+    diagnostic = diagnose_onu_not_found(pon, query_result, cto_name, onu_id, onu_info)
+  session.close()
+  return {'onu_id': onu_id, 'cto_name': cto_name, 'diagnostic': diagnostic}
+
 def find_onu_by_user(username):
-  onu_id = cto_name = diagnostic = onu_info = ''
   session = get_mysql_session()
   query_acct = "SELECT CallingStationId, CalledStationId FROM {0} WHERE UserName = :username ORDER BY AcctStartTime DESC LIMIT 1;".format(mysqldb_config.radius_acct_table)
   query_postauth = "SELECT sucess, pass, CallingStationId, CalledStationId FROM {0} WHERE user = :username ORDER BY date DESC LIMIT 1;".format(mysqldb_config.radius_postauth_table)
   if (query_result := session.execute(query_acct, {'username': username}).first()):
-    pon = format_pon_name(query_result['CalledStationId'])
-    cto_name = sanitize_cto_vlan_name(query_result['CalledStationId'])
-    if not (onu_id := get_onu_id_by_mac(query_result['CallingStationId'], pon)):
-      if is_onu_id_valid(query_result['CalledStationId'][1:5]):
-        onu_id = query_result['CalledStationId'][1:5]
-      elif (onu_info := find_onu_info(username=username)):
-        onu_id = str(onu_info['onu_id'])
-      diagnostic = diagnose_onu_not_found(pon, query_result, cto_name, onu_id, onu_info)
+    return get_onu_from_connection(session, query_result, username)
   elif (query_result := session.execute(query_postauth, {'username': username}).first()):
-    pon = format_pon_name(query_result['CalledStationId'])
-    cto_name = sanitize_cto_vlan_name(query_result['CalledStationId'])
-    if (onu_id := get_onu_id_by_mac(query_result['CallingStationId'], pon)):
-      diagnostic = diagnose_login(session, query_result, username)
-    else:
-      if is_onu_id_valid(query_result['CalledStationId'][1:5]):
-        onu_id = query_result['CalledStationId'][1:5]
-      elif (onu_info := find_onu_info(username=username)):
-        onu_id = str(onu_info['onu_id'])
-      diagnostic = diagnose_onu_not_found(pon, query_result, cto_name, onu_id, onu_info)
-  session.close()
-  return {'onu_id': onu_id, 'cto_name': cto_name, 'diagnostic': diagnostic}
+    return get_onu_from_connection(session, query_result, username, do_diagnose_login=True)
+  return {'onu_id': '', 'cto_name': '', 'diagnostic': ''}
 
 def main():
   parser = argparse.ArgumentParser()

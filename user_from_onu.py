@@ -9,6 +9,7 @@ import mysqldb_config
 from mysql_common import get_mysql_session
 from telnet_common import connect_su, get_next_value, str_to_telnet
 from string_common import is_int, sanitize_cto_vlan_name, is_onu_id_valid
+from sqlite_common import update_onu_info
 
 logger = logging.getLogger('user_from_onu')
 logger.setLevel(logging.INFO)
@@ -148,6 +149,8 @@ def find_user_by_onu(onu_id):
       if (username := session.execute(sql_query_string, {'mac': mac}).scalar()):
         username_list.append(username)
     if username_list:
+      if len(username_list) == 1:
+        update_onu_info(int(onu_id), username=username_list[0])
       session.close()
       return ' '.join(username_list)
   elif 'ERR' in mac_list:

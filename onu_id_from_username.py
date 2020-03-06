@@ -132,6 +132,7 @@ def diagnose_login(session, query_result, username):
   return '\nErro. Conexão do usuário não encontrada. Reinicie o roteador.'
 
 def get_onu_from_connection(session, query_result, username, do_diagnose_login=False):
+  diagnostic = ''
   pon = format_pon_name(query_result['CalledStationId'])
   cto_name = sanitize_cto_vlan_name(query_result['CalledStationId'])
   if (onu_id := get_onu_id_by_mac(query_result['CallingStationId'], pon)):

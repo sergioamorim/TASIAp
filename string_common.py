@@ -44,3 +44,9 @@ def sanitize_cto_vlan_name(cto_vlan_name):
     cto_sanitized_name = 'CTO {0} {1}{2}'.format(onu_id, vlan, cto_actual_name)
     return cto_sanitized_name
   return ''
+
+def format_datetime(datetime_object):
+  return datetime_object.strftime('%d/%m/%Y %H:%M:%S')
+
+def format_onu_state(onu_state):
+  return 'online' if onu_id_from_serial['state'] == 'up' else 'offline'

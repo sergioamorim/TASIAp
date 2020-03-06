@@ -46,7 +46,8 @@ def get_sqlite_session():
   Session = sessionmaker(bind=engine)
   return Session()
 
-def update_onu_info(session, onu_id, serial=None, username=None):
+def update_onu_info(onu_id, serial=None, username=None):
+  session = get_sqlite_session()
   if not (onu_device := session.query(OnuDevice).filter(OnuDevice.onu_id.is_(onu_id)).first()):
     onu_device = OnuDevice(onu_id, serial=serial, username=username)
   else:
@@ -56,56 +57,26 @@ def update_onu_info(session, onu_id, serial=None, username=None):
       onu_device.set_username(username)
   session.add(onu_device)
   session.commit()
+  session.close()
 
-def find_onu_info(session, onu_id=None, serial=None, username=None):
-  onu_info = {'found': False, 'onu_id': None, 'serial': None, 'username': None, 'last_update': None}
+def find_onu_info(onu_id=None, serial=None, username=None):
+  session = get_sqlite_session()
   if onu_id:
     if (onu_device := session.query(OnuDevice).filter(OnuDevice.onu_id.is_(onu_id)).first()):
-      onu_info['found'] = True
-      onu_info['onu_id'] = onu_id
-      onu_info['serial'] = onu_device.serial
-      onu_info['username'] = onu_device.username
-      onu_info['last_update'] = str(onu_device.last_update)
+      return {'onu_id': onu_id, 'serial': onu_device.serial, 'username': onu_device.username, 'last_update': onu_device.last_update}
   elif serial:
-    if (onu_device := session.query(OnuDevice).filter(OnuDevice.serial.is_(serial)).first()):
-      onu_info['found'] = True
-      onu_info['onu_id'] = onu_device.onu_id
-      onu_info['serial'] = serial
-      onu_info['username'] = onu_device.username
-      onu_info['last_update'] = str(onu_device.last_update)
+    if (onu_device := session.query(OnuDevice).filter(OnuDevice.serial.is_(serial)).order_by(OnuDevice.last_update.desc()).first()):
+      return {'onu_id': onu_device.onu_id, 'serial': serial, 'username': onu_device.username, 'last_update': onu_device.last_update}
   elif username:
-    if (onu_device := session.query(OnuDevice).filter(OnuDevice.username.is_(username)).first()):
-      onu_info['found'] = True
-      onu_info['onu_id'] = onu_device.onu_id
-      onu_info['serial'] = onu_device.serial
-      onu_info['username'] = username
-      onu_info['last_update'] = str(onu_device.last_update)
-  return onu_info
+    if (onu_device := session.query(OnuDevice).filter(OnuDevice.username.is_(username)).order_by(OnuDevice.last_update.desc()).first()):
+      return {'onu_id': onu_device.onu_id, 'serial': onu_device.serial, 'username': username, 'last_update': onu_device.last_update}
+  session.close()
+  return None
 
-def print_all_onu_devices(session):
+def print_all_onu_devices():
+  session = get_sqlite_session()
   onu_devices = session.query(OnuDevice).all()
   print('List of OnuDevices:')
   for onu_device in onu_devices:
     print(repr(onu_device))
-
-def main():
-  logger.info('Executing main function...')
-
-  session = get_sqlite_session()
-  logger.info('SQLite session created.')
-
-  update_onu_info(session, 1324, username='saugusto')
-  logger.info('OnuDevice created.')
-
-  logger.info('find_onu_info: username: saugusto\n{0}'.format(find_onu_info(session, username='saugusto')))
-  logger.info('find_onu_info: onu_id: 1324\n{0}'.format(find_onu_info(session, onu_id=1324)))
-
-  print_all_onu_devices(session)
-
   session.close()
-  logger.info('Done.')
-
-  return 0
-
-if __name__ == '__main__':
-  main()

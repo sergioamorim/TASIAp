@@ -37,6 +37,23 @@ def is_cto_id(session, onu_id):
     return sanitize_cto_vlan_name(cto_vlan_name)
   return None
 
+def is_offline_cto_id(session, onu_id):
+  sql_query_string = "SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%' ORDER BY AcctStopTime DESC LIMIT 1;".format(mysqldb_config.radius_acct_table, onu_id)
+  if (cto_vlan_name := session.execute(sql_query_string).scalar()):
+    return '{0} (offline)'.format(sanitize_cto_vlan_name(cto_vlan_name))
+  if onu_id[:1] == '1':
+    board = '12'
+  else:
+    board = '14'
+  pon = onu_id[1:2]
+  onu_number = onu_id[2:]
+  cto_like_name = 'P{0}-PON{1}-ONU{2}'.format(board, pon, onu_number)
+  sql_query_string = "SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%' ORDER BY AcctStopTime DESC LIMIT 1;".format(
+    mysqldb_config.radius_acct_table, cto_like_name)
+  if (cto_vlan_name := session.execute(sql_query_string).scalar()):
+    return '{0} (offline)'.format(sanitize_cto_vlan_name(cto_vlan_name))
+  return None
+
 def get_mac_list_from_onu_id(onu_id):
   with Telnet(telnet_config.ip, telnet_config.port) as tn:
     connect_su(tn)
@@ -136,6 +153,9 @@ def find_user_by_onu(onu_id):
   elif 'ERR' in mac_list:
     session.close()
     return 'ERR'
+  elif (cto := is_offline_cto_id(session, onu_id)):
+    session.close()
+    return cto
   session.close()
   return None
 

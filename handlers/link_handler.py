@@ -1,7 +1,14 @@
 import subprocess
 
-from bot_daemon import logger, is_user_authorized, create_link_changing_command_list
+import bot_config
+from bot_daemon import logger, is_user_authorized
 from logger import log_update
+
+
+def create_link_changing_command_list(link_name):
+  return ['ssh', '-p', '{0}'.format(bot_config.mk_link['ssh']['port']),
+          '{0}@{1}'.format(bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip']), '/system', 'script',
+          'run', '{0}'.format(bot_config.mk_link['script'][link_name])]
 
 
 def link(update, context):

@@ -2,10 +2,8 @@
 # coding=utf-8
 
 from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton
 import re
 import bot_config
-import inspect
 
 from handlers.authorize import authorize
 from handlers.autorizar import autorizar
@@ -35,27 +33,6 @@ from handlers.sinal import sinal
 
 def is_user_authorized(user_id):
   return True if user_id in bot_config.permissions[get_caller_name()] else False
-
-
-def create_link_changing_command_list(link_name):
-  return ['ssh', '-p', '{0}'.format(bot_config.mk_link['ssh']['port']),
-          '{0}@{1}'.format(bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip']), '/system', 'script',
-          'run', '{0}'.format(bot_config.mk_link['script'][link_name])]
-
-
-def create_keyboard_markup_auth(onu_serials_list):
-  keyboard = []
-  for onu_serial in onu_serials_list:
-    onu_serial_regex_list = re.findall('(.*)_(.*)_(.*)', onu_serial)
-    board = onu_serial_regex_list[0][0]
-    pon = onu_serial_regex_list[0][1]
-    serial = onu_serial_regex_list[0][2]
-    callback_data = "<a=ca><s={0}><b={1}><p={2}>".format(serial, board, pon)
-    keyboard.append([InlineKeyboardButton(text='Serial: {0} Placa: {1} PON: {2}'.format(serial, board, pon),
-                                          callback_data=callback_data)])
-  keyboard.append([InlineKeyboardButton(text='Cancelar', callback_data="<a=aa>")])
-  keyboard_markup = InlineKeyboardMarkup(keyboard)
-  return keyboard_markup
 
 
 def get_signal(onu_id):

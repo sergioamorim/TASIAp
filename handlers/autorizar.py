@@ -1,7 +1,24 @@
 import subprocess
 
-from bot_daemon import logger, is_user_authorized, create_keyboard_markup_auth
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+
+from bot_daemon import logger, is_user_authorized
 from logger import log_update
+
+
+def create_keyboard_markup_auth(onu_serials_list):
+  keyboard = []
+  for onu_serial in onu_serials_list:
+    onu_serial_regex_list = re.findall('(.*)_(.*)_(.*)', onu_serial)
+    board = onu_serial_regex_list[0][0]
+    pon = onu_serial_regex_list[0][1]
+    serial = onu_serial_regex_list[0][2]
+    callback_data = "<a=ca><s={0}><b={1}><p={2}>".format(serial, board, pon)
+    keyboard.append([InlineKeyboardButton(text='Serial: {0} Placa: {1} PON: {2}'.format(serial, board, pon),
+                                          callback_data=callback_data)])
+  keyboard.append([InlineKeyboardButton(text='Cancelar', callback_data="<a=aa>")])
+  keyboard_markup = InlineKeyboardMarkup(keyboard)
+  return keyboard_markup
 
 
 def autorizar(update, context):

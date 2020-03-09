@@ -26,7 +26,7 @@ from onu_signal_power import get_onu_power_signal_by_id
 from telnetlib import Telnet
 import telnet_config
 from telnet_common import connect_su
-from string_common import get_onu_id_from_repr
+from string_common import get_onu_id_from_repr, get_caller_name
 from find_next_onu_connection import find_onu_connection
 from threading import Thread
 from sqlite_common import update_onu_info
@@ -34,7 +34,7 @@ from handlers.sinal import sinal
 
 
 def is_user_authorized(user_id):
-  return True if user_id in bot_config.permissions[inspect.stack()[1].function] else False
+  return True if user_id in bot_config.permissions[get_caller_name()] else False
 
 
 def create_link_changing_command_list(link_name):

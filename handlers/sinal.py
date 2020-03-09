@@ -3,6 +3,7 @@
 
 import re
 from bot_daemon import is_user_authorized, get_signal, logger
+from logger import log_update
 from string_common import is_onu_id_valid
 from user_from_onu import is_cto_id
 from mysql_common import get_mysql_session, user_exists
@@ -11,13 +12,7 @@ from onu_id_from_username import find_onu_by_user
 
 
 def sinal(update, context):
-  logger.debug('sinal handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name,
-                                                                                 ' {0}'.format(
-                                                                                   update.message.from_user.last_name) if update.message.from_user.last_name else '',
-                                                                                 ' - @{0} '.format(
-                                                                                   update.message.from_user.username) if update.message.from_user.username else '',
-                                                                                 update.message.from_user.id,
-                                                                                 update.message.text))
+  log_update(update, logger)
   if is_user_authorized(update.message.from_user.id):
     if not len(context.args):
       update.message.reply_text('Envie "/sinal 1234" para verificar o sinal da ONU de ID 1234, "/sinal maria" para '

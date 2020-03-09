@@ -1,17 +1,12 @@
 import subprocess
 
 from bot_daemon import logger, is_user_authorized
+from logger import log_update
 from string_common import is_vlan_id_valid
 
 
 def cto(update, context):
-  logger.debug('cto handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name,
-                                                                               ' {0}'.format(
-                                                                                 update.message.from_user.last_name) if update.message.from_user.last_name else '',
-                                                                               ' - @{0} '.format(
-                                                                                 update.message.from_user.username) if update.message.from_user.username else '',
-                                                                               update.message.from_user.id,
-                                                                               update.message.text))
+  log_update(update, logger)
   if is_user_authorized(update.message.from_user.id):
     if not (args_len := len(context.args)):
       update.message.reply_text(

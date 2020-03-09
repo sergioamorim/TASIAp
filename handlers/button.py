@@ -5,18 +5,14 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 
 import bot_config
 from bot_daemon import logger, get_onu_info_string
+from logger import log_update
 from sqlite_common import update_onu_info
 from string_common import get_onu_id_from_repr
 
 
 def button(update, context):
+  log_update(update, logger)
   query = update.callback_query
-  logger.debug('button handler: query from {0}{1}{2}({3}) received: {4}'.format(query.message.chat.first_name,
-                                                                                ' {0}'.format(
-                                                                                  query.message.chat.last_name) if query.message.chat.last_name else '',
-                                                                                ' - @{0} '.format(
-                                                                                  query.message.chat.username) if query.message.chat.username else '',
-                                                                                query.message.chat.id, query.data))
   action = re.findall('<a=(.*?)>', query.data)[0]
   logger.debug('action: {0}'.format(action))
   if action == 'ca':
@@ -97,7 +93,7 @@ def button(update, context):
     elif answer_string == 'done':
       query.edit_message_text('Comando enviado com sucesso. A ONU será reiniciada em até 2 minutos.', quote=True)
     else:
-      query.edit_message_text('Resposta desconhecida: {1}'.format(answer_string), quote=True)
+      query.edit_message_text('Resposta desconhecida: {0}'.format(answer_string), quote=True)
   elif action == 'ar':
     query.edit_message_text('Reinicialização cancelada.', quote=True)
   elif action == 'v':

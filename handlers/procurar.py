@@ -1,17 +1,13 @@
 from telegram import ParseMode
 
-from bot_daemon import logger, is_user_authorized, format_clients_message
+from bot_daemon import logger, is_user_authorized
+from logger import log_update
+from string_common import format_clients_message
 from username_by_name import find_username_by_name
 
 
 def procurar(update, context):
-  logger.debug('procurar handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name,
-                                                                                    ' {0}'.format(
-                                                                                      update.message.from_user.last_name) if update.message.from_user.last_name else '',
-                                                                                    ' - @{0} '.format(
-                                                                                      update.message.from_user.username) if update.message.from_user.username else '',
-                                                                                    update.message.from_user.id,
-                                                                                    update.message.text))
+  log_update(update, logger)
   if is_user_authorized(update.message.from_user.id):
     if not len(context.args):
       update.message.reply_text(

@@ -1,18 +1,12 @@
 import subprocess
 
 from bot_daemon import logger, is_user_authorized, get_onu_info_string
+from logger import log_update
 from string_common import is_int, is_vlan_id_valid
 
 
 def authorize(update, context):
-  logger.debug(
-    'authorize handler: message from {0}{1}{2}({3}) received: {4}'.format(update.message.from_user.first_name,
-                                                                          ' {0}'.format(
-                                                                            update.message.from_user.last_name) if update.message.from_user.last_name else '',
-                                                                          ' - @{0} '.format(
-                                                                            update.message.from_user.username) if update.message.from_user.username else '',
-                                                                          update.message.from_user.id,
-                                                                          update.message.text))
+  log_update(update, logger)
   if is_user_authorized(update.message.from_user.id):
     if not (args_len := len(context.args)):
       answer_list = subprocess.run(['python3.8', 'authorize_onu.py'], capture_output=True).stdout.decode('utf-8').split(

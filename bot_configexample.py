@@ -31,3 +31,4 @@ mk_link = {
   }
 }
 sqlite_db_path = '/path/to/bot.db'
+logs_path = 'logs/'

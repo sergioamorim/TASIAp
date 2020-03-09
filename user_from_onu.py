@@ -2,28 +2,21 @@
 # coding=utf-8
 
 import argparse
-import logging
 from telnetlib import Telnet
 import telnet_config
 import mysqldb_config
+from logger import logger
 from mysql_common import get_mysql_session
 from telnet_common import connect_su, get_next_value, str_to_telnet
-from string_common import is_int, sanitize_cto_vlan_name, is_onu_id_valid
+from string_common import sanitize_cto_vlan_name, is_onu_id_valid
 from sqlite_common import update_onu_info
 
-logger = logging.getLogger('user_from_onu')
-logger.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-file_handler = logging.FileHandler('logs/user_from_onu.log')
-file_handler.setFormatter(formatter)
-stream_handler = logging.StreamHandler()
-stream_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
-logger.addHandler(stream_handler)
 
 def is_cto_id(session, onu_id):
-  sql_query_string = "SELECT DISTINCT CalledStationID FROM {0} WHERE AcctStopTime = '0000-00-00 00:00:00' AND CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT 1;".format(mysqldb_config.radius_acct_table, onu_id)
-  if (cto_vlan_name := session.execute(sql_query_string).scalar()):
+  sql_query_string = "SELECT DISTINCT CalledStationID FROM {0} WHERE AcctStopTime = '0000-00-00 00:00:00' AND " \
+                     "CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT 1;".format(
+                      mysqldb_config.radius_acct_table, onu_id)
+  if cto_vlan_name := session.execute(sql_query_string).scalar():
     return sanitize_cto_vlan_name(cto_vlan_name)
   if onu_id[:1] == '1':
     board = '12'
@@ -32,15 +25,18 @@ def is_cto_id(session, onu_id):
   pon = onu_id[1:2]
   onu_number = onu_id[2:]
   cto_like_name = 'P{0}-PON{1}-ONU{2}'.format(board, pon, onu_number)
-  sql_query_string = "SELECT DISTINCT CalledStationID FROM {0} WHERE AcctStopTime = '0000-00-00 00:00:00' AND CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT 1;".format(
-    mysqldb_config.radius_acct_table, cto_like_name)
-  if (cto_vlan_name := session.execute(sql_query_string).scalar()):
+  sql_query_string = "SELECT DISTINCT CalledStationID FROM {0} WHERE AcctStopTime = '0000-00-00 00:00:00' AND " \
+                     "CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT 1;".format(
+                      mysqldb_config.radius_acct_table, cto_like_name)
+  if cto_vlan_name := session.execute(sql_query_string).scalar():
     return sanitize_cto_vlan_name(cto_vlan_name)
   return None
 
+
 def is_offline_cto_id(session, onu_id):
-  sql_query_string = "SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%' ORDER BY AcctStopTime DESC LIMIT 1;".format(mysqldb_config.radius_acct_table, onu_id)
-  if (cto_vlan_name := session.execute(sql_query_string).scalar()):
+  sql_query_string = "SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%' ORDER BY " \
+                     "AcctStopTime DESC LIMIT 1;".format(mysqldb_config.radius_acct_table, onu_id)
+  if cto_vlan_name := session.execute(sql_query_string).scalar():
     return '{0} (offline)'.format(sanitize_cto_vlan_name(cto_vlan_name))
   if onu_id[:1] == '1':
     board = '12'
@@ -49,11 +45,12 @@ def is_offline_cto_id(session, onu_id):
   pon = onu_id[1:2]
   onu_number = onu_id[2:]
   cto_like_name = 'P{0}-PON{1}-ONU{2}'.format(board, pon, onu_number)
-  sql_query_string = "SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%' ORDER BY AcctStopTime DESC LIMIT 1;".format(
-    mysqldb_config.radius_acct_table, cto_like_name)
-  if (cto_vlan_name := session.execute(sql_query_string).scalar()):
+  sql_query_string = "SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%' ORDER BY " \
+                     "AcctStopTime DESC LIMIT 1;".format(mysqldb_config.radius_acct_table, cto_like_name)
+  if cto_vlan_name := session.execute(sql_query_string).scalar():
     return '{0} (offline)'.format(sanitize_cto_vlan_name(cto_vlan_name))
   return None
+
 
 def get_mac_list_from_onu_id(onu_id):
   with Telnet(telnet_config.ip, telnet_config.port) as tn:
@@ -89,7 +86,7 @@ def get_mac_list_from_onu_id(onu_id):
       current_onu_number = get_next_value(tn, '\n')[6:]
       logger.debug('get_mac_list_from_onu_id: while not found: current_onu_number: {0}'.format(current_onu_number))
       waste_value = get_next_value(tn, '\t')
-      logger.debug('get_mac_list_from_onu_id: while not found: waste value: {0}'.format(waste_value.replace('\r','')))
+      logger.debug('get_mac_list_from_onu_id: while not found: waste value: {0}'.format(waste_value.replace('\r', '')))
       if 'gponline#' in waste_value:
         logger.error('get_mac_list_from_onu_id: onu not found!')
         return ['ERR']
@@ -137,16 +134,18 @@ def get_mac_list_from_onu_id(onu_id):
     logger.debug('get_mac_list_from_onu_id: stoped...')
     return associated_mac_list
 
+
 def find_user_by_onu(onu_id):
   session = get_mysql_session()
-  if (cto := is_cto_id(session, onu_id)):
+  if cto := is_cto_id(session, onu_id):
     session.close()
     return cto
   if len((mac_list := get_mac_list_from_onu_id(onu_id))):
     username_list = []
     for mac in mac_list:
-      sql_query_string = "SELECT DISTINCT UserName FROM {0} WHERE CallingStationID = :mac ORDER BY AcctStartTime DESC LIMIT 1;".format(mysqldb_config.radius_acct_table)
-      if (username := session.execute(sql_query_string, {'mac': mac}).scalar()):
+      sql_query_string = "SELECT DISTINCT UserName FROM {0} WHERE CallingStationID = :mac ORDER BY AcctStartTime ' \
+      'DESC LIMIT 1;".format(mysqldb_config.radius_acct_table)
+      if username := session.execute(sql_query_string, {'mac': mac}).scalar():
         username_list.append(username)
     if username_list:
       if len(username_list) == 1:
@@ -156,19 +155,20 @@ def find_user_by_onu(onu_id):
   elif 'ERR' in mac_list:
     session.close()
     return 'ERR'
-  elif (cto := is_offline_cto_id(session, onu_id)):
+  elif cto := is_offline_cto_id(session, onu_id):
     session.close()
     return cto
   session.close()
   return None
 
+
 def main():
   parser = argparse.ArgumentParser()
-  parser.add_argument('-i', '--id', dest='i', help='ONU id to find the username from the user connected to it', default=None)
+  parser.add_argument('-i', '--id', dest='i', help='ONU id to find the username from the user connected to it',
+                      default=None)
   args = parser.parse_args()
 
-  onu_id = None
-  if (onu_id := args.i):
+  if onu_id := args.i:
     if is_onu_id_valid(onu_id):
       print(find_user_by_onu(onu_id))
       return 0
@@ -176,6 +176,7 @@ def main():
     return 1
   print('Informe o ID da ONU.')
   return 1
+
 
 if __name__ == '__main__':
   main()

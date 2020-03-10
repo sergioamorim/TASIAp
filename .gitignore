@@ -1,7 +1,7 @@
 *_config.py
 screenlog.*
 __pycache__
-logs
+*.log
 .vscode
 *.db
 .idea

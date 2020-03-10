@@ -1,8 +1,8 @@
 from telegram import ParseMode
 
 from bot_daemon import logger, is_user_authorized
+from common.string_common import format_clients_message
 from logger import log_update
-from string_common import format_clients_message
 from username_by_name import find_username_by_name
 
 

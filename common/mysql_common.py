@@ -3,7 +3,9 @@
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-import mysqldb_config
+
+from common.string_common import is_int
+from config import mysqldb_config
 
 
 def get_mysql_session():
@@ -40,4 +42,4 @@ def reauthorize_user(session, username):
   insert_into_radius_login(session, 'C', username, 'Simultaneous-Use', ':=', 1)
   insert_into_radius_login(session, 'C', username, 'User-Password', ':=', login_info['pass'])
   if login_info['ip']:
-    insert_into_radius_login(session, 'R', username, 'Framed-IP-Address', '==', reserved_ip)
+    insert_into_radius_login(session, 'R', username, 'Framed-IP-Address', '==', login_info['ip'])

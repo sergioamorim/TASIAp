@@ -1,11 +1,13 @@
 #!/usr/bin/env python3.8
 # coding=utf-8
 
-from sqlalchemy import create_engine, Column, Integer, String, DateTime
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
-import bot_config
+
+from sqlalchemy import create_engine, Column, Integer, String, DateTime
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
+from config import bot_config
 
 Base = declarative_base()
 

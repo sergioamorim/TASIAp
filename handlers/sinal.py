@@ -2,13 +2,14 @@
 # coding=utf-8
 
 import re
+
 from bot_daemon import is_user_authorized, get_signal, logger
+from common.mysql_common import get_mysql_session, user_exists
+from common.string_common import is_onu_id_valid
 from logger import log_update
-from string_common import is_onu_id_valid
-from user_from_onu import is_cto_id
-from mysql_common import get_mysql_session, user_exists
 from onu_id_from_serial import find_onu_by_serial
 from onu_id_from_username import find_onu_by_user
+from user_from_onu import is_cto_id
 
 
 def sinal(update, context):

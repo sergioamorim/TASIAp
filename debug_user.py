@@ -8,12 +8,9 @@ from telnetlib import Telnet
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from common.telnet_common import str_to_telnet
 from config import mysqldb_config, telnet_config
 from logger import logger
-
-
-def str_to_telnet(string):
-  return string.encode('ascii') + b'\n'
 
 
 class Login:

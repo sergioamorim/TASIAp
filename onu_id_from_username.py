@@ -3,12 +3,12 @@
 
 import argparse
 from telnetlib import Telnet
-import mysqldb_config
-import telnet_config
-from telnet_common import connect_su, str_to_telnet, get_next_value
-from string_common import sanitize_cto_vlan_name, format_datetime, format_onu_state
-from mysql_common import get_mysql_session, reauthorize_user
-from sqlite_common import find_onu_info, update_onu_info
+
+from common.mysql_common import get_mysql_session, reauthorize_user
+from common.sqlite_common import find_onu_info, update_onu_info
+from common.string_common import sanitize_cto_vlan_name, format_datetime, format_onu_state
+from common.telnet_common import connect_su, str_to_telnet, get_next_value
+from config import mysqldb_config, telnet_config
 from onu_id_from_serial import find_onu_by_serial
 from user_from_onu import find_user_by_onu
 

@@ -2,11 +2,11 @@
 # coding=iso-8859-1
 
 import argparse
-import snmp_config
 import subprocess
 
+from common.string_common import is_onu_id_valid, is_vlan_id_valid
+from config import snmp_config
 from logger import logger
-from string_common import is_onu_id_valid, is_vlan_id_valid
 
 
 def format_strhexoctet(strhexoctet):

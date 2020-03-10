@@ -1,10 +1,17 @@
 #!/usr/bin/env python3.8
 # coding=utf-8
 
-from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
 import re
-import bot_config
+from telnetlib import Telnet
+from threading import Thread
 
+from telegram.ext import Updater, CommandHandler, MessageHandler, CallbackQueryHandler, Filters
+
+from common.sqlite_common import update_onu_info
+from common.string_common import get_onu_id_from_repr, get_caller_name
+from common.telnet_common import connect_su
+from config import bot_config, telnet_config
+from find_next_onu_connection import find_onu_connection
 from handlers.authorize import authorize
 from handlers.autorizar import autorizar
 from handlers.button import button
@@ -16,19 +23,12 @@ from handlers.link_handler import link
 from handlers.onuid import onuid
 from handlers.procurar import procurar
 from handlers.reiniciar import reiniciar
+from handlers.sinal import sinal
 from handlers.start import start
 from handlers.usuario import usuario
 from handlers.vlan import vlan
 from logger import logger
 from onu_signal_power import get_onu_power_signal_by_id
-from telnetlib import Telnet
-import telnet_config
-from telnet_common import connect_su
-from string_common import get_onu_id_from_repr, get_caller_name
-from find_next_onu_connection import find_onu_connection
-from threading import Thread
-from sqlite_common import update_onu_info
-from handlers.sinal import sinal
 
 
 def is_user_authorized(user_id):

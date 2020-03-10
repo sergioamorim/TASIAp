@@ -1,15 +1,15 @@
 #!/usr/bin/python3
 # coding=iso-8859-1
 
-from telnetlib import Telnet
 import argparse
-import subprocess
-import telnet_config
 import re
+import subprocess
+from telnetlib import Telnet
 
+from common.string_common import is_int, is_vlan_id_valid
+from common.telnet_common import str_to_telnet, connect_su
+from config import telnet_config
 from logger import logger
-from string_common import is_int, is_vlan_id_valid
-from telnet_common import str_to_telnet, connect_su
 
 
 class OnuDevice:

@@ -3,13 +3,13 @@
 
 import argparse
 from telnetlib import Telnet
-import telnet_config
-import mysqldb_config
+
+from common.mysql_common import get_mysql_session
+from common.sqlite_common import update_onu_info
+from common.string_common import sanitize_cto_vlan_name, is_onu_id_valid
+from common.telnet_common import connect_su, get_next_value, str_to_telnet
+from config import mysqldb_config, telnet_config
 from logger import logger
-from mysql_common import get_mysql_session
-from telnet_common import connect_su, get_next_value, str_to_telnet
-from string_common import sanitize_cto_vlan_name, is_onu_id_valid
-from sqlite_common import update_onu_info
 
 
 def is_cto_id(session, onu_id):

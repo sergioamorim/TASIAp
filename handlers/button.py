@@ -3,11 +3,11 @@ import subprocess
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 
-import bot_config
 from bot_daemon import logger, get_onu_info_string
+from common.sqlite_common import update_onu_info
+from common.string_common import get_onu_id_from_repr
+from config import bot_config
 from logger import log_update
-from sqlite_common import update_onu_info
-from string_common import get_onu_id_from_repr
 
 
 def button(update, context):

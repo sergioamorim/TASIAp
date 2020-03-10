@@ -1,6 +1,6 @@
 # coding=utf-8
 
-import telnet_config
+from config import telnet_config
 from logger import logger
 
 

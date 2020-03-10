@@ -3,11 +3,12 @@
 
 import argparse
 import re
+from telnetlib import Telnet
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from telnetlib import Telnet
-import mysqldb_config
-import telnet_config
+
+from config import mysqldb_config, telnet_config
 from logger import logger
 
 

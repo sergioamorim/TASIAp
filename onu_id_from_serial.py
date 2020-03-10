@@ -1,12 +1,13 @@
 #!/usr/bin/env python3.8
 # coding=utf-8
 
-import re
 import argparse
+import re
 from telnetlib import Telnet
-from telnet_common import connect_su, str_to_telnet
-from string_common import is_serial_valid
-import telnet_config
+
+from common.string_common import is_serial_valid
+from common.telnet_common import connect_su, str_to_telnet
+from config import telnet_config
 
 
 def find_onu_by_serial(serial):

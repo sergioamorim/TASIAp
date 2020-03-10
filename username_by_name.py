@@ -2,10 +2,12 @@
 # coding=utf-8
 
 import argparse
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-import mysqldb_config
-from string_common import remove_accents, sanitize_dumb
+
+from common.string_common import remove_accents, sanitize_dumb
+from config import mysqldb_config
 
 
 def sanitize_name(name):

@@ -1,8 +1,7 @@
-import inspect
 import logging
 
-import bot_config
-from string_common import get_caller_name
+from common.string_common import get_caller_name
+from config import bot_config
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)

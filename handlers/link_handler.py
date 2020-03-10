@@ -1,7 +1,7 @@
 import subprocess
 
-import bot_config
 from bot_daemon import logger, is_user_authorized
+from config import bot_config
 from logger import log_update
 
 

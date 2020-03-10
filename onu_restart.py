@@ -3,7 +3,9 @@
 
 import argparse
 from telnetlib import Telnet
-import telnet_config
+
+from common.string_common import is_int
+from config import telnet_config
 from logger import logger
 
 
@@ -27,14 +29,6 @@ def connect_su(tn):
   tn.read_until(b'service# ', timeout=1)
   tn.write(str_to_telnet('cd ..'))
   tn.read_until(b'Admin# ', timeout=1)
-
-
-def is_int(s):
-  try:
-    int(s)
-    return True
-  except ValueError:
-    return False
 
 
 def get_next_value(tn, char):

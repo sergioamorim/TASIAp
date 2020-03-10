@@ -1,12 +1,13 @@
 import argparse
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from datetime import datetime
+from os import remove
+
 from fpdf import FPDF
 from requests import post
-from os import remove
-import mysqldb_config
-import bot_config
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from config import bot_config, mysqldb_config
 
 
 def to_int(string):

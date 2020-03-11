@@ -1,9 +1,8 @@
 from subprocess import run
 
-from bot_daemon import logger
 from common.bot_common import is_user_authorized
 from config import bot_config
-from logger import log_update
+from logger import log_update, logger
 
 
 def create_link_changing_command_list(link_name):

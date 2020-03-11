@@ -1,9 +1,8 @@
 from subprocess import run
 
-from bot_daemon import logger
 from common.bot_common import is_user_authorized, get_onu_info_string
 from common.string_common import is_int, is_vlan_id_valid
-from logger import log_update
+from logger import log_update, logger
 
 
 def authorize(update, context):

@@ -1,10 +1,9 @@
 from re import findall
 
-from bot_daemon import logger
 from common.bot_common import is_user_authorized, get_signal
 from common.mysql_common import get_mysql_session, user_exists
 from common.string_common import is_onu_id_valid
-from logger import log_update
+from logger import log_update, logger
 from onu_id_from_serial import find_onu_by_serial
 from onu_id_from_username import find_onu_by_user
 from user_from_onu import is_cto_id

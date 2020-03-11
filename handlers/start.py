@@ -1,5 +1,4 @@
-from bot_daemon import logger
-from logger import log_update
+from logger import log_update, logger
 
 
 def start(update):

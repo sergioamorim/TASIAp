@@ -1,8 +1,7 @@
-from bot_daemon import logger
 from common.bot_common import is_user_authorized
 from common.mysql_common import get_mysql_session
 from common.string_common import is_onu_id_valid, is_serial_valid
-from logger import log_update
+from logger import log_update, logger
 from onu_id_from_serial import find_onu_by_serial
 from user_from_onu import find_user_by_onu, is_cto_id
 

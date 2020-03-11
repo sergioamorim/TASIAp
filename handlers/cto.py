@@ -1,9 +1,8 @@
 from subprocess import run
 
-from bot_daemon import logger
 from common.bot_common import is_user_authorized
 from common.string_common import is_vlan_id_valid
-from logger import log_update
+from logger import log_update, logger
 
 
 def cto(update, context):

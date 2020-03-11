@@ -15,7 +15,17 @@ def one_day_has_passed(start_time, actual_time):
   return actual_time - start_time > timedelta(days=1)
 
 
+def diagnose_fail(session, user):
+  if (actual_pass := session.execute('SELECT pass FROM {0} WHERE user = :username;'.format(mysqldb_config.login_table),
+    {'username': user['user']})) == user['pass']:
+    reauthorize_user(session, user['user'])
+    return 'erro, reinicie o roteador.'
+  return 'erro, senha do usuário errada.\nSenha recebida: {0}\nSenha correta: {1}'.format(user['pass'], actual_pass)
+
+
 def diagnose_connection(session, user):
+  if not user['sucess']:
+    return diagnose_fail(session, user)
   query_string = 'SELECT FramedIPAddress, AcctStopTime FROM {0} WHERE UserName = :username ORDER BY AcctStartTime ' \
                  'DESC;'.format(mysqldb_config.radius_acct_table)
   if connection_info := session.execute(query_string, {'username': user['user']}).first():
@@ -84,13 +94,8 @@ def find_onu_connection(onu_id):
                   'SELECT user, pass, sucess, CallingStationId FROM {0} WHERE user = :username ORDER BY date '
                   'DESC;'.format(mysqldb_config.radius_postauth_table), {'username': user['user']}).first()
                 logger.debug('find_onu_connection: user: {0}'.format(user))
-                if user['sucess'] == 0 and user['pass'] == session.execute(
-                    'SELECT pass FROM {0} WHERE user = :username;'.format(mysqldb_config.login_table),
-                    {'username': user['user']}):
-                  reauthorize_user(session, user['user'])
-                  diagnostic = 'erro, reinicie o roteador.'
-                elif user['sucess'] == 0:
-                  diagnostic = 'erro, senha do usuário errada.'
+                if not user['sucess']:
+                  diagnostic = diagnose_fail(session, user)
                 else:
                   diagnostic = 'desconhecido.'
             user_data = {'username': user['user'], 'password': user['pass'], 'diagnostic': diagnostic}

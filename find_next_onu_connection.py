@@ -1,6 +1,3 @@
-#!/usr/bin/env python3.8
-# coding=utf-8
-
 from datetime import timedelta
 from telnetlib import Telnet
 from time import sleep

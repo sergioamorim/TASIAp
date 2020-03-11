@@ -1,6 +1,3 @@
-#!/usr/bin/env python3.8
-# coding=utf-8
-
 from datetime import datetime
 
 from sqlalchemy import create_engine, Column, Integer, String, DateTime

@@ -1,5 +1,3 @@
-# coding=utf-8
-
 from config import telnet_config
 from logger import logger
 

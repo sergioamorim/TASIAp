@@ -3,7 +3,7 @@ from telnetlib import Telnet
 from threading import Thread
 
 from common.sqlite_common import update_onu_info
-from common.string_common import get_caller_name, get_onu_id_from_repr
+from common.string_common import get_caller_name, get_onu_id_from_repr, is_query_update
 from common.telnet_common import connect_su
 from config import bot_config, telnet_config
 from find_next_onu_connection import find_onu_connection
@@ -12,14 +12,6 @@ from onu_signal_power import get_onu_power_signal_by_id
 
 def is_user_authorized(user_id):
   return True if user_id in bot_config.permissions[get_caller_name()] else False
-
-
-def is_query_update(update):
-  try:
-    update.message.chat
-    return False
-  except:
-    return True
 
 
 def get_signal(onu_id):

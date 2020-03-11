@@ -5,6 +5,14 @@ from unicodedata import normalize
 from telegram import MAX_MESSAGE_LENGTH
 
 
+def is_query_update(update):
+  try:
+    update.message.chat
+    return False
+  except:
+    return True
+
+
 def is_onu_id_valid(onu_id):
   return is_int(onu_id) and 1100 < int(onu_id) < 3900 and int(onu_id[2:]) > 0 and int(
     onu_id[1:2]) > 0 and int(onu_id[1:2]) < 9

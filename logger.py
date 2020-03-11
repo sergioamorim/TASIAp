@@ -3,8 +3,7 @@ from logging import getLogger, DEBUG, Formatter, FileHandler, StreamHandler
 from pathlib import Path
 from re import findall
 
-from common.bot_common import is_query_update
-from common.string_common import get_caller_name
+from common.string_common import get_caller_name, is_query_update
 from config import bot_config
 
 if result := findall('.*/(.*?).py', stack()[-1].filename):

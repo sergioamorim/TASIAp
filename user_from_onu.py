@@ -142,8 +142,8 @@ def find_user_by_onu(onu_id):
   if len((mac_list := get_mac_list_from_onu_id(onu_id))):
     username_list = []
     for mac in mac_list:
-      sql_query_string = "SELECT DISTINCT UserName FROM {0} WHERE CallingStationID = :mac ORDER BY AcctStartTime ' \
-      'DESC LIMIT 1;".format(mysqldb_config.radius_acct_table)
+      sql_query_string = "SELECT DISTINCT UserName FROM {0} WHERE CallingStationID = :mac ORDER BY AcctStartTime " \
+                         "DESC LIMIT 1;".format(mysqldb_config.radius_acct_table)
       if username := session.execute(sql_query_string, {'mac': mac}).scalar():
         username_list.append(username)
     if username_list:

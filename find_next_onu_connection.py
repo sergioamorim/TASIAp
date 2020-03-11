@@ -16,7 +16,7 @@ def one_day_has_passed(start_time, actual_time):
 
 
 def diagnose_connection(session, user):
-  query_string = 'SELECT FramedIPAddress, AcctStopTime FROM {0} WHERE UserName = :username ORDER BY AcctStartTime' \
+  query_string = 'SELECT FramedIPAddress, AcctStopTime FROM {0} WHERE UserName = :username ORDER BY AcctStartTime ' \
                  'DESC;'.format(mysqldb_config.radius_acct_table)
   if connection_info := session.execute(query_string, {'username': user['user']}).first():
     logger.debug('diagnose_connection: connection_info: {0}'.format(connection_info))

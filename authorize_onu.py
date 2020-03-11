@@ -6,7 +6,10 @@ from telnetlib import Telnet
 from common.string_common import is_int, is_vlan_id_valid
 from common.telnet_common import str_to_telnet, connect_su
 from config import telnet_config
-from logger import logger
+from logger import get_logger
+
+
+logger = get_logger(__name__)
 
 
 class OnuDevice:

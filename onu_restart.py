@@ -4,7 +4,10 @@ from telnetlib import Telnet
 from common.string_common import is_int
 from common.telnet_common import get_next_value, connect_su, str_to_telnet
 from config import telnet_config
-from logger import logger
+from logger import get_logger
+
+
+logger = get_logger(__name__)
 
 
 def restart_onu_by_id(tn, onu_id):

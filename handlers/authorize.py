@@ -2,7 +2,10 @@ from subprocess import run
 
 from common.bot_common import is_user_authorized, get_onu_info_string
 from common.string_common import is_int, is_vlan_id_valid
-from logger import log_update, logger
+from logger import log_update, get_logger
+
+
+logger = get_logger(__name__)
 
 
 def authorize(update, context):

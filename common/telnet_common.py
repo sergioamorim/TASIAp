@@ -1,5 +1,8 @@
 from config import telnet_config
-from logger import logger
+from logger import get_logger
+
+
+logger = get_logger(__name__)
 
 
 def str_to_telnet(string):

@@ -5,8 +5,11 @@ from time import sleep
 from common.mysql_common import get_mysql_session, reauthorize_user
 from common.telnet_common import connect_su
 from config import mysqldb_config, telnet_config
-from logger import logger
+from logger import get_logger
 from onu_id_from_username import get_onu_id_by_mac_and_pon, format_pon_name
+
+
+logger = get_logger(__name__)
 
 
 def one_day_has_passed(start_time, actual_time):

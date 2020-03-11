@@ -16,7 +16,10 @@ from handlers.sinal import sinal
 from handlers.start import start
 from handlers.usuario import usuario
 from handlers.vlan import vlan
-from logger import logger
+from logger import get_logger
+
+
+logger = get_logger(__name__)
 
 
 def main():

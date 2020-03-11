@@ -6,7 +6,10 @@ from common.sqlite_common import update_onu_info
 from common.string_common import sanitize_cto_vlan_name, is_onu_id_valid
 from common.telnet_common import connect_su, get_next_value, str_to_telnet
 from config import mysqldb_config, telnet_config
-from logger import logger
+from logger import get_logger
+
+
+logger = get_logger(__name__)
 
 
 def is_cto_id(session, onu_id):

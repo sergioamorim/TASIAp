@@ -4,7 +4,10 @@ from telnetlib import Telnet
 from common.string_common import is_int
 from common.telnet_common import str_to_telnet, get_next_value, connect_su
 from config import telnet_config
-from logger import logger
+from logger import get_logger
+
+
+logger = get_logger(__name__)
 
 
 def get_onu_power_signal_by_id(tn, onu_id):

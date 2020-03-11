@@ -1,27 +1,23 @@
-from inspect import stack
 from logging import getLogger, DEBUG, Formatter, FileHandler, StreamHandler
 from pathlib import Path
-from re import findall
 
 from common.string_common import get_caller_name, is_query_update
 from config import bot_config
 
-if result := findall('.*/(.*?).py', stack()[-1].filename):
-  module_name = result[0]
-else:
-  module_name = stack()[-1].filename[:-3]
 
-logger = getLogger(module_name)
-logger.setLevel(DEBUG)
-formatter = Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-file_path = Path(bot_config.logs_path + module_name + '.log')
-Path(bot_config.logs_path).mkdir(parents=True, exist_ok=True)
-file_handler = FileHandler(file_path)
-file_handler.setFormatter(formatter)
-stream_handler = StreamHandler()
-stream_handler.setFormatter(formatter)
-logger.addHandler(file_handler)
-logger.addHandler(stream_handler)
+def get_logger(name):
+  file_path = Path(bot_config.logs_path + name + '.log')
+  Path(bot_config.logs_path).mkdir(parents=True, exist_ok=True)
+  logger = getLogger(name)
+  logger.setLevel(DEBUG)
+  formatter = Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+  file_handler = FileHandler(file_path)
+  file_handler.setFormatter(formatter)
+  stream_handler = StreamHandler()
+  stream_handler.setFormatter(formatter)
+  logger.addHandler(file_handler)
+  logger.addHandler(stream_handler)
+  return logger
 
 
 def get_last_name(update, query=False):

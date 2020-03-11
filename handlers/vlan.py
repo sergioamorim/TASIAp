@@ -2,7 +2,10 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 
 from common.bot_common import is_user_authorized
 from common.string_common import is_onu_id_valid, is_vlan_id_valid
-from logger import log_update, logger
+from logger import log_update, get_logger
+
+
+logger = get_logger(__name__)
 
 
 def vlan(update, context):

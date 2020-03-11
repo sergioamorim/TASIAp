@@ -4,7 +4,10 @@ from subprocess import run
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 from common.bot_common import is_user_authorized
-from logger import log_update, logger
+from logger import log_update, get_logger
+
+
+logger = get_logger(__name__)
 
 
 def create_keyboard_markup_auth(onu_serials_list):

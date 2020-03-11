@@ -1,4 +1,7 @@
-from logger import log_update, logger
+from logger import log_update, get_logger
+
+
+logger = get_logger(__name__)
 
 
 def error(update, context):

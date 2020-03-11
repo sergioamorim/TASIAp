@@ -5,7 +5,10 @@ from telnetlib import Telnet
 from common.mysql_common import get_mysql_session
 from common.telnet_common import str_to_telnet
 from config import mysqldb_config, telnet_config
-from logger import logger
+from logger import get_logger
+
+
+logger = get_logger(__name__)
 
 
 class Login:

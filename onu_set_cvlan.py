@@ -3,7 +3,10 @@ from subprocess import run
 
 from common.string_common import is_onu_id_valid, is_vlan_id_valid
 from config import snmp_config
-from logger import logger
+from logger import get_logger
+
+
+logger = get_logger(__name__)
 
 
 def format_strhexoctet(strhexoctet):

@@ -2,7 +2,10 @@ from subprocess import run
 
 from common.bot_common import is_user_authorized
 from config import bot_config
-from logger import log_update, logger
+from logger import log_update, get_logger
+
+
+logger = get_logger(__name__)
 
 
 def create_link_changing_command_list(link_name):

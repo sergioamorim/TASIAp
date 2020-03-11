@@ -1,9 +1,12 @@
 from common.bot_common import is_user_authorized
 from common.mysql_common import get_mysql_session
 from common.string_common import is_serial_valid
-from logger import log_update, logger
+from logger import log_update, get_logger
 from onu_id_from_serial import find_onu_by_serial
 from onu_id_from_username import find_onu_by_user
+
+
+logger = get_logger(__name__)
 
 
 def onuid(update, context):

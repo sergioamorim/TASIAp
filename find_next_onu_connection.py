@@ -8,7 +8,6 @@ from config import mysqldb_config, telnet_config
 from logger import get_logger
 from onu_id_from_username import get_onu_id_by_mac_and_pon, format_pon_name
 
-
 logger = get_logger(__name__)
 
 

@@ -5,7 +5,6 @@ from logger import log_update, get_logger
 from onu_id_from_serial import find_onu_by_serial
 from onu_id_from_username import find_onu_by_user
 
-
 logger = get_logger(__name__)
 
 

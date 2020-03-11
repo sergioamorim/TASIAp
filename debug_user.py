@@ -7,7 +7,6 @@ from common.telnet_common import str_to_telnet
 from config import mysqldb_config, telnet_config
 from logger import get_logger
 
-
 logger = get_logger(__name__)
 
 

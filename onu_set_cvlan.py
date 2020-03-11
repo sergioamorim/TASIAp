@@ -5,7 +5,6 @@ from common.string_common import is_onu_id_valid, is_vlan_id_valid
 from config import snmp_config
 from logger import get_logger
 
-
 logger = get_logger(__name__)
 
 

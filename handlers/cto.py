@@ -4,7 +4,6 @@ from common.bot_common import is_user_authorized
 from common.string_common import is_vlan_id_valid
 from logger import log_update, get_logger
 
-
 logger = get_logger(__name__)
 
 

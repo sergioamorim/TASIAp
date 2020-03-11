@@ -5,7 +5,6 @@ from common.string_common import format_clients_message
 from logger import log_update, get_logger
 from username_by_name import find_username_by_name
 
-
 logger = get_logger(__name__)
 
 

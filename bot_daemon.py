@@ -18,7 +18,6 @@ from handlers.usuario import usuario
 from handlers.vlan import vlan
 from logger import get_logger
 
-
 logger = get_logger(__name__)
 
 

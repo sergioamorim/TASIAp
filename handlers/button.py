@@ -9,7 +9,6 @@ from common.string_common import get_onu_id_from_repr
 from config import bot_config
 from logger import log_update, get_logger
 
-
 logger = get_logger(__name__)
 
 

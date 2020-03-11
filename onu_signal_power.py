@@ -6,7 +6,6 @@ from common.telnet_common import str_to_telnet, get_next_value, connect_su
 from config import telnet_config
 from logger import get_logger
 
-
 logger = get_logger(__name__)
 
 

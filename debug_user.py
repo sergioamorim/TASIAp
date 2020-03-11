@@ -1,13 +1,8 @@
-#!/usr/bin/python3.6
-# coding=utf-8
-
-import argparse
-import re
+from argparse import ArgumentParser
+from re import findall
 from telnetlib import Telnet
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
+from common.mysql_common import get_mysql_session
 from common.telnet_common import str_to_telnet
 from config import mysqldb_config, telnet_config
 from logger import logger
@@ -270,10 +265,10 @@ class Onu:
 
   def __init__(self, tn, string=None, mac=None, onu_id=None):
     if string:
-      self.phy_address = re.findall(".*phy_id=\\'([0-9A-Z]{4}[0-9A-Fa-f]{8}).*", string)[0]
-      self.board = re.findall(".*board_id=\\'([0-9]{2}).*", string)[0]
-      self.pon = re.findall(".*pon_id=\\'([0-9]).*", string)[0]
-      self.onu_number = re.findall(".*number=\\'([0-9]*)'.*", string)[0]
+      self.phy_address = findall(".*phy_id=\\'([0-9A-Z]{4}[0-9A-Fa-f]{8}).*", string)[0]
+      self.board = findall(".*board_id=\\'([0-9]{2}).*", string)[0]
+      self.pon = findall(".*pon_id=\\'([0-9]).*", string)[0]
+      self.onu_number = findall(".*number=\\'([0-9]*)'.*", string)[0]
       self.autoset_vlan_and_macs(tn)
       self.autoset_signal_power(tn)
     elif mac:
@@ -459,7 +454,7 @@ def find_onu_by_id(session, tn, onu_id):
 
 
 def main():
-  parser = argparse.ArgumentParser()
+  parser = ArgumentParser()
   parser.add_argument('-u', '--user', dest='u', help='Usuario a ser consultado', default=None)
   parser.add_argument('-o', '--onu', dest='o', help='ONU a ser consultada', default=None)
   parser.add_argument('-i', '--id', dest='i', help='ID da ONU a ser consultada', default=None)
@@ -475,11 +470,7 @@ def main():
   elif args.i:
     onu_id = str(args.i)
 
-  engine = create_engine(
-    'mysql://{0}:{1}@{2}/{3}'.format(mysqldb_config.username, mysqldb_config.password, mysqldb_config.host,
-                                     mysqldb_config.database), encoding='latin1')
-  Session = sessionmaker(bind=engine)
-  session = Session()
+  session = get_mysql_session()
 
   with Telnet(telnet_config.ip, telnet_config.port) as tn:
     connect_su(tn)
@@ -489,6 +480,7 @@ def main():
       find_onu_by_user(session, tn, username)
     elif onu_id:
       find_onu_by_id(session, tn, onu_id)
+  session.close()
 
 
 if __name__ == '__main__':

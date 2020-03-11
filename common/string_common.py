@@ -1,8 +1,6 @@
-#!/usr/bin/env python3.8
-# coding=utf-8
-import inspect
-import re
-import unicodedata
+from inspect import stack
+from re import findall, search
+from unicodedata import normalize
 
 from telegram import MAX_MESSAGE_LENGTH
 
@@ -17,11 +15,11 @@ def is_vlan_id_valid(vlan_id):
 
 
 def is_serial_valid(serial):
-  return re.search('([0-9A-Z]{4}[0-9A-Fa-f]{8})', serial) is not None
+  return search('([0-9A-Z]{4}[0-9A-Fa-f]{8})', serial) is not None
 
 
 def remove_accents(string):
-  return str(unicodedata.normalize('NFD', string).encode('ascii', 'ignore').decode('utf-8'))
+  return str(normalize('NFD', string).encode('ascii', 'ignore').decode('utf-8'))
 
 
 def sanitize_dumb(string):
@@ -38,13 +36,13 @@ def is_int(s):
 
 
 def get_caller_name():
-  return inspect.stack()[2].function
+  return stack()[2].function
 
 
 def get_onu_id_from_repr(onu_repr):
   onu_repr_pattern = "([0-9])',board='<Board\(board_id='([0-9]{2})'\)>',last_authorized_onu_number='[0-9]+'\)>'," \
                      "onu_type='.*',number='([0-9]+)"
-  regex_result = re.findall(onu_repr_pattern, onu_repr)
+  regex_result = findall(onu_repr_pattern, onu_repr)
   board = regex_result[0][1]
   pon = regex_result[0][0]
   onu_number = regex_result[0][2]

@@ -1,4 +1,4 @@
-import argparse
+from argparse import ArgumentParser
 from datetime import datetime
 from os import remove
 
@@ -49,21 +49,16 @@ def sanitize_name(name):
 
 
 def sanitize_to_terminal(string):
-  return string.replace(chr(0xC2), '\xC3\x82').replace(chr(0xA0), '').replace(chr(0xC3), '\xC3\x83').replace(chr(0xBA),
-                                                                                                             '\xC2\xBA').replace(
-    chr(0xD3), '\xC3\x93').replace(chr(0xC7), '\xC3\x87'
-                                   ).replace(chr(0xD5), '\xC3\x95').replace(chr(0xC9), '\xC3\x89').replace(chr(0xAA),
-                                                                                                           '\xC2\xAA').replace(
-    chr(0xD4), '\xC3\x94').replace(chr(0xED), '\xC3\xAD').replace(chr(0xCD), '\xC3\x8D'
-                                                                  ).replace(chr(0xC0), '\xC3\x80').replace(chr(0xC1),
-                                                                                                           '\xC3\x81').replace(
-    chr(0xB0), '\xC2\xB0').replace(chr(0xE2), '\xC3\xA2').replace(chr(0xCA), '\xC3\x8A').replace(chr(0xE9), '\xC3\xA9'
-                                                                                                 ).replace(chr(0xEA),
-                                                                                                           '\xC3\xAA').replace(
-    chr(0xDA), '\xC3\x9A').replace(chr(0xE1), '\xC3\xA1').replace(chr(0xF3), '\xC3\xB3').replace(chr(0xF4),
-                                                                                                 '\xC3\xB4').replace(
-    chr(0xE3), '\xC3\xA3'
-  ).replace(chr(0xFA), '\xC3\xBA').replace(chr(0xE7), '\xC3\xA7').replace(chr(0xB4), '\xC2\xB4')
+  return string.replace(
+    chr(0xC2), '\xC3\x82').replace(chr(0xA0), '').replace(chr(0xC3), '\xC3\x83').replace(chr(0xBA), '\xC2\xBA').replace(
+    chr(0xD3), '\xC3\x93').replace(chr(0xC7), '\xC3\x87').replace(chr(0xD5), '\xC3\x95').replace(
+    chr(0xC9), '\xC3\x89').replace(chr(0xAA), '\xC2\xAA').replace(chr(0xD4), '\xC3\x94').replace(
+    chr(0xED), '\xC3\xAD').replace(chr(0xCD), '\xC3\x8D').replace(chr(0xC0), '\xC3\x80').replace(
+    chr(0xC1), '\xC3\x81').replace(chr(0xB0), '\xC2\xB0').replace(chr(0xE2), '\xC3\xA2').replace(
+    chr(0xCA), '\xC3\x8A').replace(chr(0xE9), '\xC3\xA9').replace(chr(0xEA), '\xC3\xAA').replace(
+    chr(0xDA), '\xC3\x9A').replace(chr(0xE1), '\xC3\xA1').replace(chr(0xF3), '\xC3\xB3').replace(
+    chr(0xF4), '\xC3\xB4').replace(chr(0xE3), '\xC3\xA3').replace(chr(0xFA), '\xC3\xBA').replace(
+    chr(0xE7), '\xC3\xA7').replace(chr(0xB4), '\xC2\xB4')
 
 
 def get_clientes_dict(users):
@@ -72,7 +67,7 @@ def get_clientes_dict(users):
     clientes = session.execute('SELECT clientes.nome, clientes.endereco, clientes.numero, clientes.complemento, '
                                'clientes.referencia, login.user FROM clientes INNER JOIN login ON clientes.id = '
                                'login.cliente_id WHERE clientes.status = 1 AND login.user IN ({0})'.format(
-      str(users)[1:-1]))
+                                str(users)[1:-1]))
     for cliente in clientes:
       d = dict(cliente.items())
       d['nome'] = sanitize_name(d['nome'])
@@ -86,7 +81,7 @@ def plural_s(count):
   return 's' if count > 1 else ''
 
 
-parser = argparse.ArgumentParser()
+parser = ArgumentParser()
 
 parser.add_argument("-c", "--cto", dest="c", help="Codigo da CTO a consultar")
 parser.add_argument("-t", "--tecnico", dest="t", help="Ordenar clientes de acordo com endereço no PDF")

@@ -1,7 +1,4 @@
-#!/usr/bin/env python3.8
-# coding=utf-8
-
-import argparse
+from argparse import ArgumentParser
 from telnetlib import Telnet
 
 from common.mysql_common import get_mysql_session
@@ -163,7 +160,7 @@ def find_user_by_onu(onu_id):
 
 
 def main():
-  parser = argparse.ArgumentParser()
+  parser = ArgumentParser()
   parser.add_argument('-i', '--id', dest='i', help='ONU id to find the username from the user connected to it',
                       default=None)
   args = parser.parse_args()

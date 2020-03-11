@@ -1,7 +1,4 @@
-#!/usr/bin/env python3.8
-# coding=utf-8
-
-import argparse
+from argparse import ArgumentParser
 from telnetlib import Telnet
 
 from common.mysql_common import get_mysql_session, reauthorize_user
@@ -180,7 +177,7 @@ def find_onu_by_user(username):
 
 
 def main():
-  parser = argparse.ArgumentParser()
+  parser = ArgumentParser()
   parser.add_argument('-u', '--username', dest='u', help='Usuario a ser consultado.', default=None)
   args = parser.parse_args()
 

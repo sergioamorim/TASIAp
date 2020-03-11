@@ -1,9 +1,6 @@
-#!/usr/bin/python3
-# coding=iso-8859-1
-
-import argparse
-import re
-import subprocess
+from argparse import ArgumentParser
+from re import findall
+from subprocess import run
 from telnetlib import Telnet
 
 from common.string_common import is_int, is_vlan_id_valid
@@ -87,8 +84,8 @@ def authorize_onu(onu, cvlan):
 def set_cvlan(onu, cvlan):
   onu_id = '{0}{1}{2}'.format('1' if onu.pon.board.board_id == 12 else '2', onu.pon.pon_id, onu.number)
   command_list = ['python3', 'onu_set_cvlan.py', '-i', '{0}'.format(onu_id), '-c', '{0}'.format(cvlan)]
-  answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
-  cvlan_commited = re.findall('_([0-9]{4})', answer_string)[0]
+  answer_string = run(command_list, capture_output=True).stdout.decode('utf-8')
+  cvlan_commited = findall('_([0-9]{4})', answer_string)[0]
   onu.cvlan = int(cvlan_commited)
 
 
@@ -119,7 +116,7 @@ def find_onu_in_list(onu_list, auth_onu):
 
 
 def main():
-  parser = argparse.ArgumentParser()
+  parser = ArgumentParser()
   parser.add_argument("-a", "--authorize-onu", dest="a",
                       help="Numero da ONU que deve ser autorizada da lista de ONUs disponiveis para autorizacao",
                       default=None)

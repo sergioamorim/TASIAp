@@ -1,7 +1,4 @@
-#!/usr/bin/python3.6
-# coding=utf-8
-
-import argparse
+from argparse import ArgumentParser
 from telnetlib import Telnet
 
 from common.string_common import is_int
@@ -67,7 +64,7 @@ def get_onu_power_signal_by_id(tn, onu_id):
 
 
 def main():
-  parser = argparse.ArgumentParser()
+  parser = ArgumentParser()
   parser.add_argument('-i', '--id', dest='i', help='ID da ONU a ser consultada', default=None)
   args = parser.parse_args()
 

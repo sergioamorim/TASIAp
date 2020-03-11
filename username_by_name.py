@@ -1,11 +1,6 @@
-#!/usr/bin/env python3.8
-# coding=utf-8
+from argparse import ArgumentParser
 
-import argparse
-
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
+from common.mysql_common import get_mysql_session
 from common.string_common import remove_accents, sanitize_dumb
 from config import mysqldb_config
 
@@ -32,11 +27,7 @@ def make_dict(clients):
 
 
 def find_username_by_name(name):
-  engine = create_engine(
-    'mysql://{0}:{1}@{2}/{3}'.format(mysqldb_config.username, mysqldb_config.password, mysqldb_config.host,
-                                     mysqldb_config.database), encoding='latin1')
-  Session = sessionmaker(bind=engine)
-  session = Session()
+  session = get_mysql_session()
   name = remove_accents(name.lower())
   query_string = "SELECT nome, endereco, numero, complemento, referencia, observacao, status, user, pass, enable, " \
                  "groupname FROM {0} INNER JOIN {1} ON {0}.id = {1}.cliente_id WHERE ((status = 1 OR status = 2) AND " \
@@ -53,11 +44,12 @@ def find_username_by_name(name):
       else:
         related_clients.append(client)
     final_result = {'direct': clients, 'related': related_clients}
+  session.close()
   return final_result
 
 
 def main():
-  parser = argparse.ArgumentParser()
+  parser = ArgumentParser()
   parser.add_argument('-n', '--name', dest='n', help='Nome do cliente a ser consultado.', default=None)
   args = parser.parse_args()
 

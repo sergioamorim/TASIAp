@@ -1,8 +1,5 @@
-#!/usr/bin/python3
-# coding=iso-8859-1
-
-import argparse
-import subprocess
+from argparse import ArgumentParser
+from subprocess import run
 
 from common.string_common import is_onu_id_valid, is_vlan_id_valid
 from config import snmp_config
@@ -46,12 +43,12 @@ def set_cvlan(ip, community, onu_id, cvlan):
             '00 00"'.format(community, ip, int_to_hexoctetstr(board_id), int_to_hexoctetstr(pon_id),
                             int_to_hexoctetstr(onu_number), assure_two_octet_hexstr(int_to_hexoctetstr(cvlan)))
   logger.debug('set_cvlan: command: {0}'.format(command))
-  subprocess.run(command, shell=True)
+  run(command, shell=True)
   print('{0}_{1}'.format(onu_id, cvlan))
 
 
 def main():
-  parser = argparse.ArgumentParser()
+  parser = ArgumentParser()
   parser.add_argument('-i', '--id', dest='i', help='ID da ONU em que a VLAN vai ser configurada', default=None)
   parser.add_argument('-c', '--cvlan', dest='c', help='CVLAN a ser configurada na ONU', default=None)
   args = parser.parse_args()

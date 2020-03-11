@@ -1,16 +1,17 @@
-import re
-import subprocess
+from re import findall
+from subprocess import run
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-from bot_daemon import logger, is_user_authorized
+from bot_daemon import logger
+from common.bot_common import is_user_authorized
 from logger import log_update
 
 
 def create_keyboard_markup_auth(onu_serials_list):
   keyboard = []
   for onu_serial in onu_serials_list:
-    onu_serial_regex_list = re.findall('(.*)_(.*)_(.*)', onu_serial)
+    onu_serial_regex_list = findall('(.*)_(.*)_(.*)', onu_serial)
     board = onu_serial_regex_list[0][0]
     pon = onu_serial_regex_list[0][1]
     serial = onu_serial_regex_list[0][2]
@@ -26,7 +27,7 @@ def autorizar(update, context):
   log_update(update, logger)
   if is_user_authorized(update.message.from_user.id):
     if not len(context.args):
-      answer_list = subprocess.run(['python3.8', 'authorize_onu.py'], capture_output=True).stdout.decode('utf-8').split(
+      answer_list = run(['python3.8', 'authorize_onu.py'], capture_output=True).stdout.decode('utf-8').split(
         ' ')
       logger.debug('autorizar handler: /autorizar: answer_list: {0}'.format(answer_list))
       if '\n' in answer_list:

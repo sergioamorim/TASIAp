@@ -1,6 +1,7 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 
-from bot_daemon import logger, is_user_authorized
+from bot_daemon import logger
+from common.bot_common import is_user_authorized
 from common.string_common import is_onu_id_valid, is_vlan_id_valid
 from logger import log_update
 

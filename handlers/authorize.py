@@ -1,6 +1,7 @@
-import subprocess
+from subprocess import run
 
-from bot_daemon import logger, is_user_authorized, get_onu_info_string
+from bot_daemon import logger
+from common.bot_common import is_user_authorized, get_onu_info_string
 from common.string_common import is_int, is_vlan_id_valid
 from logger import log_update
 
@@ -9,7 +10,7 @@ def authorize(update, context):
   log_update(update, logger)
   if is_user_authorized(update.message.from_user.id):
     if not (args_len := len(context.args)):
-      answer_list = subprocess.run(['python3.8', 'authorize_onu.py'], capture_output=True).stdout.decode('utf-8').split(
+      answer_list = run(['python3.8', 'authorize_onu.py'], capture_output=True).stdout.decode('utf-8').split(
         ' ')
       logger.debug('authorize handler: /authorize: answer_list: {0}'.format(answer_list))
       if '\n' in answer_list:
@@ -34,12 +35,12 @@ def authorize(update, context):
                                   quote=True)
     elif is_int(context.args[0]):
       if args_len == 2 and ((args_1_lower := context.args[1].lower()) == 'cto' or is_vlan_id_valid(context.args[1])):
-        answer_string = subprocess.run(
+        answer_string = run(
           ['python3.8', 'authorize_onu.py', '-a', '{0}'.format(context.args[0]), '-c', '{0}'.format(args_1_lower)],
           capture_output=True).stdout.decode('utf-8')
       else:
-        answer_string = subprocess.run(['python3.8', 'authorize_onu.py', '-a', '{0}'.format(context.args[0])],
-                                       capture_output=True).stdout.decode('utf-8')
+        answer_string = run(['python3.8', 'authorize_onu.py', '-a', '{0}'.format(
+          context.args[0])], capture_output=True).stdout.decode('utf-8')
       logger.debug('authorize: int: answer_string: {0}'.format(answer_string))
       if 'OnuDevice' in answer_string:
         update.message.reply_text(
@@ -53,10 +54,11 @@ def authorize(update, context):
           'Nenhuma ONU foi encontrada. Envie /authorize para verificar novamente se há novas ONUs.', quote=True)
     elif context.args[0] == 'sim':
       if args_len == 2 and ((args_1_lower := context.args[1].lower()) == 'cto' or is_vlan_id_valid(context.args[1])):
-        answer_string = subprocess.run(['python3.8', 'authorize_onu.py', '-a', '1', '-c', '{0}'.format(args_1_lower)],
-                                       capture_output=True).stdout.decode('utf-8')
+        answer_string = run(
+          ['python3.8', 'authorize_onu.py', '-a', '1', '-c', '{0}'.format(args_1_lower)],
+          capture_output=True).stdout.decode('utf-8')
       else:
-        answer_string = subprocess.run(['python3.8', 'authorize_onu.py', '-a', '1'], capture_output=True).stdout.decode(
+        answer_string = run(['python3.8', 'authorize_onu.py', '-a', '1'], capture_output=True).stdout.decode(
           'utf-8')
       logger.debug('authorize: sim: answer_string: {0}'.format(answer_string))
       if 'OnuDevice' in answer_string:

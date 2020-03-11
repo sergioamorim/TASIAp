@@ -1,9 +1,7 @@
-#!/usr/bin/env python3.8
-# coding=utf-8
+from re import findall
 
-import re
-
-from bot_daemon import is_user_authorized, get_signal, logger
+from bot_daemon import logger
+from common.bot_common import is_user_authorized, get_signal
 from common.mysql_common import get_mysql_session, user_exists
 from common.string_common import is_onu_id_valid
 from logger import log_update
@@ -24,7 +22,7 @@ def sinal(update, context):
       cto_string = is_cto_id(session, context.args[0])
       signal = get_signal(context.args[0]).capitalize()
       update.message.reply_text('{0}{1}'.format('{0}\n'.format(cto_string) if cto_string else '', signal), quote=True)
-    elif serial := re.findall("([0-9A-Z]{4}[0-9A-Fa-f]{8})", context.args[0]):
+    elif serial := findall("([0-9A-Z]{4}[0-9A-Fa-f]{8})", context.args[0]):
       if onu := find_onu_by_serial(serial[0]):
         cto_string = is_cto_id(session, onu['onuid'])
         if onu['state'] == 'dn':

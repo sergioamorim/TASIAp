@@ -1,6 +1,7 @@
-import subprocess
+from subprocess import run
 
-from bot_daemon import logger, is_user_authorized
+from bot_daemon import logger
+from common.bot_common import is_user_authorized
 from config import bot_config
 from logger import log_update
 
@@ -20,19 +21,19 @@ def link(update, context):
     elif context.args[0] == 'squid':
       command_list = create_link_changing_command_list('first-link')
       logger.debug(command_list)
-      answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
+      answer_string = run(command_list, capture_output=True).stdout.decode('utf-8')
       logger.debug('link: answer_string: {0}'.format(answer_string))
       update.message.reply_text('Comando enviado para usar apenas o link SQUID.', quote=True)
     elif context.args[0] == 'we':
       command_list = create_link_changing_command_list('second-link')
       logger.debug(command_list)
-      answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
+      answer_string = run(command_list, capture_output=True).stdout.decode('utf-8')
       logger.debug('link: answer_string: {0}'.format(answer_string))
       update.message.reply_text('Comando enviado para usar apenas o link WE.', quote=True)
     elif context.args[0] == 'ambos':
       command_list = create_link_changing_command_list('both-links')
       logger.debug(command_list)
-      answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
+      answer_string = run(command_list, capture_output=True).stdout.decode('utf-8')
       logger.debug('link: answer_string: {0}'.format(answer_string))
       update.message.reply_text('Comando enviado para usar ambos os links.', quote=True)
     else:

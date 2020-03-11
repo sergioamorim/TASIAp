@@ -1,6 +1,7 @@
-import subprocess
+from subprocess import run
 
-from bot_daemon import logger, is_user_authorized
+from bot_daemon import logger
+from common.bot_common import is_user_authorized
 from common.string_common import is_vlan_id_valid
 from logger import log_update
 
@@ -17,7 +18,7 @@ def cto(update, context):
       command_list = ['python3.8', 'cto_info.py', '-c', '{0}'.format(context.args[0])]
       if args_len == 2 and context.args[1].lower() == 'tecnico':
         command_list.extend(['-t', '1'])
-      answer_string = subprocess.run(command_list, capture_output=True).stdout.decode('utf-8')
+      answer_string = run(command_list, capture_output=True).stdout.decode('utf-8')
       logger.debug('cto: answer_string: {0}'.format(answer_string))
     else:
       update.message.reply_text('ID da VLAN inválido. Um ID válido deve estar entre 1 e 4095.', quote=True)

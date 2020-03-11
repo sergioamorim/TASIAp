@@ -22,7 +22,7 @@ def diagnose_connection(session, user):
     logger.debug('diagnose_connection: connection_info: {0}'.format(connection_info))
     if connection_info['FramedIPAddress'][4:6] == '66':
       query_string = 'SELECT cliente_id, enable FROM {0} WHERE user = :username;'.format(mysqldb_config.login_table)
-      if login := session.execute(query_string, {'username': user['UserName']}).first():
+      if login := session.execute(query_string, {'username': user['user']}).first():
         if login['enable'] == 1:
           query_string = 'SELECT status FROM {0} WHERE id = :id;'.format(mysqldb_config.clientes_table)
           if (client_status := session.execute(query_string, {'id': login['cliente_id']}).scalar()) == 1:

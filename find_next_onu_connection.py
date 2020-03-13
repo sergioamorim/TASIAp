@@ -18,12 +18,12 @@ def one_day_has_passed(start_time, actual_time):
 def diagnose_fail(session, user):
   if result := session.execute('SELECT user, pass FROM {0} WHERE user = :username;'.format(mysqldb_config.login_table),
                                {'username': user['user']}).first():
-    if result['pass'] == user['pass']:
-      return diagnose_account(session, user)
-    if result['pass'] == 'None':
-      return 'erro, usuário sem senha de login cadastrada no sistema.'
-    return 'erro, senha do usuário errada.\nSenha recebida: {0}\nSenha correta: {1}'.format(user['pass'],
-                                                                                            result['pass'])
+    if result['pass']:
+      if result['pass'] == user['pass']:
+        return diagnose_account(session, user)
+      return 'erro, senha do usuário errada.\nSenha recebida: {0}\nSenha correta: {1}'.format(user['pass'],
+                                                                                              result['pass'])
+    return 'erro, usuário sem senha de login cadastrada no sistema.'
   return 'erro, não existe login com esse usuário.'
 
 

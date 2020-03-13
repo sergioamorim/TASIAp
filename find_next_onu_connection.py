@@ -18,9 +18,28 @@ def one_day_has_passed(start_time, actual_time):
 def diagnose_fail(session, user):
   if (actual_pass := session.execute('SELECT pass FROM {0} WHERE user = :username;'.format(mysqldb_config.login_table),
     {'username': user['user']}).scalar()) == user['pass']:
-    reauthorize_user(session, user['user'])
-    return 'erro, reinicie o roteador.'
+    return diagnose_account(session, user)
   return 'erro, senha do usuário errada.\nSenha recebida: {0}\nSenha correta: {1}'.format(user['pass'], actual_pass)
+
+
+def diagnose_account(session, user):
+  query_string = 'SELECT cliente_id, enable FROM {0} WHERE user = :username;'.format(mysqldb_config.login_table)
+  if login := session.execute(query_string, {'username': user['user']}).first():
+    if login['enable'] == 1:
+      query_string = 'SELECT status FROM {0} WHERE id = :id;'.format(mysqldb_config.clientes_table)
+      if (client_status := session.execute(query_string, {'id': login['cliente_id']}).scalar()) == 1:
+        reauthorize_user(session, user['user'])
+        return 'erro, reinicie o roteador.'
+      elif client_status == 2:
+        return 'bloqueada, pendência financeira.'
+      elif client_status == 0:
+        return 'bloqueada, cadastro do cliente desativado.'
+      else:
+        return 'bloqueada, cadastro do cliente bloqueado manualmente.'
+    else:
+      return 'bloqueada, o login está desativado.'
+  else:
+    return 'bloqueada, o usúario não existe.'
 
 
 def diagnose_connection(session, user):
@@ -31,23 +50,7 @@ def diagnose_connection(session, user):
   if connection_info := session.execute(query_string, {'username': user['user']}).first():
     logger.debug('diagnose_connection: connection_info: {0}'.format(connection_info))
     if connection_info['FramedIPAddress'][4:6] == '66':
-      query_string = 'SELECT cliente_id, enable FROM {0} WHERE user = :username;'.format(mysqldb_config.login_table)
-      if login := session.execute(query_string, {'username': user['user']}).first():
-        if login['enable'] == 1:
-          query_string = 'SELECT status FROM {0} WHERE id = :id;'.format(mysqldb_config.clientes_table)
-          if (client_status := session.execute(query_string, {'id': login['cliente_id']}).scalar()) == 1:
-            reauthorize_user(session, user['user'])
-            return 'erro, reinicie o roteador.'
-          elif client_status == 2:
-            return 'bloqueada, pendência financeira.'
-          elif client_status == 0:
-            return 'bloqueada, cadastro do cliente desativado.'
-          else:
-            return 'bloqueada, cadastro do cliente bloqueado manualmente.'
-        else:
-          return 'bloqueada, o login está desativado.'
-      else:
-        return 'bloqueada, o usúario não existe.'
+      return diagnose_account(session, user)
     else:
       if not connection_info['AcctStopTime']:
         return 'normal.\nIP: {0}'.format(connection_info['FramedIPAddress'])

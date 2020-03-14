@@ -20,7 +20,7 @@ def procurar(update, context):
     else:
       if context.args[0] == 'cto':
         if args_len > 1:
-          update.message.reply_text('{0}'.format('/n'.join(find_cto_by_name(context.args[1:]))), quote=True)
+          update.message.reply_text('{0}'.format('\n'.join(find_cto_by_name(context.args[1:]))), quote=True)
         else:
           update.message.reply_text('Envie "/procurar cto leisiane" para procurar CTOs com leisiane no nome.',
                                     quote=True)

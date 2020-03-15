@@ -23,7 +23,7 @@ def int_to_hexoctetstr(intvalue):
 
 
 def assure_two_octet_hexstr(hexstr):
-  if len(hexstr) is 2:
+  if len(hexstr) == 2:
     return '00 ' + hexstr
   return hexstr
 

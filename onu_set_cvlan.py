@@ -58,7 +58,7 @@ def set_cvlan(onu_id, cvlan=None):
                             assure_two_octet_hexstr(int_to_hexoctetstr(int(cvlan))))
   logger.debug('set_cvlan: command: {0}'.format(command))
   run(command, shell=True)
-  cvlan_set = {'onu_id': onu_id, 'cvlan': cvlan}
+  cvlan_set = {'onu_id': onu_id, 'cvlan': str(cvlan)}
   logger.debug('set_cvlan({0}, {1}): {2}'.format(repr(onu_id), repr(cvlan), repr(cvlan_set)))
   return cvlan_set
 

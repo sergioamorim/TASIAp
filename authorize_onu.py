@@ -101,7 +101,7 @@ def set_cvlan(onu, cvlan):
   command_list = ['python3', 'onu_set_cvlan.py', '-i', '{0}'.format(onu_id), '-c', '{0}'.format(cvlan)]
   answer_string = run(command_list, capture_output=True).stdout.decode('utf-8')
   cvlan_commited = findall('_([0-9]{4})', answer_string)[0]
-  onu.cvlan = int(cvlan_commited)
+  onu.cvlan = cvlan_commited
 
 
 def get_first_missing_number_precedent(numbers_list):

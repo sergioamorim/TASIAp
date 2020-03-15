@@ -10,8 +10,8 @@ logger = get_logger(__name__)
 def create_keyboard_markup_auth(onu_list):
   keyboard = []
   for onu in onu_list:
-    callback_data = "<a=ca><s={0}><b={1}><p={2}>".format(onu.phy_address, onu.pon.board.board_id, onu.pon.pon_id)
-    keyboard.append([InlineKeyboardButton(text='Serial: {0} Placa: {1} PON: {2}'.format(onu.phy_address,
+    callback_data = "<a=ca><s={0}><b={1}><p={2}>".format(onu.phy_id, onu.pon.board.board_id, onu.pon.pon_id)
+    keyboard.append([InlineKeyboardButton(text='Serial: {0} Placa: {1} PON: {2}'.format(onu.phy_id,
                                                                                         onu.pon.board.board_id,
                                                                                         onu.pon.pon_id),
                                           callback_data=callback_data)])

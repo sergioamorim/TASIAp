@@ -11,7 +11,7 @@ def get_onu_text_list(onu_list):
   for onu in onu_list:
     onu_text_list = onu_text_list + '{0}. Placa: {1} PON: {2} Serial: {3}\n'.format(onu.authorization_id,
                                                                                     onu.pon.board.board_id,
-                                                                                    onu.pon.pon_id, onu.phy_address)
+                                                                                    onu.pon.pon_id, onu.phy_id)
   return onu_text_list
 
 

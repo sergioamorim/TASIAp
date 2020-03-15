@@ -9,6 +9,7 @@ from common.sqlite_common import update_onu_info
 from common.string_common import get_onu_device_id
 from config import bot_config
 from logger import log_update, get_logger
+from onu_set_cvlan import set_cvlan
 
 logger = get_logger(__name__)
 
@@ -42,7 +43,7 @@ def button(update, context):
         update_onu_info(int(onu_id), serial=serial)
         callback_data = '<a=c><s={0}><i={1}>'.format(authorized_onu.phy_id, onu_id)
         keyboard = [[
-          InlineKeyboardButton(text='CTO', callback_data='{0}{1}'.format(callback_data, '<c=ct>')),
+          InlineKeyboardButton(text='CTO', callback_data='{0}{1}'.format(callback_data, '<c=cto>')),
           InlineKeyboardButton(text='Cliente', callback_data='{0}{1}'.format(callback_data, '<c=cl>'))
         ]]
         keyboard_markup = InlineKeyboardMarkup(keyboard)
@@ -64,13 +65,12 @@ def button(update, context):
     serial = regex_result[0][0]
     onu_id = regex_result[0][1]
     cvlan = regex_result[0][2]
-    command_list = ['python3.8', 'onu_set_cvlan.py', '-i', '{0}'.format(onu_id)]
-    if cvlan == 'ct':
-      command_list.extend(['-c', 'cto'])
-    logger.debug('button: set_cvlan: command_list: {0}'.format(command_list))
-    answer_string = run(command_list, capture_output=True).stdout.decode('utf-8')
-    logger.debug('button: set_cvlan: answer_string: {0}'.format(answer_string))
-    cvlan_commited = findall('_([0-9]{4})', answer_string)[0]
+    if cvlan != 'cto':
+      cvlan = None
+    if result := set_cvlan(onu_id, cvlan):
+      cvlan_commited = result['cvlan']
+    else:
+      cvlan_commited = None
     onu_info_string = get_onu_info_string(context, update, onu_id=onu_id, cvlan=cvlan_commited, serial=serial)
     if query.message.chat.id != int(bot_config.default_chat):
       context.bot.send_message(int(bot_config.default_chat),
@@ -99,10 +99,10 @@ def button(update, context):
     regex_result = findall(data_pattern, query.data)
     onu_id = regex_result[0][0]
     cvlan = regex_result[0][1]
-    command_list = ['python3.8', 'onu_set_cvlan.py', '-i', '{0}'.format(onu_id), '-c', '{0}'.format(cvlan)]
-    answer_string = run(command_list, capture_output=True).stdout.decode('utf-8')
-    logger.debug('button: vlan: answer_string: {0}'.format(answer_string))
-    cvlan_commited = findall('_([0-9]{4})', answer_string)[0]
+    if result := set_cvlan(onu_id, cvlan):
+      cvlan_commited = result['cvlan']
+    else:
+      cvlan_commited = None
     query.edit_message_text('ONU de ID {0} configurada com sucesso com a CVLAN {1}.'.format(onu_id, cvlan_commited),
                             quote=True)
   elif action == 'av':

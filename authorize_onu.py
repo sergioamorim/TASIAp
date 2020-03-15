@@ -1,12 +1,12 @@
 from argparse import ArgumentParser
 from re import findall
-from subprocess import run
 from telnetlib import Telnet
 
 from common.string_common import is_int, is_vlan_id_valid, get_onu_device_id
 from common.telnet_common import str_to_telnet, connect_su
 from config import telnet_config
 from logger import get_logger
+from onu_set_cvlan import set_cvlan
 
 logger = get_logger(__name__)
 
@@ -18,6 +18,11 @@ class OnuDevice:
   number = None
   cvlan = None
   authorization_id = None
+
+  def set_cvlan(self, cvlan):
+    onu_id = get_onu_device_id(self)
+    if result := set_cvlan(onu_id, cvlan):
+      self.cvlan = result['cvlan']
 
   def __init__(self, authorization_id, onu_type, phy_id, pon):
     self.phy_id = phy_id
@@ -92,16 +97,8 @@ def authorize_onu_effective(onu, cvlan):
                            'type {4}'.format(onu.phy_id, onu.pon.board.board_id, onu.pon.pon_id, onu.number,
                                              onu.onu_type)))
   if cvlan:
-    set_cvlan(onu, cvlan)
+    onu.set_cvlan(cvlan)
   return onu
-
-
-def set_cvlan(onu, cvlan):
-  onu_id = get_onu_device_id(onu)
-  command_list = ['python3', 'onu_set_cvlan.py', '-i', '{0}'.format(onu_id), '-c', '{0}'.format(cvlan)]
-  answer_string = run(command_list, capture_output=True).stdout.decode('utf-8')
-  cvlan_commited = findall('_([0-9]{4})', answer_string)[0]
-  onu.cvlan = cvlan_commited
 
 
 def get_first_missing_number_precedent(numbers_list):

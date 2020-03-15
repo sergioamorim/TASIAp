@@ -28,8 +28,19 @@ def assure_two_octet_hexstr(hexstr):
   return hexstr
 
 
-def set_cvlan(ip, community, onu_id, cvlan):
-  logger.debug('set_cvlan: onu_id: {0} cvlan: {1}'.format(onu_id, cvlan))
+def can_cvlan_be_set(onu_id, cvlan):
+  return (not cvlan or (cvlan == 'cto' or is_vlan_id_valid(cvlan))) and onu_id and is_onu_id_valid(onu_id)
+
+
+def set_cvlan(onu_id, cvlan=None):
+  logger.debug('set_cvlan({0}, {1})'.format(repr(onu_id), repr(cvlan)))
+  if not can_cvlan_be_set(onu_id, cvlan):
+    logger.error('set_cvlan({0}, {1}): can not set cvlan'.format(repr(onu_id), repr(cvlan)))
+    return None
+  if not cvlan:
+    cvlan = int(onu_id[:2] + '00')
+  elif cvlan == 'cto':
+    cvlan = snmp_config.cto_default_cvlan
   board_id = 12 if onu_id[:1] == '1' else 14
   pon_id = int(onu_id[1:2])
   onu_number = int(onu_id[2:])
@@ -42,11 +53,14 @@ def set_cvlan(ip, community, onu_id, cvlan):
             '00 81 00 FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ' \
             '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 81 00 FF FF FF 00 00 00 00 00 00 00 01 00 00 ' \
             '00 00 00 00 00 00 00 00 02 80 00 0F 42 40 00 0F 42 40 00 00 FF FF FF 81 00 FF FF FF 81 00 00 00 00 00 ' \
-            '00 00"'.format(community, ip, int_to_hexoctetstr(board_id), int_to_hexoctetstr(pon_id),
-                            int_to_hexoctetstr(onu_number), assure_two_octet_hexstr(int_to_hexoctetstr(cvlan)))
+            '00 00"'.format(snmp_config.community, snmp_config.ip, int_to_hexoctetstr(board_id),
+                            int_to_hexoctetstr(pon_id), int_to_hexoctetstr(onu_number),
+                            assure_two_octet_hexstr(int_to_hexoctetstr(int(cvlan))))
   logger.debug('set_cvlan: command: {0}'.format(command))
   run(command, shell=True)
-  print('{0}_{1}'.format(onu_id, cvlan))
+  cvlan_set = {'onu_id': onu_id, 'cvlan': cvlan}
+  logger.debug('set_cvlan({0}, {1}): {2}'.format(repr(onu_id), repr(cvlan), repr(cvlan_set)))
+  return cvlan_set
 
 
 def main():
@@ -55,27 +69,7 @@ def main():
   parser.add_argument('-c', '--cvlan', dest='c', help='CVLAN a ser configurada na ONU', default=None)
   args = parser.parse_args()
 
-  if args.i:
-    if is_onu_id_valid(args.i):
-      onu_id = str(args.i)
-      if args.c:
-        if is_vlan_id_valid(args.c):
-          cvlan = int(args.c)
-        elif args.c == 'cto':
-          cvlan = 4000
-        else:
-          logger.error('CVLAN invalida.')
-          return 1
-      else:
-        cvlan = int(onu_id[:2] + '00')
-    else:
-      logger.error('ID da ONU invalido.')
-      return 1
-  else:
-    logger.error('Informe o ID da ONU.')
-    return 1
-
-  set_cvlan(snmp_config.ip, snmp_config.community, onu_id, cvlan)
+  print(set_cvlan(args.i, args.c))
 
   return 0
 

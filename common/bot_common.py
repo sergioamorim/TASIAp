@@ -1,9 +1,8 @@
-from re import findall
 from telnetlib import Telnet
 from threading import Thread
 
 from common.sqlite_common import update_onu_info
-from common.string_common import get_caller_name, get_onu_id_from_repr, is_query_update
+from common.string_common import get_caller_name, is_query_update, get_onu_device_id
 from common.telnet_common import connect_su
 from config import bot_config, telnet_config
 from find_next_onu_connection import find_onu_connection
@@ -27,16 +26,11 @@ def get_signal(onu_id):
   return signal
 
 
-def get_onu_info_string(context, update, onu_repr=None, onu_id=None, cvlan=None, serial=None):
-  if onu_repr:
-    onu_repr_pattern = "([0-9A-Z]{4}[0-9A-Fa-f]{8})',pon='<Pon\(pon_id='[0-9]',board='<Board\(board_id='[0-9]{" \
-                       "2}'\)>',last_authorized_onu_number='[0-9]+'\)>',onu_type='.*',number='[0-9]+'," \
-                       "cvlan='(N?o?n?e?[0-9]{0,4}) "
-    regex_result = findall(onu_repr_pattern, onu_repr)
-    serial = regex_result[0][0]
-    if regex_result[0][1] != 'None':
-      cvlan = regex_result[0][1]
-    onu_id = get_onu_id_from_repr(onu_repr)
+def get_onu_info_string(context, update, authorized_onu=None, onu_id=None, cvlan=None, serial=None):
+  if authorized_onu:
+    serial = authorized_onu.phy_id
+    cvlan = authorized_onu.cvlan
+    onu_id = get_onu_device_id(authorized_onu)
     signal = signal_job_caller(context, update, onu_id)
   else:
     signal = get_signal(onu_id)

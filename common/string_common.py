@@ -47,15 +47,8 @@ def get_caller_name():
   return stack()[2].function
 
 
-def get_onu_id_from_repr(onu_repr):
-  onu_repr_pattern = "([0-9])',board='<Board\(board_id='([0-9]{2})'\)>',last_authorized_onu_number='[0-9]+'\)>'," \
-                     "onu_type='.*',number='([0-9]+)"
-  regex_result = findall(onu_repr_pattern, onu_repr)
-  board = regex_result[0][1]
-  pon = regex_result[0][0]
-  onu_number = regex_result[0][2]
-  onu_id = '{0}{1}{2}{3}'.format('1' if board == '12' else '2', pon, '0' if int(onu_number) < 10 else '', onu_number)
-  return onu_id
+def get_onu_device_id(onu_device):
+  '{0}{1}{2}'.format('1' if onu_device.pon.board.board_id == '12' else '2', onu_device.pon.pon_id, onu_device.number)
 
 
 def sanitize_cto_vlan_name(cto_vlan_name):

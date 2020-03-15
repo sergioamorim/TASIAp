@@ -3,9 +3,10 @@ from subprocess import run
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 
+from authorize_onu import authorize_onu
 from common.bot_common import get_onu_info_string
 from common.sqlite_common import update_onu_info
-from common.string_common import get_onu_id_from_repr
+from common.string_common import get_onu_device_id
 from config import bot_config
 from logger import log_update, get_logger
 
@@ -35,30 +36,24 @@ def button(update, context):
       reply_markup=keyboard_markup, parse_mode=ParseMode.MARKDOWN, quote=True)
   elif action == 'a':
     serial = findall('<s=(.*?)>', query.data)[0]
-    answer_string = run(
-      ['python3.8', 'authorize_onu.py', '-a', '{0}'.format(serial)],
-      capture_output=True).stdout.decode('utf-8')
-    logger.debug('button: authorize: answer_string: {0}'.format(answer_string))
-    if 'OnuDevice' in answer_string:
-      serial = findall("([0-9A-Z]{4}[0-9A-Fa-f]{8})", answer_string)[0]
-      onu_id = get_onu_id_from_repr(answer_string)
-      update_onu_info(int(onu_id), serial=serial)
-      callback_data = '<a=c><s={0}><i={1}>'.format(serial, onu_id)
-      keyboard = [[
-        InlineKeyboardButton(text='CTO', callback_data='{0}{1}'.format(callback_data, '<c=ct>')),
-        InlineKeyboardButton(text='Cliente', callback_data='{0}{1}'.format(callback_data, '<c=cl>'))
-      ]]
-      keyboard_markup = InlineKeyboardMarkup(keyboard)
-      if query.message.chat.id != int(bot_config.default_chat):
-        context.bot.send_message(int(bot_config.default_chat),
-                                 '{0} autorizando {1} {2}'.format(query.message.chat.id, onu_id, serial))
-      query.edit_message_text('ONU de cliente ou CTO?', reply_markup=keyboard_markup, quote=True)
-    elif answer_string == 'ERR':
-      query.edit_message_text(
-        'Tente novamente, não foi possivel encontrar a ONU informada agora. Envie /autorizar para ver a lista de ONUs '
-        'disponíveis.',
-        quote=True)
-    elif answer_string == 'None':
+    if authorized_onu := authorize_onu(serial):
+      if authorized_onu != 'ERROR':
+        onu_id = get_onu_device_id(authorized_onu)
+        update_onu_info(int(onu_id), serial=serial)
+        callback_data = '<a=c><s={0}><i={1}>'.format(authorized_onu.phy_id, onu_id)
+        keyboard = [[
+          InlineKeyboardButton(text='CTO', callback_data='{0}{1}'.format(callback_data, '<c=ct>')),
+          InlineKeyboardButton(text='Cliente', callback_data='{0}{1}'.format(callback_data, '<c=cl>'))
+        ]]
+        keyboard_markup = InlineKeyboardMarkup(keyboard)
+        if query.message.chat.id != int(bot_config.default_chat):
+          context.bot.send_message(int(bot_config.default_chat),
+                                   '{0} autorizando {1} {2}'.format(query.message.chat.id, onu_id, serial))
+        query.edit_message_text('ONU de cliente ou CTO?', reply_markup=keyboard_markup, quote=True)
+      else:
+        query.edit_message_text('Tente novamente, não foi possivel encontrar a ONU informada agora. Envie /autorizar '
+                                'para ver a lista de ONUs disponíveis.', quote=True)
+    else:
       query.edit_message_text(
         'Tente novamente, não foi possivel encontrar nenhuma ONU agora. Envie /autorizar para verificar novamente se '
         'há ONUs disponíveis.',

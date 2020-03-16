@@ -12,8 +12,8 @@ def onuid(update, context):
   log_update(update, logger)
   if is_user_authorized(update.message.from_user.id):
     if len(context.args) != 1:
-      update.message.reply_text('Envie "/onuid usuariologin" para verificar o ID da ONU do usuario "usuariologin".',
-                                quote=True)
+      update.message.reply_text('Envie "/onuid maria" para verificar o ID da ONU do usuario usuariologin ou "/onuid '
+                                'FHTT0fab320e" para verificar o ID da ONU de serial FHTT0fab320e.', quote=True)
     else:
       session = get_mysql_session()
       if is_serial_valid(context.args[0]):

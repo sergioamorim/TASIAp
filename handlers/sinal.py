@@ -26,15 +26,15 @@ def sinal(update, context):
         update.message.reply_text('{0}{1}'.format('{0}\n'.format(cto_string) if cto_string else '', signal), quote=True)
       elif serial := findall("([0-9A-Z]{4}[0-9A-Fa-f]{8})", context.args[0]):
         if onu := find_onu_by_serial(serial[0]):
-          cto_string = is_cto_id(session, onu['onuid'])
+          cto_string = is_cto_id(session, onu['onu_id'])
           if onu['state'] == 'dn':
             update.message.reply_text(
-              '{0}ONU ID: {1}\nSem sinal.'.format('{0}\n'.format(cto_string) if cto_string else '', onu['onuid']),
+              '{0}ONU ID: {1}\nSem sinal.'.format('{0}\n'.format(cto_string) if cto_string else '', onu['onu_id']),
               quote=True)
           else:
-            signal = get_signal(onu['onuid']).capitalize()
+            signal = get_signal(onu['onu_id']).capitalize()
             update.message.reply_text(
-              '{0}ONU ID: {1}\n{2}'.format('{0}\n'.format(cto_string) if cto_string else '', onu['onuid'], signal),
+              '{0}ONU ID: {1}\n{2}'.format('{0}\n'.format(cto_string) if cto_string else '', onu['onu_id'], signal),
               quote=True)
         else:
           update.message.reply_text('Nenhuma ONU encontrada com o serial informado.', quote=True)
@@ -57,4 +57,4 @@ def sinal(update, context):
         update.message.reply_text('ID da ONU, usuário ou serial inválido ou não encontrado.', quote=True)
       session.close()
   else:
-    update.message.reply_text('Você não tem permissão para acessar o handlers /sinal.', quote=True)
+    update.message.reply_text('Você não tem permissão para acessar o menu /sinal.', quote=True)

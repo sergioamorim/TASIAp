@@ -83,19 +83,19 @@ def diagnose_onu_not_found(pon, query_result, cto_name, onu_id, onu_info):
     if onu_info:
       checked_id = False
       if onu_id_by_serial := find_onu_by_serial(onu_info['serial']):
-        if onu_id_by_serial['onuid'] == str(onu_info['onu_id']):
+        if onu_id_by_serial['onu_id'] == str(onu_info['onu_id']):
           diagnostic_second_addition = check_connection_by_onu_id_same_serial(onu_info, onu_id_by_serial['state'])
           checked_id = True
         else:
-          if user_from_onu_id := find_user_by_onu(onu_id_by_serial['onuid']):
-            update_onu_info(int(onu_id_by_serial['onuid']), serial=onu_info['serial'], username=user_from_onu_id)
+          if user_from_onu_id := find_user_by_onu(onu_id_by_serial['onu_id']):
+            update_onu_info(int(onu_id_by_serial['onu_id']), serial=onu_info['serial'], username=user_from_onu_id)
             diagnostic_fourth_addition = 'O usuário {0} está conectado na ONU ID {1} de serial {2}.'.format(
-              user_from_onu_id, onu_id_by_serial['onuid'], onu_info['serial'])
+              user_from_onu_id, onu_id_by_serial['onu_id'], onu_info['serial'])
           else:
             diagnostic_fourth_addition = 'Nenhum usuário foi encontrado conectado através da ONU ID {0} (serial ' \
-                                         '{1}).'.format(onu_id_by_serial['onuid'], onu_info['serial'])
+                                         '{1}).'.format(onu_id_by_serial['onu_id'], onu_info['serial'])
           diagnostic_second_addition = 'A ONU de serial {0} agora está com o ID {1} e está {2}.\n{3}'.format(
-            onu_info['serial'], onu_id_by_serial['onuid'], format_onu_state(onu_id_by_serial['state']),
+            onu_info['serial'], onu_id_by_serial['onu_id'], format_onu_state(onu_id_by_serial['state']),
             diagnostic_fourth_addition)
       else:
         diagnostic_second_addition = 'A ONU de serial {0} não está autorizada.'

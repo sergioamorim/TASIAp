@@ -32,17 +32,17 @@ def usuario(update, context):
           session.close()
           if onu['state'] == 'dn':
             update.message.reply_text(
-              'ONU ID: {0}\nSem sinal.{1}'.format(onu['onuid'], '\n{0}'.format(cto_string) if cto_string else ''),
+              'ONU ID: {0}\nSem sinal.{1}'.format(onu['onu_id'], '\n{0}'.format(cto_string) if cto_string else ''),
               quote=True)
           else:
-            if user := find_user_by_onu(onu['onuid']):
-              update.message.reply_text('ONU ID: {0}\n{1}'.format(onu['id'], user), quote=True)
+            if user := find_user_by_onu(onu['onu_id']):
+              update.message.reply_text('ONU ID: {0}\n{1}'.format(onu['onu_id'], user), quote=True)
             else:
               update.message.reply_text(
-                'ONU ID: {0}\nNenhum usuário associado à ONU foi encontrado.'.format(onu['onuid']), quote=True)
+                'ONU ID: {0}\nNenhum usuário associado à ONU foi encontrado.'.format(onu['onu_id']), quote=True)
         else:
           update.message.reply_text('Nenhuma ONU encontrada com o serial informado.', quote=True)
       else:
         update.message.reply_text('ID ou serial da ONU inválido.', quote=True)
   else:
-    update.message.reply_text('Você não tem permissão para acessar o handlers /usuario.', quote=True)
+    update.message.reply_text('Você não tem permissão para acessar o menu /usuario.', quote=True)

@@ -18,7 +18,7 @@ def onuid(update, context):
       session = get_mysql_session()
       if is_serial_valid(context.args[0]):
         if onu := find_onu_by_serial(context.args[0]):
-          update.message.reply_text(onu['id'], quote=True)
+          update.message.reply_text(onu['onu_id'], quote=True)
         else:
           update.message.reply_text('Nenhuma ONU encontrada com o serial informado.', quote=True)
       else:
@@ -36,4 +36,4 @@ def onuid(update, context):
             quote=True)
       session.close()
   else:
-    update.message.reply_text('Você não tem permissão para acessar o handlers /cto.', quote=True)
+    update.message.reply_text('Você não tem permissão para acessar o menu /cto.', quote=True)

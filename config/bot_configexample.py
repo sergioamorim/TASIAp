@@ -1,8 +1,4 @@
-#!/usr/bin/env python
-
 # The config file needs to be named 'bot_config.py'
-# and be placed on the same directory as the files bot_daemon.py
-# and cto_info.py
 
 token = 'bOt-T0keN_ExaMplE'
 default_chat = '012345678'

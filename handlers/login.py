@@ -8,7 +8,7 @@ logger = get_logger(__name__)
 def login(update, context):
   log_update(update, logger)
   if is_user_authorized(update.message.from_user.id):
-    if not (args_len := len(context.args)) or args_len != 1:
+    if len(context.args) != 1:
       update.message.reply_text('Envie "/login maria" para receber informações sobre o usuário maria.', quote=True)
     else:
       if login_info := find_login_info(context.args[0]):

@@ -27,7 +27,7 @@ def restart_onu(board, pon, onu_number):
 
 def restart_onu_by_id(onu_id):
   logger.debug('restart_onu_by_id({0})'.format(repr(onu_id)))
-  if not is_onu_id_valid(onu_id):
+  if not onu_id or not is_onu_id_valid(onu_id):
     logger.debug('restart_onu_by_id({0}): can not restart onu'.format(repr(onu_id)))
     return None
   board = '12' if onu_id[:1] == '1' else '14'
@@ -43,11 +43,9 @@ def main():
   parser.add_argument('-i', '--id', dest='i', help='ID da ONU a ser reiniciada', default=None)
   args = parser.parse_args()
 
-  onu_id = None
-  if args.i:
-    onu_id = str(args.i)
+  print(restart_onu_by_id(args.i))
 
-  print(restart_onu_by_id(onu_id))
+  return 0
 
 
 if __name__ == '__main__':

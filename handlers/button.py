@@ -1,5 +1,4 @@
 from re import findall
-from subprocess import run
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 
@@ -9,6 +8,7 @@ from common.sqlite_common import update_onu_info
 from common.string_common import get_onu_device_id
 from config import bot_config
 from logger import log_update, get_logger
+from onu_restart import restart_onu_by_id
 from onu_set_cvlan import set_cvlan
 
 logger = get_logger(__name__)
@@ -80,18 +80,15 @@ def button(update, context):
     query.edit_message_text('Autorização cancelada.', quote=True)
   elif action == 'r':
     onu_id = findall('<i=(.*?)>', query.data)[0]
-    command_list = ['python3.8', 'onu_restart.py', '-i', '{0}'.format(onu_id)]
-    logger.debug('button: reiniciar: valid id: command_list: {0}'.format(command_list))
-    answer_string = run(command_list, capture_output=True).stdout.decode('utf-8').replace('\n', '')
-    logger.debug('button: reiniciar: valid id: answer_string: {0}'.format(answer_string))
-    if answer_string == 'not found':
-      query.edit_message_text('Sem sinal ou não existe ONU autorizada com esse ID.', quote=True)
-    elif answer_string == 'error':
-      query.edit_message_text('Erro não especificado.', quote=True)
-    elif answer_string == 'done':
-      query.edit_message_text('Comando enviado com sucesso. A ONU será reiniciada em até 2 minutos.', quote=True)
+    if restart_result := restart_onu_by_id(onu_id):
+      if restart_result == 'done':
+        query.edit_message_text('Comando enviado com sucesso. A ONU será reiniciada em até 2 minutos.', quote=True)
+      elif restart_result == 'not found':
+        query.edit_message_text('Sem sinal ou não existe ONU autorizada com esse ID.', quote=True)
+      else:
+        query.edit_message_text('Erro não especificado.', quote=True)
     else:
-      query.edit_message_text('Resposta desconhecida: {0}'.format(answer_string), quote=True)
+      query.edit_message_text('Não foi possível reiniciar a ONU com o ID informado: ID inválido.', quote=True)
   elif action == 'ar':
     query.edit_message_text('Reinicialização cancelada.', quote=True)
   elif action == 'v':

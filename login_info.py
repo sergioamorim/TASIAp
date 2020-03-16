@@ -39,7 +39,7 @@ def format_connection_info(username, connection_info):
                                                                connection_info['FramedIPAddress'])
   else:
     connection_status = 'Desconectado.\nÚltima conexão: {0} a {1}'.format(
-      format_datetime(connection_info['AcctStartTime']), connection_info['AcctStopTime'])
+      format_datetime(connection_info['AcctStartTime']), format_datetime(connection_info['AcctStopTime']))
 
   if cto_name := sanitize_cto_vlan_name(connection_info['CalledStationId']):
     return 'Conexão por cabo na ONU da {0}.\n{1}'.format(cto_name, connection_status)

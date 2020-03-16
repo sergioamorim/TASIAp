@@ -10,6 +10,7 @@ permissions = {
   'onuid': [1234567],
   'procurar': [1234567],
   'usuario': [1234567],
+  'login': [1234567],
   'link': [1234567],
   'cto': [1234567],
   'vlan': [1234567]

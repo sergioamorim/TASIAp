@@ -11,7 +11,7 @@ def login(update, context):
     if not (args_len := len(context.args)) or args_len != 1:
       update.message.reply_text('Envie "/login maria" para receber informações sobre o usuário maria.', quote=True)
     else:
-      if login_info := find_login_info(context.args[1]):
+      if login_info := find_login_info(context.args[0]):
         update.message.reply_text(login_info, quote=True)
       else:
         update.message.reply_text('Usuário inexistente.', quote=True)

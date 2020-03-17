@@ -1,7 +1,6 @@
 from argparse import ArgumentParser
 from telnetlib import Telnet
 
-from common.string_common import is_int
 from common.telnet_common import str_to_telnet, get_next_value, connect_su
 from config import telnet_config
 from logger import get_logger
@@ -10,59 +9,29 @@ logger = get_logger(__name__)
 
 
 def get_onu_power_signal_by_id(tn, onu_id):
-  if is_int(onu_id) and 0 < int(onu_id) < 4096:
-    if onu_id[:1] == '1':
-      board = '12'
-    elif onu_id[:1] == '2':
-      board = '14'
+  logger.debug('get_onu_power_signal_by_id({0}, {1})'.format(repr(tn), repr(onu_id)))
+  board = '12' if onu_id[:1] == '1' else '14'
+  pon = onu_id[1:2]
+  onu_number = onu_id[2:] if int(onu_id[2:]) > 9 else onu_id[3:]
+  tn.write(str_to_telnet('cd gpononu'))
+  tn.read_until(b'gpononu# ', timeout=1)
+  tn.write(str_to_telnet('show optic_module slot {0} link {1} onu {2}'.format(board, pon, onu_number)))
+  tn.read_until(b'\n', timeout=3)
+  value = get_next_value(tn, ' ')
+  if value != '-----':
+    value = get_next_value(tn, ']')
+    if '-553' in value:
+      signal_power = 'off'
+    elif '-506' in value:
+      signal_power = 'not found'
     else:
-      raise ValueError('The first digit of the given ID is invalid (only 1 and 2 are accepted).')
-    pon = onu_id[1:2]
-    if int(pon) < 1 or int(pon) > 8:
-      raise ValueError('The second digit of the given ID is out of range (1 to 8 are accepted)')
-    onu_number = onu_id[2:] if int(onu_id[2:]) > 9 else onu_id[3:]
-    if int(onu_number) < 1:
-      raise ValueError('The last two digits of the given ID are invalid (needs to be greater than 00)')
-    tn.write(str_to_telnet('cd gpononu'))
-    waste_value = tn.read_until(b'gpononu# ', timeout=1).decode('utf-8').replace('\r', '')
-    logger.debug('get_onu_power_signal_by_id: waste_value 1: {0}'.format(waste_value))
-    if 'stop--' in waste_value:
-      tn.write(str_to_telnet('\n'))
-      waste_value = tn.read_until(b'gpononu# ', timeout=1).decode('utf-8').replace('\r', '')
-      logger.debug('get_onu_power_signal_by_id: waste_value 2: {0}'.format(waste_value))
-    tn.write(str_to_telnet('show optic_module slot {0} link {1} onu {2}'.format(board, pon, onu_number)))
-    logger.debug('get_onu_power_signal_by_id: tn.write: {0}'.format(
-      repr('show optic_module slot {0} link {1} onu {2}'.format(board, pon, onu_number))))
-    waste_value = tn.read_until(b'\n', timeout=3).decode('utf-8').replace('\r', '')
-    logger.debug('get_onu_power_signal_by_id: waste_value 3: {0}'.format(waste_value))
-    if 'stop--' in waste_value:
-      tn.write(str_to_telnet('\n'))
-      waste_value = tn.read_until(b'\n', timeout=3).decode('utf-8').replace('\r', '')
-      logger.debug('get_onu_power_signal_by_id: waste_value 4: {0}'.format(waste_value))
-    value = get_next_value(tn, ' ')
-    logger.debug('get_onu_power_signal_by_id: try to catch -553: {0}'.format(value))
-    if value != '-----':
-      value = get_next_value(tn, ']')
-      if '-553' in value:
-        signal_power = 'off'
-      elif '-506' in value:
-        signal_power = 'not found'
-      else:
-        signal_power = 'error'
-    else:
-      waste_value = tn.read_until(b'RECV POWER   :', timeout=3).decode('utf-8').replace('\r', '')
-      logger.debug('get_onu_power_signal_by_id: waste_value 5: {0}'.format(waste_value))
-      if 'stop--' in waste_value:
-        tn.write(str_to_telnet('\n'))
-        waste_value = tn.read_until(b'RECV POWER   :', timeout=3).decode('utf-8').replace('\r', '')
-        logger.debug('get_onu_power_signal_by_id: waste_value 6: {0}'.format(waste_value))
-      signal_power = get_next_value(tn, '\t')[1:]
-    logger.debug('get_onu_power_signal_by_id: signal_power: {0}'.format(signal_power))
-    tn.read_until(b'gpononu# ', timeout=1)
-    tn.write(str_to_telnet('cd ..'))
-    tn.read_until(b'Admin# ', timeout=1)
-    return signal_power
-  raise ValueError('The given ONU id is out of range (1 to 4095)')
+      signal_power = 'error'
+  else:
+    tn.read_until(b'RECV POWER   :', timeout=3)
+    signal_power = get_next_value(tn, '\t')[1:]
+  tn.read_until(b'gpononu# ', timeout=1)
+  logger.debug('get_onu_power_signal_by_id({0}, {1}): {2}'.format(repr(tn), repr(onu_id), repr(signal_power)))
+  return signal_power
 
 
 def main():

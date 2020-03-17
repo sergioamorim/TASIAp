@@ -10,11 +10,8 @@ def str_to_telnet(string):
 
 def get_next_value(tn, char):
   value = tn.read_until(char.encode('ascii'), timeout=1)
-  logger.debug('get_next_value: first catch: {0}'.format(value[:-1]))
   while char.encode('ascii') in value[:-1] or char.encode('ascii') is value:
     value = tn.read_until(char.encode('ascii'), timeout=1)
-    logger.debug('get_next_value: next catch: {0}'.format(value[:-1]))
-  logger.debug('get_next_value: return: {0}'.format(value[:-1]))
   return value[:-1].decode('utf-8')
 
 

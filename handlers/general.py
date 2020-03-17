@@ -3,6 +3,7 @@ from logger import log_update, get_logger
 logger = get_logger(__name__)
 
 
+# noinspection PyUnusedLocal
 def general(update, context):
   log_update(update, logger)
   update.message.reply_text(

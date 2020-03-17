@@ -1,5 +1,5 @@
 from inspect import stack
-from re import findall, search
+from re import search
 from unicodedata import normalize
 
 from telegram import MAX_MESSAGE_LENGTH

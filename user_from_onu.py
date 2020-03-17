@@ -135,9 +135,11 @@ def get_mac_list_from_onu_id(onu_id):
 
 
 def find_user_by_onu(onu_id):
+  logger.debug('find_user_by_onu({0})'.format(repr(onu_id)))
   session = get_mysql_session()
   if cto := is_cto_id(session, onu_id):
     session.close()
+    logger.debug('find_user_by_onu({0}): {1}'.format(repr(onu_id), repr(cto)))
     return cto
   if len((mac_list := get_mac_list_from_onu_id(onu_id))):
     username_list = []
@@ -146,18 +148,22 @@ def find_user_by_onu(onu_id):
                          "DESC LIMIT 1;".format(mysqldb_config.radius_acct_table)
       if username := session.execute(sql_query_string, {'mac': mac}).scalar():
         username_list.append(username)
+    session.close()
     if username_list:
       if len(username_list) == 1:
         update_onu_info(int(onu_id), username=username_list[0])
-      session.close()
-      return ' '.join(username_list)
+      usernames = ' '.join(username_list)
+      logger.debug('find_user_by_onu({0}): {1}'.format(repr(onu_id), repr(usernames)))
+      return usernames
   elif 'ERR' in mac_list:
     session.close()
+    logger.debug('find_user_by_onu({0}): {1}'.format(repr(onu_id), repr('ERR')))
     return 'ERR'
   elif cto := is_offline_cto_id(session, onu_id):
     session.close()
+    logger.debug('find_user_by_onu({0}): {1}'.format(repr(onu_id), repr(cto)))
     return cto
-  session.close()
+  logger.debug('find_user_by_onu({0}): can not find user'.format(repr(onu_id), repr(cto)))
   return None
 
 

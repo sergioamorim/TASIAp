@@ -6,8 +6,12 @@ from common.sqlite_common import find_onu_info, update_onu_info
 from common.string_common import sanitize_cto_vlan_name, format_datetime, format_onu_state
 from common.telnet_common import connect_su, str_to_telnet, get_next_value
 from config import mysqldb_config, telnet_config
+from logger import get_logger
 from onu_id_from_serial import find_onu_by_serial
 from user_from_onu import find_user_by_onu
+
+
+logger = get_logger(__name__)
 
 
 def get_onu_id_by_mac_and_pon(tn, mac, pon):
@@ -159,21 +163,24 @@ def get_onu_from_connection(session, query_result, username, do_diagnose_login=F
     elif onu_info := find_onu_info(username=username):
       onu_id = str(onu_info['onu_id'])
     diagnostic = diagnose_onu_not_found(pon, query_result, cto_name, onu_id, onu_info)
-  session.close()
   return {'onu_id': onu_id, 'cto_name': cto_name, 'diagnostic': diagnostic}
 
 
 def find_onu_by_user(username):
+  logger.debug('find_onu_by_user({0})'.format(repr(username)))
   session = get_mysql_session()
   query_acct = "SELECT CallingStationId, CalledStationId FROM {0} WHERE UserName = :username ORDER BY AcctStartTime " \
                "DESC LIMIT 1;".format(mysqldb_config.radius_acct_table)
   query_postauth = "SELECT sucess, pass, CallingStationId, CalledStationId FROM {0} WHERE user = :username ORDER BY " \
                    "date DESC LIMIT 1;".format(mysqldb_config.radius_postauth_table)
+  onu_info = {'onu_id': '', 'cto_name': '', 'diagnostic': ''}
   if query_result := session.execute(query_acct, {'username': username}).first():
-    return get_onu_from_connection(session, query_result, username)
+    onu_info = get_onu_from_connection(session, query_result, username)
   elif query_result := session.execute(query_postauth, {'username': username}).first():
-    return get_onu_from_connection(session, query_result, username, do_diagnose_login=True)
-  return {'onu_id': '', 'cto_name': '', 'diagnostic': ''}
+    onu_info = get_onu_from_connection(session, query_result, username, do_diagnose_login=True)
+  session.close()
+  logger.debug('find_onu_by_user({0}): {1}'.format(repr(username), repr(onu_info)))
+  return onu_info
 
 
 def main():

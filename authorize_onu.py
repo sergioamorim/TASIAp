@@ -160,14 +160,20 @@ def get_onu_list(discovery_list):
 
 
 def authorize_onu(auth_onu=None, cvlan=None):
+  logger.debug('authorize_onu(auth_onu={0}, cvlan={1})'.format(repr(auth_onu), repr(cvlan)))
   discovery_list = get_discovery_list()
   onu_list = get_onu_list(discovery_list)
   if not len(onu_list):
+    logger.debug('authorize_onu(auth_onu={0}, cvlan={1}): can not find onu'.format(repr(auth_onu), repr(cvlan)))
     return None
   if not auth_onu:
+    logger.debug('authorize_onu(auth_onu={0}, cvlan={1}): {2}'.format(repr(auth_onu), repr(cvlan), repr(onu_list)))
     return onu_list
   onu = find_onu_in_list(onu_list, auth_onu)
-  return authorize_onu_effective(onu, cvlan) if onu else 'ERROR'
+  authorization_result = authorize_onu_effective(onu, cvlan) if onu else 'ERROR'
+  logger.debug('authorize_onu(auth_onu={0}, cvlan={1}): {2}'.format(repr(auth_onu), repr(cvlan),
+                                                                    repr(authorization_result)))
+  return authorization_result
 
 
 def main():

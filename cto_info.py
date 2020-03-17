@@ -6,6 +6,7 @@ from fpdf import FPDF
 from requests import post
 
 from common.mysql_common import get_mysql_session
+from common.string_common import sanitize_name
 from config import bot_config
 
 
@@ -38,13 +39,6 @@ def get_numero(result_row):
 def sanitize_dumb(string):
   return string.replace(',', ', ').replace('//', '').replace(' /', ', ').replace('\t', '').replace(' ,', ',').replace(
     ' / ', ', ').replace('  ', ' ')
-
-
-def sanitize_name(name):
-  name = name.replace('*', '').replace('0-', '').replace('1-', '').replace('2-', '')
-  if name[0] == ' ':
-    name = name[1:]
-  return name
 
 
 def sanitize_to_terminal(string):

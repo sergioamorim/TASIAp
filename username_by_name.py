@@ -1,19 +1,8 @@
 from argparse import ArgumentParser
 
 from common.mysql_common import get_mysql_session
-from common.string_common import remove_accents, sanitize_dumb
+from common.string_common import remove_accents, sanitize_dumb, sanitize_name
 from config import mysqldb_config
-
-
-def sanitize_name(name):
-  if (dirty_prefix_pos := name.find('-')) != -1 and dirty_prefix_pos < 4:
-    name = name[dirty_prefix_pos + 1:]
-  if (dirty_prefix_pos := name.find('*')) != -1 and dirty_prefix_pos < 4:
-    name = name[dirty_prefix_pos + 1:]
-  name = name.replace('*', '').replace('0-', '').replace('1-', '').replace('2-', '')
-  if name[0] == ' ':
-    name = name[1:]
-  return remove_accents(name).upper()
 
 
 def make_dict(clients):

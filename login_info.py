@@ -2,7 +2,8 @@ from argparse import ArgumentParser
 
 from common.mysql_common import get_mysql_session
 from common.sqlite_common import find_onu_info
-from common.string_common import get_enable_emoji, get_status_emoji, sanitize_cto_vlan_name, format_datetime
+from common.string_common import get_enable_emoji, get_status_emoji, sanitize_cto_vlan_name, format_datetime, \
+  sanitize_name
 from config import mysqldb_config
 from logger import get_logger
 
@@ -58,7 +59,7 @@ def format_login_info(username, login_info, connection_info=None):
   login_info_string = '{0} Login ativo: {1}\nSenha: {2}\n{3}Plano: {4}\n{5}{6} Nome: {7}\nEndereço: {8}, {9}\n{10}'. \
                       format(get_enable_emoji(login_info['enable']), enable, login_info['pass'], ip,
                              login_info['groupname'], aditional_info, get_status_emoji(login_info['status']),
-                             login_info['nome'], login_info['endereco'], login_info['numero'],
+                             sanitize_name(login_info['nome']), login_info['endereco'], login_info['numero'],
                              format_connection_info(username, connection_info))
   return login_info_string
 

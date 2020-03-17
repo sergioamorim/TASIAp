@@ -85,6 +85,17 @@ def get_status_emoji(status):
   return '🔴'
 
 
+def sanitize_name(name):
+  if (dirty_prefix_pos := name.find('-')) != -1 and dirty_prefix_pos < 4:
+    name = name[dirty_prefix_pos + 1:]
+  if (dirty_prefix_pos := name.find('*')) != -1 and dirty_prefix_pos < 4:
+    name = name[dirty_prefix_pos + 1:]
+  name = name.replace('*', '').replace('0-', '').replace('1-', '').replace('2-', '')
+  if name[0] == ' ':
+    name = name[1:]
+  return remove_accents(name).upper()
+
+
 def format_clients_message(name, result):
   message = ''
   for client in result['direct']:

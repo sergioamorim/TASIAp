@@ -3,6 +3,7 @@ from re import findall
 from telnetlib import Telnet
 
 from common.mysql_common import get_mysql_session
+from common.string_common import sanitize_name
 from common.telnet_common import str_to_telnet
 from config import mysqldb_config, telnet_config
 from logger import get_logger
@@ -348,13 +349,6 @@ def get_pon_list(tn):
 def sanitize_dumb(string):
   return string.replace(',', ', ').replace('//', '').replace(' /', ', ').replace('\t', '').replace(' ,', ',').replace(
     ' / ', ', ').replace('  ', ' ')
-
-
-def sanitize_name(name):
-  name = name.replace('*', '').replace('0-', '').replace('1-', '').replace('2-', '')
-  if name[0] == ' ':
-    name = name[1:]
-  return name
 
 
 def connect_su(tn):

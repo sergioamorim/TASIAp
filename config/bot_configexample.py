@@ -19,7 +19,8 @@ mk_link = {
   'ssh': {
     'port': '22',
     'user': 'admin',
-    'ip': '255.255.255.255'
+    'ip': '255.255.255.255',
+    'identity_file': '~/.ssh/id_rsa'
   },
   'script': {
     'first-link': 'linkname-enable',

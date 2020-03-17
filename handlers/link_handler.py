@@ -8,7 +8,8 @@ logger = get_logger(__name__)
 
 
 def create_link_changing_command_list(link_name):
-  return ['ssh', '-p', '{0}'.format(bot_config.mk_link['ssh']['port']),
+  return ['ssh', '-p', '{0}'.format(bot_config.mk_link['ssh']['port']), '-i',
+          '{0}'.format(bot_config.mk_link['ssh']['identity_file']),
           '{0}@{1}'.format(bot_config.mk_link['ssh']['user'], bot_config.mk_link['ssh']['ip']), '/system', 'script',
           'run', '{0}'.format(bot_config.mk_link['script'][link_name])]
 

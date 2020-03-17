@@ -6,11 +6,12 @@ from config import mysqldb_config
 
 
 def get_mysql_session():
-  engine = create_engine(
-    'mysql://{0}:{1}@{2}/{3}'.format(mysqldb_config.username, mysqldb_config.password, mysqldb_config.host,
-                                     mysqldb_config.database), encoding='latin1')
-  Session = sessionmaker(bind=engine)
-  return Session()
+  engine_parameters = 'mysql://{0}:{1}@{2}:{3}/{4}'.format(mysqldb_config.username, mysqldb_config.password,
+                                                           mysqldb_config.host, mysqldb_config.port,
+                                                           mysqldb_config.database)
+  engine = create_engine(engine_parameters, encoding='latin1')
+  session_maker = sessionmaker(bind=engine)
+  return session_maker()
 
 
 def user_exists(session, user):

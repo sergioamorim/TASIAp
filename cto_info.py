@@ -4,10 +4,9 @@ from os import remove
 
 from fpdf import FPDF
 from requests import post
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
-from config import bot_config, mysqldb_config
+from common.mysql_common import get_mysql_session
+from config import bot_config
 
 
 def to_int(string):
@@ -90,11 +89,7 @@ args = parser.parse_args()
 cto = str(args.c)
 
 if cto:
-  engine = create_engine(
-    'mysql://{0}:{1}@{2}/{3}'.format(mysqldb_config.username, mysqldb_config.password, mysqldb_config.host,
-                                     mysqldb_config.database), encoding='latin1')
-  Session = sessionmaker(bind=engine)
-  session = Session()
+  session = get_mysql_session()
   row_cto_name = session.execute(
     'SELECT CalledStationId FROM radius_acct WHERE CalledStationId LIKE :cto ORDER BY AcctStartTime DESC LIMIT 1',
     {'cto': '%{0}%'.format(cto)}).first()

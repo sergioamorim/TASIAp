@@ -26,4 +26,4 @@ def reiniciar(update, context):
         'de 1 a 8 (número da PON) e os dois últimos dígitos devem ser entre 01 e 99 (número da ONU).',
         quote=True)
   else:
-    update.message.reply_text('Você não tem permissão para acessar o handlers /reiniciar.', quote=True)
+    update.message.reply_text('Você não tem permissão para acessar o menu /reiniciar.', quote=True)

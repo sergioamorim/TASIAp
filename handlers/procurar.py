@@ -29,4 +29,4 @@ def procurar(update, context):
         update.message.reply_text(format_clients_message(name, find_username_by_name(name)), parse_mode=ParseMode.HTML,
                                   quote=True)
   else:
-    update.message.reply_text('Você não tem permissão para acessar o handlers /procurar.', quote=True)
+    update.message.reply_text('Você não tem permissão para acessar o menu /procurar.', quote=True)

@@ -24,4 +24,4 @@ def cto(update, context):
     else:
       update.message.reply_text('ID da VLAN inválido. Um ID válido deve estar entre 1 e 4095.', quote=True)
   else:
-    update.message.reply_text('Você não tem permissão para acessar o handlers /cto.', quote=True)
+    update.message.reply_text('Você não tem permissão para acessar o menu /cto.', quote=True)

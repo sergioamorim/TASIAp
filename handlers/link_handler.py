@@ -44,4 +44,4 @@ def link(update, context):
         'links.',
         quote=True)
   else:
-    update.message.reply_text('Você não tem permissão para acessar o handlers /link.', quote=True)
+    update.message.reply_text('Você não tem permissão para acessar o menu /link.', quote=True)

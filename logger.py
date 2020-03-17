@@ -11,7 +11,7 @@ def get_logger(name):
   logger = getLogger(name)
   logger.setLevel(DEBUG)
   formatter = Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-  file_handler = FileHandler(file_path)
+  file_handler = FileHandler(file_path, encoding='utf-8')
   file_handler.setFormatter(formatter)
   stream_handler = StreamHandler()
   stream_handler.setFormatter(formatter)

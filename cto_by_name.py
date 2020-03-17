@@ -68,9 +68,9 @@ def find_cto_by_name(string_list):
     if not included:
       last_online = get_cto_last_online(session, query_result['CalledStationID'])
       offline_ctos.append({'cto_name': cto_name, 'last_online': last_online})
+  session.close()
   for cto_dict in sorted(offline_ctos, key=lambda cto: cto['last_online'], reverse=True):
     last_online = format_datetime(cto_dict['last_online'])
     ctos_found.append('*{0} (clientes offline - {1})'.format(cto_dict['cto_name'], last_online))
-  session.close()
   logger.info('find_cto_by_name({0}): {1}'.format(string_list, ctos_found))
   return ctos_found

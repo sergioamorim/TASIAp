@@ -108,9 +108,11 @@ def find_onu_connection(onu_id):
                   diagnostic = 'desconhecido.'
             user_data = {'username': user['user'], 'password': user['pass'], 'diagnostic': diagnostic}
             logger.debug('find_onu_connection: user_data: {0}'.format(user_data))
+            session.close()
             return user_data
     logger.debug('find_onu_connection: sleep: {0}'.format(checking_frequency))
     sleep(checking_frequency)
     if checking_frequency < 120:
       checking_frequency = checking_frequency + checking_frequency
+  session.close()
   return None

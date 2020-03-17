@@ -108,6 +108,7 @@ if cto:
         'AcctStartTime DESC LIMIT 1',
         {'username': username[0]}).first()
       rows.append(row)
+  session.close()
   sorted_rows = sorted(rows, key=get_acct_stop_time, reverse=True)
   users_offline = []
   users_online = []

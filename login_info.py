@@ -68,8 +68,10 @@ def find_login_info(username):
   session = get_mysql_session()
   if login_info := get_login_info(session, username):
     formatted_login_info = format_login_info(username, login_info, get_connection_info(session, username))
+    session.close()
     logger.debug('find_login_info({0}): {1}'.format(repr(username), repr(formatted_login_info)))
     return formatted_login_info
+  session.close()
   logger.debug('find_login_info({0}): can not find login info'.format(repr(username)))
   return None
 

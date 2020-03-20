@@ -71,13 +71,6 @@ class Board:
     return '<Board(board_id={0})>'.format(repr(self.board_id))
 
 
-def get_next_value(tn):
-  value = tn.read_until(b' ', timeout=10)
-  while ' '.encode('ascii') in value[:-1] or ' '.encode('ascii') is value or '\n'.encode('ascii') in value[:-1]:
-    value = tn.read_until(b' ', timeout=10)
-  return value[:-1].decode('utf-8')
-
-
 def connect_gpononu(tn):
   connect_su(tn)
   tn.write(str_to_telnet('cd gpononu'))

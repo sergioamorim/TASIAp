@@ -1,10 +1,11 @@
 from argparse import ArgumentParser
+from re import findall
 from telnetlib import Telnet
 
 from common.mysql_common import get_mysql_session, reauthorize_user
 from common.sqlite_common import find_onu_info, update_onu_info
 from common.string_common import sanitize_cto_vlan_name, format_datetime, format_onu_state
-from common.telnet_common import connect_su, str_to_telnet, get_next_value
+from common.telnet_common import connect_su, str_to_telnet
 from config import mysqldb_config, telnet_config
 from logger import get_logger
 from onu_id_from_serial import find_onu_by_serial
@@ -14,18 +15,22 @@ from user_from_onu import find_user_by_onu
 logger = get_logger(__name__)
 
 
+def get_onu_number(pon_mac_lookup):
+  onu_number_pattern = 'OnuId:([0-9]*)'
+  if onu_number := findall(onu_number_pattern, pon_mac_lookup):
+    return onu_number[0]
+  return None
+
+
 def get_onu_id_by_mac_and_pon(tn, mac, pon):
   tn.write(str_to_telnet('cd gponline'))
-  tn.read_until(b'gponline# ', timeout=1)
+  tn.read_until(b'Admin\\gponline# ', timeout=1)
   tn.write(str_to_telnet('show pon_mac {0} lookup {1}'.format(pon, mac.replace(':', ''))))
-  tn.read_until(b'-----\n\r', timeout=1)
-  value = get_next_value(tn, '\t')
-  if value == 'Admin\\gponline#':
-    return None
-  tn.read_until(b'OnuId:', timeout=1)
-  onu_number = get_next_value(tn, '\n')
-  board_id = '1' if pon[5:7] == '12' else '2'
-  return '{0}{1}{2}{3}'.format(board_id, pon[13:], '0' if int(onu_number) < 10 else '', onu_number)
+  pon_mac_lookup = tn.read_until(b'Admin\\gponline# ', timeout=1).decode('ascii')
+  if onu_number := get_onu_number(pon_mac_lookup):
+    board_id = '1' if pon[5:7] == '12' else '2'
+    return '{0}{1}{2}{3}'.format(board_id, pon[13:], '0' if int(onu_number) < 10 else '', onu_number)
+  return None
 
 
 def get_onu_id_by_mac(mac, pon):
@@ -47,17 +52,9 @@ def get_pon_list(tn):
   tn.write(str_to_telnet('cd gponline'))
   tn.read_until(b'gponline# ', timeout=1)
   tn.write(str_to_telnet('show pon_auth all'))
-  tn.read_until(b'ITEM=', timeout=1)
-  pon_sum = get_next_value(tn, ' ')
-  tn.read_until(b'\r', timeout=1)
-  pon_list = []
-  for i in range(0, int(pon_sum)):
-    current_pon = tn.read_until(b' ,', timeout=1)[:-2].decode('utf-8')
-    pon_list.append(current_pon)
-    tn.read_until(b'\r', timeout=1).decode('utf-8')
-  tn.read_until(b'gponline# ', timeout=1)
-  tn.write(str_to_telnet('cd ..'))
-  tn.read_until(b'Admin# ', timeout=1)
+  show_pon_auth_all = tn.read_until(b'Admin\\gponline# ', timeout=1).decode('ascii')
+  pon_pattern = '(slot [0-9]* link [0-9]*) *,auth mode is physical id.'
+  pon_list = findall(pon_pattern, show_pon_auth_all)
   return pon_list
 
 

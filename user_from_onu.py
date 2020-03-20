@@ -1,10 +1,11 @@
 from argparse import ArgumentParser
+from re import findall
 from telnetlib import Telnet
 
 from common.mysql_common import get_mysql_session
 from common.sqlite_common import update_onu_info
 from common.string_common import sanitize_cto_vlan_name, is_onu_id_valid
-from common.telnet_common import connect_su, get_next_value, str_to_telnet
+from common.telnet_common import connect_su, str_to_telnet
 from config import mysqldb_config, telnet_config
 from logger import get_logger
 
@@ -13,8 +14,8 @@ logger = get_logger(__name__)
 
 def is_cto_id(session, onu_id):
   sql_query_string = "SELECT DISTINCT CalledStationID FROM {0} WHERE AcctStopTime = '0000-00-00 00:00:00' AND " \
-                     "CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT 1;".format(
-                      mysqldb_config.radius_acct_table, onu_id)
+                     "CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT " \
+                     "1;".format(mysqldb_config.radius_acct_table, onu_id)
   if cto_vlan_name := session.execute(sql_query_string).scalar():
     return sanitize_cto_vlan_name(cto_vlan_name)
   if onu_id[:1] == '1':
@@ -51,87 +52,23 @@ def is_offline_cto_id(session, onu_id):
   return None
 
 
+def get_mac_list(show_pon_mac, onu_number):
+  mac_pattern = 't([0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2})\\t *Vid:[' \
+                '0-9]*\\t *OnuId:' + '{0}\\n'.format(onu_number)
+  return findall(mac_pattern, show_pon_mac)
+
+
 def get_mac_list_from_onu_id(onu_id):
   with Telnet(telnet_config.ip, telnet_config.port) as tn:
     connect_su(tn)
-    if onu_id[:1] == '1':
-      board = '12'
-    else:
-      board = '14'
+    board = '12' if onu_id[:1] == '1' else '14'
     pon = onu_id[1:2]
     onu_number = onu_id[2:] if int(onu_id[2:]) > 9 else onu_id[3:]
-    associated_mac_list = []
     tn.write(str_to_telnet('cd gponline'))
-    tn.read_until(b'gponline# ', timeout=1)
+    tn.read_until(b'Admin\\gponline# ', timeout=1)
     tn.write(str_to_telnet('show pon_mac slot {0} link {1}'.format(board, pon)))
-    remove_header_value = tn.read_until(b'-----\n\r001\t', timeout=1)
-    logger.debug('get_mac_list_from_onu_id: remove_header: {0}'.format(remove_header_value))
-    if 'gponline#' in remove_header_value.decode('utf-8'):
-      logger.error('get_mac_list_from_onu_id: onu not found!')
-      return ['ERR']
-    found = False
-    logger.debug('get_mac_list_from_onu_id: starting find onu_number: {0}'.format(onu_number))
-    while not found:
-      value = get_next_value(tn, '\t')
-      if '--Press' in value:
-        logger.debug('get_mac_list_from_onu_id: while not found: catch --Press: value: {0}'.format(value))
-        tn.write(str_to_telnet('\n'))
-        tn.read_until(b'Master', timeout=1)
-        value = get_next_value(tn, '\t')
-      current_mac = value
-      logger.debug('get_mac_list_from_onu_id: while not found: current_mac: {0}'.format(current_mac))
-      current_vlan = get_next_value(tn, ' ')[4:]
-      logger.debug('get_mac_list_from_onu_id: while not found: current_vlan: {0}'.format(current_vlan))
-      current_onu_number = get_next_value(tn, '\n')[6:]
-      logger.debug('get_mac_list_from_onu_id: while not found: current_onu_number: {0}'.format(current_onu_number))
-      waste_value = get_next_value(tn, '\t')
-      logger.debug('get_mac_list_from_onu_id: while not found: waste value: {0}'.format(waste_value.replace('\r', '')))
-      if 'gponline#' in waste_value:
-        logger.error('get_mac_list_from_onu_id: onu not found!')
-        return ['ERR']
-      if current_onu_number == onu_number:
-        logger.debug('get_mac_list_from_onu_id: catch right onu_number')
-        associated_mac_list.append(current_mac)
-        vlan = current_vlan
-        found = True
-    same_onu = True
-    while same_onu:
-      value = get_next_value(tn, '\t')
-      if value == '--Press':
-        logger.debug('get_mac_list_from_onu_id: while same_onu: catch --Press')
-        tn.write(str_to_telnet('\n'))
-        tn.read_until(b'Master', timeout=1)
-        value = get_next_value(tn, '\t')
-      current_mac = value
-      logger.debug('get_mac_list_from_onu_id: while same_onu: current_mac: {0}'.format(current_mac))
-      current_vlan = get_next_value(tn, ' ')[4:]
-      logger.debug('get_mac_list_from_onu_id: while same_onu: current_vlan: {0}'.format(current_vlan))
-      if current_vlan == vlan:
-        logger.debug('get_mac_list_from_onu_id: while same_onu: same vlan')
-        current_onu_number = get_next_value(tn, '\n')[6:]
-        logger.debug('get_mac_list_from_onu_id: while same_onu: current_onu_number: {0}'.format(current_onu_number))
-        if current_onu_number == onu_number:
-          logger.debug('get_mac_list_from_onu_id: while same_onu: same vlan: same onu_number')
-          associated_mac_list.append(current_mac)
-          waste_value = get_next_value(tn, '\t')
-          logger.debug('get_mac_list_from_onu_id: while not found: waste value: {0}'.format(waste_value))
-        else:
-          logger.debug('get_mac_list_from_onu_id: while same_onu: same vlan: different onu_number'.format)
-          same_onu = False
-      else:
-        logger.debug('get_mac_list_from_onu_id: while same_onu: different vlan')
-        same_onu = False
-    waste_value = tn.read_until(b'gponline# ', timeout=1).decode('utf-8')
-    logger.debug('get_mac_list_from_onu_id: finalizing: catch gponline#: waste_value: {0}'.format(waste_value))
-    while 'stop--' in waste_value:
-      tn.write(str_to_telnet('\n'))
-      logger.debug('get_mac_list_from_onu_id: finalizing: catch stop--: waste_value: {0}'.format(waste_value))
-      waste_value = tn.read_until(b'gponline# ', timeout=1).decode('utf-8')
-      logger.debug('get_mac_list_from_onu_id: finalizing: catch gponline#: waste_value: {0}'.format(waste_value))
-    tn.write(str_to_telnet('cd ..'))
-    tn.read_until(b'Admin# ', timeout=1)
-    logger.debug('get_mac_list_from_onu_id: stoped...')
-    return associated_mac_list
+    show_pon_mac = tn.read_until(b'Admin\\gponline# ', timeout=1).decode('ascii')
+    return get_mac_list(show_pon_mac, onu_number)
 
 
 def find_user_by_onu(onu_id):
@@ -141,7 +78,7 @@ def find_user_by_onu(onu_id):
     session.close()
     logger.debug('find_user_by_onu({0}): {1}'.format(repr(onu_id), repr(cto)))
     return cto
-  if len((mac_list := get_mac_list_from_onu_id(onu_id))):
+  if mac_list := get_mac_list_from_onu_id(onu_id):
     username_list = []
     for mac in mac_list:
       sql_query_string = "SELECT DISTINCT UserName FROM {0} WHERE CallingStationID = :mac ORDER BY AcctStartTime " \
@@ -155,10 +92,6 @@ def find_user_by_onu(onu_id):
       usernames = ' '.join(username_list)
       logger.debug('find_user_by_onu({0}): {1}'.format(repr(onu_id), repr(usernames)))
       return usernames
-  elif 'ERR' in mac_list:
-    session.close()
-    logger.debug('find_user_by_onu({0}): {1}'.format(repr(onu_id), repr('ERR')))
-    return 'ERR'
   elif cto := is_offline_cto_id(session, onu_id):
     session.close()
     logger.debug('find_user_by_onu({0}): {1}'.format(repr(onu_id), repr(cto)))

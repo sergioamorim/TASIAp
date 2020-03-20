@@ -8,13 +8,6 @@ def str_to_telnet(string):
   return string.encode('ascii') + b'\n'
 
 
-def get_next_value(tn, char):
-  value = tn.read_until(char.encode('ascii'), timeout=1)
-  while char.encode('ascii') in value[:-1] or char.encode('ascii') is value:
-    value = tn.read_until(char.encode('ascii'), timeout=1)
-  return value[:-1].decode('utf-8')
-
-
 def connect_su(tn):
   tn.read_until(b'Login: ', timeout=1)
   tn.write(str_to_telnet(telnet_config.username))

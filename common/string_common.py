@@ -49,7 +49,8 @@ def get_caller_name():
 
 def get_onu_device_id(onu_device):
   board_id = '1' if onu_device.pon.board.board_id == '12' else '2'
-  return '{0}{1}{2}'.format(board_id, onu_device.pon.pon_id, onu_device.number)
+  onu_number = onu_device.number if onu_device.number > 9 else '0{0}'.format(onu_device.number)
+  return '{0}{1}{2}'.format(board_id, onu_device.pon.pon_id, onu_number)
 
 
 def sanitize_cto_vlan_name(cto_vlan_name):

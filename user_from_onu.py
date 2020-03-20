@@ -53,8 +53,8 @@ def is_offline_cto_id(session, onu_id):
 
 
 def get_mac_list(show_pon_mac, onu_number):
-  mac_pattern = 't([0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2})\\t *Vid:[' \
-                '0-9]*\\t *OnuId:' + '{0}\\n'.format(onu_number)
+  mac_pattern = '\\t([0-9A-F]{{2}}:[0-9A-F]{{2}}:[0-9A-F]{{2}}:[0-9A-F]{{2}}:[0-9A-F]{{2}}:[0-9A-F]{{2}})\\t *Vid:[' \
+                '0-9]*\\t *OnuId:{0}\\n'.format(onu_number)
   return findall(mac_pattern, show_pon_mac)
 
 

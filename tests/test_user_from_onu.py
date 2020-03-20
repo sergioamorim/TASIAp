@@ -1,9 +1,9 @@
-import unittest
+from unittest import TestCase, main
 
 from user_from_onu import get_mac_list
 
 
-class TestOutputMethods(unittest.TestCase):
+class TestOutputMethods(TestCase):
 
   def test_get_mac_list(self):
 
@@ -111,18 +111,18 @@ class TestOutputMethods(unittest.TestCase):
                    b'OnuId:19\n\r201\tC8:3A:35:32:0C:E8\t Vid:1135\t OnuId:35\n\r202\tCC:06:77:69:DC:B1\t Vid:4087\t ' \
                    b'OnuId:33\n\r203\t22:3E:44:55:66:11\t Vid:4091\t OnuId:65535\n\rAdmin\\gponline# '.decode('ascii')
 
-    expected_33 = ['CC:06:77:69:DC:B1']
+    expected_25 = ['E4:BE:ED:A2:2E:7E']
     expected_26 = ['00:1A:3F:86:EC:0A']
     expected_99 = []
     expected_1 = ['58:10:8C:26:DC:30', '58:10:8C:46:8D:67', '58:10:8C:B0:E9:8E', '78:44:76:8F:BB:07',
                   '78:44:76:90:65:0F', '78:44:76:90:C1:27', 'C4:6E:1F:AC:76:27', 'C8:3A:35:7C:FE:30',
                   'E4:BE:ED:1B:64:1B', 'EC:08:6B:88:74:F3']
 
-    self.assertEqual(get_mac_list(show_pon_mac, '33'), expected_33)
+    self.assertEqual(get_mac_list(show_pon_mac, '25'), expected_25)
     self.assertEqual(get_mac_list(show_pon_mac, '26'), expected_26)
     self.assertEqual(get_mac_list(show_pon_mac, '99'), expected_99)
     self.assertEqual(get_mac_list(show_pon_mac, '1'), expected_1)
 
 
 if __name__ == '__main__':
-  unittest.main()
+  main()

@@ -131,6 +131,12 @@ def get_authorization_list(pon):
   return authorization_list.decode('ascii')
 
 
+def format_onu_type(onu_type):
+  if onu_type[:2] == 'AN':
+    return onu_type[2:].lower()
+  return onu_type.lower()
+
+
 def get_onu_list(discovery_list):
   onu_list = []
   discovery_pon_list = findall('SLOT=([0-9]*) PON=([0-9]*) ,ITEM=([0-9]*)', discovery_list)
@@ -145,7 +151,7 @@ def get_onu_list(discovery_list):
       onu_tuple_list = findall('([0-9]*) *(.*?) *([0-9A-Z]{4}[0-9A-Fa-f]{8}) ', onu_raw_list)
       for onu_tuple in onu_tuple_list:
         onu_authorization_id = str(int(onu_tuple[0]))
-        onu_type = onu_tuple[1]
+        onu_type = format_onu_type(onu_tuple[1])
         onu_phy_id = onu_tuple[2]
         onu = OnuDevice(onu_authorization_id, onu_type, onu_phy_id, pon)
         onu_list.append(onu)

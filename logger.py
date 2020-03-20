@@ -20,6 +20,21 @@ def get_logger(name):
   return logger
 
 
+class Log(object):
+
+  def __init__(self, logger):
+    self.logger = logger
+
+  def __call__(self, function):
+    def log_wrapper(*args, **kwargs):
+      calling_statement = '{0}({1})'.format(function.__name__, str(args)[1:-2])
+      self.logger.debug(calling_statement)
+      result = function(*args, **kwargs)
+      self.logger.debug('{0}: {1}'.format(calling_statement, repr(result)))
+      return result
+    return log_wrapper
+
+
 def get_last_name(update, query=False):
   if query:
     return ' {0}'.format(update.callback_query.message.chat.last_name) if update.callback_query.message.chat.last_name \

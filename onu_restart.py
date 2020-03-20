@@ -4,7 +4,7 @@ from telnetlib import Telnet
 from common.string_common import is_onu_id_valid
 from common.telnet_common import connect_su, str_to_telnet
 from config import telnet_config
-from logger import get_logger
+from logger import Log, get_logger
 
 logger = get_logger(__name__)
 
@@ -25,16 +25,14 @@ def restart_onu(board, pon, onu_number):
   return restart_result
 
 
+@Log(logger)
 def restart_onu_by_id(onu_id):
-  logger.debug('restart_onu_by_id({0})'.format(repr(onu_id)))
   if not onu_id or not is_onu_id_valid(onu_id):
-    logger.debug('restart_onu_by_id({0}): can not restart onu'.format(repr(onu_id)))
     return None
   board = '12' if onu_id[:1] == '1' else '14'
   pon = onu_id[1:2]
   onu_number = onu_id[2:] if int(onu_id[2:]) > 9 else onu_id[3:]
   result = restart_onu(board, pon, onu_number)
-  logger.debug('restart_onu_by_id({0}): {1}'.format(repr(onu_id), repr(result)))
   return result
 
 

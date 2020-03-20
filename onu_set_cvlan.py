@@ -3,7 +3,7 @@ from subprocess import run
 
 from common.string_common import is_onu_id_valid, is_vlan_id_valid
 from config import snmp_config
-from logger import get_logger
+from logger import Log, get_logger
 
 logger = get_logger(__name__)
 
@@ -32,10 +32,9 @@ def can_cvlan_be_set(onu_id, cvlan):
   return (not cvlan or (cvlan == 'cto' or is_vlan_id_valid(cvlan))) and onu_id and is_onu_id_valid(onu_id)
 
 
+@Log(logger)
 def set_cvlan(onu_id, cvlan=None):
-  logger.debug('set_cvlan({0}, {1})'.format(repr(onu_id), repr(cvlan)))
   if not can_cvlan_be_set(onu_id, cvlan):
-    logger.error('set_cvlan({0}, {1}): can not set cvlan'.format(repr(onu_id), repr(cvlan)))
     return None
   if not cvlan:
     cvlan = int(onu_id[:2] + '00')
@@ -56,10 +55,8 @@ def set_cvlan(onu_id, cvlan=None):
             '00 00"'.format(snmp_config.community, snmp_config.ip, int_to_hexoctetstr(board_id),
                             int_to_hexoctetstr(pon_id), int_to_hexoctetstr(onu_number),
                             assure_two_octet_hexstr(int_to_hexoctetstr(int(cvlan))))
-  logger.debug('set_cvlan: command: {0}'.format(command))
   run(command, shell=True)
   cvlan_set = {'onu_id': onu_id, 'cvlan': str(cvlan)}
-  logger.debug('set_cvlan({0}, {1}): {2}'.format(repr(onu_id), repr(cvlan), repr(cvlan_set)))
   return cvlan_set
 
 

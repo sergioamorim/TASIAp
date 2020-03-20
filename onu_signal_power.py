@@ -4,7 +4,7 @@ from telnetlib import Telnet
 
 from common.telnet_common import str_to_telnet, connect_su
 from config import telnet_config
-from logger import get_logger
+from logger import Log, get_logger
 
 logger = get_logger(__name__)
 
@@ -26,8 +26,8 @@ def get_signal_power(show_optic_module):
   return 'error'
 
 
+@Log(logger)
 def get_onu_power_signal_by_id(tn, onu_id):
-  logger.debug('get_onu_power_signal_by_id({0}, {1})'.format(repr(tn), repr(onu_id)))
   board = '12' if onu_id[:1] == '1' else '14'
   pon = onu_id[1:2]
   onu_number = onu_id[2:] if int(onu_id[2:]) > 9 else onu_id[3:]
@@ -36,7 +36,6 @@ def get_onu_power_signal_by_id(tn, onu_id):
   tn.write(str_to_telnet('show optic_module slot {0} link {1} onu {2}'.format(board, pon, onu_number)))
   show_optic_module = tn.read_until(b'Admin\\gpononu# ', timeout=3).decode('ascii')
   signal_power = get_signal_power(show_optic_module)
-  logger.debug('get_onu_power_signal_by_id({0}, {1}): {2}'.format(repr(tn), repr(onu_id), repr(signal_power)))
   return signal_power
 
 

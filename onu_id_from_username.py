@@ -7,10 +7,9 @@ from common.sqlite_common import find_onu_info, update_onu_info
 from common.string_common import sanitize_cto_vlan_name, format_datetime, format_onu_state
 from common.telnet_common import connect_su, str_to_telnet
 from config import mysqldb_config, telnet_config
-from logger import get_logger
+from logger import Log, get_logger
 from onu_id_from_serial import find_onu_by_serial
 from user_from_onu import find_user_by_onu
-
 
 logger = get_logger(__name__)
 
@@ -163,8 +162,8 @@ def get_onu_from_connection(session, query_result, username, do_diagnose_login=F
   return {'onu_id': onu_id, 'cto_name': cto_name, 'diagnostic': diagnostic}
 
 
+@Log(logger)
 def find_onu_by_user(username):
-  logger.debug('find_onu_by_user({0})'.format(repr(username)))
   session = get_mysql_session()
   query_acct = "SELECT CallingStationId, CalledStationId FROM {0} WHERE UserName = :username ORDER BY AcctStartTime " \
                "DESC LIMIT 1;".format(mysqldb_config.radius_acct_table)
@@ -176,7 +175,6 @@ def find_onu_by_user(username):
   elif query_result := session.execute(query_postauth, {'username': username}).first():
     onu_info = get_onu_from_connection(session, query_result, username, do_diagnose_login=True)
   session.close()
-  logger.debug('find_onu_by_user({0}): {1}'.format(repr(username), repr(onu_info)))
   return onu_info
 
 

@@ -7,7 +7,7 @@ from common.sqlite_common import update_onu_info
 from common.string_common import sanitize_cto_vlan_name, is_onu_id_valid
 from common.telnet_common import connect_su, str_to_telnet
 from config import mysqldb_config, telnet_config
-from logger import get_logger
+from logger import Log, get_logger
 
 logger = get_logger(__name__)
 
@@ -71,12 +71,11 @@ def get_mac_list_from_onu_id(onu_id):
     return get_mac_list(show_pon_mac, onu_number)
 
 
+@Log(logger)
 def find_user_by_onu(onu_id):
-  logger.debug('find_user_by_onu({0})'.format(repr(onu_id)))
   session = get_mysql_session()
   if cto := is_cto_id(session, onu_id):
     session.close()
-    logger.debug('find_user_by_onu({0}): {1}'.format(repr(onu_id), repr(cto)))
     return cto
   if mac_list := get_mac_list_from_onu_id(onu_id):
     username_list = []
@@ -90,13 +89,10 @@ def find_user_by_onu(onu_id):
       if len(username_list) == 1:
         update_onu_info(int(onu_id), username=username_list[0])
       usernames = ' '.join(username_list)
-      logger.debug('find_user_by_onu({0}): {1}'.format(repr(onu_id), repr(usernames)))
       return usernames
   elif cto := is_offline_cto_id(session, onu_id):
     session.close()
-    logger.debug('find_user_by_onu({0}): {1}'.format(repr(onu_id), repr(cto)))
     return cto
-  logger.debug('find_user_by_onu({0}): can not find user'.format(repr(onu_id), repr(cto)))
   return None
 
 

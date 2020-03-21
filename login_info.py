@@ -5,7 +5,7 @@ from common.sqlite_common import find_onu_info
 from common.string_common import get_enable_emoji, get_status_emoji, sanitize_cto_vlan_name, format_datetime, \
   sanitize_name
 from config import mysqldb_config
-from logger import get_logger
+from logger import Log, get_logger
 
 logger = get_logger(__name__)
 
@@ -64,16 +64,14 @@ def format_login_info(username, login_info, connection_info=None):
   return login_info_string
 
 
+@Log(logger)
 def find_login_info(username):
-  logger.debug('find_login_info({0})'.format(repr(username)))
   session = get_mysql_session()
   if login_info := get_login_info(session, username):
     formatted_login_info = format_login_info(username, login_info, get_connection_info(session, username))
     session.close()
-    logger.debug('find_login_info({0}): {1}'.format(repr(username), repr(formatted_login_info)))
     return formatted_login_info
   session.close()
-  logger.debug('find_login_info({0}): can not find login info'.format(repr(username)))
   return None
 
 

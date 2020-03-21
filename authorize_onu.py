@@ -5,7 +5,7 @@ from telnetlib import Telnet
 from common.string_common import is_int, is_vlan_id_valid, get_onu_device_id
 from common.telnet_common import str_to_telnet, connect_su
 from config import telnet_config
-from logger import get_logger
+from logger import Log, get_logger
 from onu_set_cvlan import set_cvlan
 
 logger = get_logger(__name__)
@@ -158,20 +158,16 @@ def get_onu_list(discovery_list):
   return onu_list
 
 
+@Log(logger)
 def authorize_onu(auth_onu=None, cvlan=None):
-  logger.debug('authorize_onu(auth_onu={0}, cvlan={1})'.format(repr(auth_onu), repr(cvlan)))
   discovery_list = get_discovery_list()
   onu_list = get_onu_list(discovery_list)
   if not len(onu_list):
-    logger.debug('authorize_onu(auth_onu={0}, cvlan={1}): can not find onu'.format(repr(auth_onu), repr(cvlan)))
     return None
   if not auth_onu:
-    logger.debug('authorize_onu(auth_onu={0}, cvlan={1}): {2}'.format(repr(auth_onu), repr(cvlan), repr(onu_list)))
     return onu_list
   onu = find_onu_in_list(onu_list, auth_onu)
   authorization_result = authorize_onu_effective(onu, cvlan) if onu else 'ERROR'
-  logger.debug('authorize_onu(auth_onu={0}, cvlan={1}): {2}'.format(repr(auth_onu), repr(cvlan),
-                                                                    repr(authorization_result)))
   return authorization_result
 
 
@@ -189,7 +185,6 @@ def main():
     if is_vlan_id_valid(args.c) or args.c == 'cto':
       cvlan = str(args.c)
     else:
-      logger.error('CVLAN invalida.')
       return 1
   print(repr(authorize_onu(auth_onu, cvlan)))
 

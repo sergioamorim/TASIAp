@@ -3,7 +3,7 @@ from re import findall
 from common.mysql_common import get_mysql_session
 from common.string_common import sanitize_cto_vlan_name, format_datetime
 from config import mysqldb_config
-from logger import get_logger
+from logger import Log, get_logger
 
 logger = get_logger(__name__)
 
@@ -45,8 +45,8 @@ def get_cto_last_online(session, cto_vlan_name):
   return session.execute(sql_query_string, {'ctovlanname': cto_vlan_name}).scalar()
 
 
+@Log(logger)
 def find_cto_by_name(string_list):
-  logger.debug('find_cto_by_name({0})'.format(string_list))
   session = get_mysql_session()
   query_results_all = get_query_results_all(session, string_list)
   query_results_online = get_query_results_online(session, string_list)
@@ -72,5 +72,4 @@ def find_cto_by_name(string_list):
   for cto_dict in sorted(offline_ctos, key=lambda cto: cto['last_online'], reverse=True):
     last_online = format_datetime(cto_dict['last_online'])
     ctos_found.append('*{0} (clientes offline - {1})'.format(cto_dict['cto_name'], last_online))
-  logger.info('find_cto_by_name({0}): {1}'.format(string_list, ctos_found))
   return ctos_found

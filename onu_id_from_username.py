@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 from re import findall
 from telnetlib import Telnet
 
-from common.mysql_common import get_mysql_session, reauthorize_user
+from common.mysql_common import supply_mysql_session, reauthorize_user
 from common.sqlite_common import find_onu_info, update_onu_info
 from common.string_common import sanitize_cto_vlan_name, format_datetime, format_onu_state
 from common.telnet_common import connect_su, str_to_telnet
@@ -162,9 +162,9 @@ def get_onu_from_connection(session, query_result, username, do_diagnose_login=F
   return {'onu_id': onu_id, 'cto_name': cto_name, 'diagnostic': diagnostic}
 
 
+@supply_mysql_session
 @Log(logger)
-def find_onu_by_user(username):
-  session = get_mysql_session()
+def find_onu_by_user(username, session=None):
   query_acct = "SELECT CallingStationId, CalledStationId FROM {0} WHERE UserName = :username ORDER BY AcctStartTime " \
                "DESC LIMIT 1;".format(mysqldb_config.radius_acct_table)
   query_postauth = "SELECT sucess, pass, CallingStationId, CalledStationId FROM {0} WHERE user = :username ORDER BY " \
@@ -174,7 +174,6 @@ def find_onu_by_user(username):
     onu_info = get_onu_from_connection(session, query_result, username)
   elif query_result := session.execute(query_postauth, {'username': username}).first():
     onu_info = get_onu_from_connection(session, query_result, username, do_diagnose_login=True)
-  session.close()
   return onu_info
 
 

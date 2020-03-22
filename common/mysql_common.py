@@ -1,3 +1,6 @@
+from contextlib import contextmanager
+from functools import wraps
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -5,13 +8,28 @@ from common.string_common import is_int
 from config import mysqldb_config
 
 
-def get_mysql_session():
+def supply_mysql_session(function):
+  @wraps(function)
+  def mysql_session_supplier(*args, **kwargs):
+    with mysql_session() as session:
+      return function(session=session, *args, **kwargs)
+
+  return mysql_session_supplier
+
+
+@contextmanager
+def mysql_session():
   engine_parameters = 'mysql://{0}:{1}@{2}:{3}/{4}'.format(mysqldb_config.username, mysqldb_config.password,
                                                            mysqldb_config.host, mysqldb_config.port,
                                                            mysqldb_config.database)
   engine = create_engine(engine_parameters, encoding='latin1')
   session_maker = sessionmaker(bind=engine)
-  return session_maker()
+  session = session_maker()
+  try:
+    yield session
+  finally:
+    session.commit()
+    session.close()
 
 
 def user_exists(session, user):

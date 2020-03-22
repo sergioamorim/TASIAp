@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 
-from common.mysql_common import get_mysql_session
+from common.mysql_common import supply_mysql_session
 from common.string_common import remove_accents, sanitize_dumb, sanitize_name
 from config import mysqldb_config
 
@@ -15,8 +15,8 @@ def make_dict(clients):
   return sorted(sorted_dict, key=lambda client_result: client_result['nome'])
 
 
-def find_username_by_name(name):
-  session = get_mysql_session()
+@supply_mysql_session
+def find_username_by_name(name, session=None):
   name = remove_accents(name.lower())
   query_string = "SELECT nome, endereco, numero, complemento, referencia, observacao, status, user, pass, enable, " \
                  "groupname FROM {0} INNER JOIN {1} ON {0}.id = {1}.cliente_id WHERE ((status = 1 OR status = 2) AND " \
@@ -33,7 +33,6 @@ def find_username_by_name(name):
       else:
         related_clients.append(client)
     final_result = {'direct': clients, 'related': related_clients}
-  session.close()
   return final_result
 
 

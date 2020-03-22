@@ -5,7 +5,7 @@ from os import remove
 from fpdf import FPDF
 from requests import post
 
-from common.mysql_common import get_mysql_session
+from common.mysql_common import supply_mysql_session
 from common.string_common import sanitize_name
 from config import bot_config
 
@@ -54,7 +54,8 @@ def sanitize_to_terminal(string):
     chr(0xE7), '\xC3\xA7').replace(chr(0xB4), '\xC2\xB4')
 
 
-def get_clientes_dict(users):
+@supply_mysql_session
+def get_clientes_dict(users, session=None):
   if users:
     clientes_dict = []
     clientes = session.execute('SELECT clientes.nome, clientes.endereco, clientes.numero, clientes.complemento, '
@@ -74,35 +75,26 @@ def plural_s(count):
   return 's' if count > 1 else ''
 
 
-parser = ArgumentParser()
-
-parser.add_argument("-c", "--cto", dest="c", help="Codigo da CTO a consultar")
-parser.add_argument("-t", "--tecnico", dest="t", help="Ordenar clientes de acordo com endereço no PDF")
-
-args = parser.parse_args()
-cto = str(args.c)
-
-if cto:
-  session = get_mysql_session()
+@supply_mysql_session
+def do_things(cto_id, tech_report, session=None):
   row_cto_name = session.execute(
     'SELECT CalledStationId FROM radius_acct WHERE CalledStationId LIKE :cto ORDER BY AcctStartTime DESC LIMIT 1',
-    {'cto': '%{0}%'.format(cto)}).first()
+    {'cto': '%{0}%'.format(cto_id)}).first()
   usernames = session.execute(
     'SELECT DISTINCT UserName FROM radius_acct WHERE CalledStationId LIKE :cto AND UserName IN (SELECT user FROM '
     'login WHERE cliente_id IN (SELECT id FROM clientes WHERE status = 1))',
-    {'cto': '%{0}%'.format(cto)})
+    {'cto': '%{0}%'.format(cto_id)})
   rows = []
   for username in usernames:
     last_cto = session.execute(
       'SELECT CalledStationId FROM radius_acct WHERE UserName = :username ORDER BY AcctStartTime DESC LIMIT 1',
       {'username': username[0]}).first()[0]
-    if cto in last_cto:
+    if cto_id in last_cto:
       row = session.execute(
         'SELECT UserName, AcctStartTime, AcctStopTime FROM radius_acct WHERE UserName = :username ORDER BY '
         'AcctStartTime DESC LIMIT 1',
         {'username': username[0]}).first()
       rows.append(row)
-  session.close()
   sorted_rows = sorted(rows, key=get_acct_stop_time, reverse=True)
   users_offline = []
   users_online = []
@@ -124,7 +116,6 @@ if cto:
   pdf.add_page(orientation='L')
   pdf.add_font('Calibri', '', 'fonts/CALIBRI.TTF', uni=True)
   pdf.add_font('Calibri', 'B', 'fonts/CALIBRIB.TTF', uni=True)
-  effective_page_width = pdf.w - pdf.l_margin * pdf.r_margin
   pdf.set_font('Calibri', '', 13)
   pdf.write(0, 'CTO ')
   pdf.set_font('Calibri', 'B', 13)
@@ -153,7 +144,7 @@ if cto:
   if users_offline:
     pdf.write(0, 'Clientes offline: {0}'.format(users_offline_count))
     pdf.ln(4)
-    if args.t:
+    if tech_report:
       sorted_dict = sorted(clientes_offline_dict, key=get_rua)
     else:
       sorted_dict = sorted(clientes_offline_dict, key=get_nome)
@@ -173,7 +164,7 @@ if cto:
   if users_online:
     pdf.write(0, 'Clientes online: {0}'.format(users_online_count))
     pdf.ln(4)
-    if args.t:
+    if tech_report:
       sorted_dict = sorted(clientes_online_dict, key=get_numero)
       sorted_dict = sorted(sorted_dict, key=get_rua)
     else:
@@ -195,3 +186,21 @@ if cto:
     post('https://api.telegram.org/bot{0}/sendDocument'.format(bot_config.token),
          data={'chat_id': bot_config.default_chat}, files={'document': document})
   remove(filename)
+
+
+def main():
+  parser = ArgumentParser()
+  parser.add_argument("-c", "--cto", dest="c", help="Código da CTO a consultar")
+  parser.add_argument("-t", "--tecnico", dest="t", help="Ordenar clientes de acordo com endereço no PDF")
+  args = parser.parse_args()
+
+  if not args.c:
+    print('Informe o código da CTO.')
+    return 1
+
+  do_things(args.c, args.t)
+  return 0
+
+
+if __name__ == '__main__':
+  main()

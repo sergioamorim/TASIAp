@@ -1,10 +1,8 @@
-from telnetlib import Telnet
 from threading import Thread
 
 from common.sqlite_common import update_onu_info
 from common.string_common import get_caller_name, is_query_update, get_onu_device_id
-from common.telnet_common import connect_su
-from config import bot_config, telnet_config
+from config import bot_config
 from find_next_onu_connection import find_onu_connection
 from onu_signal_power import get_onu_power_signal_by_id
 
@@ -14,9 +12,7 @@ def is_user_authorized(user_id):
 
 
 def get_signal(onu_id):
-  with Telnet(telnet_config.ip, telnet_config.port) as tn:
-    connect_su(tn)
-    signal = get_onu_power_signal_by_id(tn, onu_id)
+  signal = get_onu_power_signal_by_id(onu_id)
   if signal == 'not found':
     return 'não existe ONU autorizada com esse ID.'
   elif signal == 'off':

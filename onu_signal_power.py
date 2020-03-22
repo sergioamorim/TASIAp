@@ -1,9 +1,7 @@
 from argparse import ArgumentParser
 from re import findall
-from telnetlib import Telnet
 
-from common.telnet_common import str_to_telnet, connect_su
-from config import telnet_config
+from common.telnet_common import str_to_telnet, supply_telnet_connection
 from logger import Log, get_logger
 
 logger = get_logger(__name__)
@@ -26,8 +24,9 @@ def get_signal_power(show_optic_module):
   return 'error'
 
 
+@supply_telnet_connection
 @Log(logger)
-def get_onu_power_signal_by_id(tn, onu_id):
+def get_onu_power_signal_by_id(onu_id, tn=None):
   board = '12' if onu_id[:1] == '1' else '14'
   pon = onu_id[1:2]
   onu_number = onu_id[2:] if int(onu_id[2:]) > 9 else onu_id[3:]
@@ -44,14 +43,11 @@ def main():
   parser.add_argument('-i', '--id', dest='i', help='ID da ONU a ser consultada', default=None)
   args = parser.parse_args()
 
-  onu_id = None
-  if args.i:
-    onu_id = str(args.i)
+  if not args.i:
+    return 1
 
-  with Telnet(telnet_config.ip, telnet_config.port) as tn:
-    connect_su(tn)
-    signal_power = get_onu_power_signal_by_id(tn, onu_id)
-    print(signal_power)
+  print(get_onu_power_signal_by_id(args.i))
+  return 0
 
 
 if __name__ == '__main__':

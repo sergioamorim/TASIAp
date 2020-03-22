@@ -1,12 +1,11 @@
 from argparse import ArgumentParser
 from re import findall
-from telnetlib import Telnet
 
 from common.mysql_common import supply_mysql_session
 from common.sqlite_common import update_onu_info
 from common.string_common import sanitize_cto_vlan_name, is_onu_id_valid
-from common.telnet_common import connect_su, str_to_telnet
-from config import mysqldb_config, telnet_config
+from common.telnet_common import str_to_telnet, supply_telnet_connection
+from config import mysqldb_config
 from logger import Log, get_logger
 
 logger = get_logger(__name__)
@@ -58,17 +57,16 @@ def get_mac_list(show_pon_mac, onu_number):
   return findall(mac_pattern, show_pon_mac)
 
 
-def get_mac_list_from_onu_id(onu_id):
-  with Telnet(telnet_config.ip, telnet_config.port) as tn:
-    connect_su(tn)
-    board = '12' if onu_id[:1] == '1' else '14'
-    pon = onu_id[1:2]
-    onu_number = onu_id[2:] if int(onu_id[2:]) > 9 else onu_id[3:]
-    tn.write(str_to_telnet('cd gponline'))
-    tn.read_until(b'Admin\\gponline# ', timeout=1)
-    tn.write(str_to_telnet('show pon_mac slot {0} link {1}'.format(board, pon)))
-    show_pon_mac = tn.read_until(b'Admin\\gponline# ', timeout=1).decode('ascii')
-    return get_mac_list(show_pon_mac, onu_number)
+@supply_telnet_connection
+def get_mac_list_from_onu_id(onu_id, tn=None):
+  board = '12' if onu_id[:1] == '1' else '14'
+  pon = onu_id[1:2]
+  onu_number = onu_id[2:] if int(onu_id[2:]) > 9 else onu_id[3:]
+  tn.write(str_to_telnet('cd gponline'))
+  tn.read_until(b'Admin\\gponline# ', timeout=1)
+  tn.write(str_to_telnet('show pon_mac slot {0} link {1}'.format(board, pon)))
+  show_pon_mac = tn.read_until(b'Admin\\gponline# ', timeout=1).decode('ascii')
+  return get_mac_list(show_pon_mac, onu_number)
 
 
 @supply_mysql_session

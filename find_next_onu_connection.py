@@ -1,10 +1,9 @@
 from datetime import timedelta
-from telnetlib import Telnet
 from time import sleep
 
 from common.mysql_common import supply_mysql_session, reauthorize_user
-from common.telnet_common import connect_su
-from config import mysqldb_config, telnet_config
+from common.telnet_common import supply_telnet_connection
+from config import mysqldb_config
 from logger import get_logger
 from onu_id_from_username import get_onu_id_by_mac_and_pon, format_pon_name
 
@@ -63,6 +62,36 @@ def diagnose_connection(session, user):
   return None
 
 
+@supply_telnet_connection
+@supply_mysql_session
+def find_user_data(onu_id, users, vlan_name, session=None, tn=None):
+  tn_formated_pon_name = format_pon_name(vlan_name)
+  for user in users:
+    if (onu_id_from_user := get_onu_id_by_mac_and_pon(user['CallingStationId'], tn_formated_pon_name, tn=tn)) == onu_id:
+      logger.debug('find_onu_connection: onu_id_from_user: {0}'.format(onu_id_from_user))
+      diagnostic = diagnose_connection(session, user)
+      logger.debug('find_onu_connection: diagnostic: {0}'.format(diagnostic))
+      if not diagnostic:
+        times_tried = 1
+        while not diagnostic or times_tried > 3:
+          sleep(30)
+          diagnostic = diagnose_connection(session, user)
+          logger.debug('find_onu_connection: diagnostic: {0}'.format(diagnostic))
+          times_tried = times_tried + 1
+        if not diagnostic:
+          user = session.execute(
+            'SELECT user, pass, sucess, CallingStationId FROM {0} WHERE user = :username ORDER BY date '
+            'DESC;'.format(mysqldb_config.radius_postauth_table), {'username': user['user']}).first()
+          logger.debug('find_onu_connection: user: {0}'.format(user))
+          if not user['sucess']:
+            diagnostic = diagnose_fail(session, user)
+          else:
+            diagnostic = 'desconhecido.'
+      user_data = {'username': user['user'], 'password': user['pass'], 'diagnostic': diagnostic}
+      logger.debug('find_onu_connection: user_data: {0}'.format(user_data))
+      return user_data
+
+
 @supply_mysql_session
 def find_onu_connection(onu_id, session=None):
   start_time = update_time = session.execute('SELECT NOW();').scalar() - timedelta(minutes=1)
@@ -70,7 +99,6 @@ def find_onu_connection(onu_id, session=None):
   board_number = '12' if onu_id[0] == '1' else '14'
   checking_frequency = 4
   vlan_name = 'v{0}00-P{1}-PON{2}-CLIENTES-FIBRA'.format(onu_id[0:2], board_number, onu_id[1])
-  tn_formated_pon_name = format_pon_name(vlan_name)
   while not one_day_has_passed(start_time, update_time):
     query_string = 'SELECT user, pass, sucess, CallingStationId FROM {0} WHERE CalledStationId = :vlanname ' \
                    'AND date > :updatetime ORDER BY date DESC;'.format(mysqldb_config.radius_postauth_table)
@@ -81,34 +109,7 @@ def find_onu_connection(onu_id, session=None):
     update_time = session.execute('SELECT NOW();').scalar() - timedelta(minutes=1)
     logger.debug('find_onu_connection: users: {0}'.format(users))
     if len(users):
-      with Telnet(telnet_config.ip, telnet_config.port) as tn:
-        connect_su(tn)
-        for user in users:
-          if (
-              onu_id_from_user := get_onu_id_by_mac_and_pon(tn, user['CallingStationId'],
-                                                            tn_formated_pon_name)) == onu_id:
-            logger.debug('find_onu_connection: onu_id_from_user: {0}'.format(onu_id_from_user))
-            diagnostic = diagnose_connection(session, user)
-            logger.debug('find_onu_connection: diagnostic: {0}'.format(diagnostic))
-            if not diagnostic:
-              times_tried = 1
-              while not diagnostic or times_tried > 3:
-                sleep(30)
-                diagnostic = diagnose_connection(session, user)
-                logger.debug('find_onu_connection: diagnostic: {0}'.format(diagnostic))
-                times_tried = times_tried + 1
-              if not diagnostic:
-                user = session.execute(
-                  'SELECT user, pass, sucess, CallingStationId FROM {0} WHERE user = :username ORDER BY date '
-                  'DESC;'.format(mysqldb_config.radius_postauth_table), {'username': user['user']}).first()
-                logger.debug('find_onu_connection: user: {0}'.format(user))
-                if not user['sucess']:
-                  diagnostic = diagnose_fail(session, user)
-                else:
-                  diagnostic = 'desconhecido.'
-            user_data = {'username': user['user'], 'password': user['pass'], 'diagnostic': diagnostic}
-            logger.debug('find_onu_connection: user_data: {0}'.format(user_data))
-            return user_data
+      return find_user_data(onu_id, users, vlan_name, session=session)
     logger.debug('find_onu_connection: sleep: {0}'.format(checking_frequency))
     sleep(checking_frequency)
     if checking_frequency < 120:

@@ -11,9 +11,10 @@ from config import mysqldb_config
 def supply_mysql_session(function):
   @wraps(function)
   def mysql_session_supplier(*args, **kwargs):
-    with mysql_session() as session:
-      return function(session=session, *args, **kwargs)
-
+    if 'session' not in kwargs:
+      with mysql_session() as session:
+        return function(session=session, *args, **kwargs)
+    return function(*args, **kwargs)
   return mysql_session_supplier
 
 

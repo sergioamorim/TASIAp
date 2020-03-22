@@ -1,21 +1,18 @@
 from argparse import ArgumentParser
-from telnetlib import Telnet
 
 from common.string_common import is_onu_id_valid
-from common.telnet_common import connect_su, str_to_telnet
-from config import telnet_config
+from common.telnet_common import str_to_telnet, supply_telnet_connection
 from logger import Log, get_logger
 
 logger = get_logger(__name__)
 
 
-def restart_onu(board, pon, onu_number):
-  with Telnet(telnet_config.ip, telnet_config.port) as tn:
-    connect_su(tn)
-    tn.write(str_to_telnet('cd gpononu'))
-    tn.read_until(b'gpononu# ', timeout=1)
-    tn.write(str_to_telnet('reset slot {0} link {1} onulist {2}'.format(board, pon, onu_number)))
-    result = tn.read_until(b'gpononu# ', timeout=3).decode('ascii')
+@supply_telnet_connection
+def restart_onu(board, pon, onu_number, tn=None):
+  tn.write(str_to_telnet('cd gpononu'))
+  tn.read_until(b'gpononu# ', timeout=1)
+  tn.write(str_to_telnet('reset slot {0} link {1} onulist {2}'.format(board, pon, onu_number)))
+  result = tn.read_until(b'gpononu# ', timeout=3).decode('ascii')
   if 'no onu satisfy the list' in result:
     restart_result = 'not found'
   elif 'reset onu ok' in result:

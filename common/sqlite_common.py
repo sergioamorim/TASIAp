@@ -13,10 +13,12 @@ Base = declarative_base()
 
 def supply_sqlite_session(function):
   @wraps(function)
-  def mysql_session_supplier(*args, **kwargs):
-    with sqlite_session() as session:
-      return function(session=session, *args, **kwargs)
-  return mysql_session_supplier
+  def sqlite_session_supplier(*args, **kwargs):
+    if 'session' not in kwargs:
+      with sqlite_session() as session:
+        return function(session=session, *args, **kwargs)
+    return function(*args, **kwargs)
+  return sqlite_session_supplier
 
 
 class OnuDevice(Base):
@@ -90,6 +92,7 @@ def find_onu_info(session=None, onu_id=None, serial=None, username=None):
   return None
 
 
+@supply_sqlite_session
 def print_all_onu_devices(session=None):
   onu_devices = session.query(OnuDevice).all()
   print('List of OnuDevices:')

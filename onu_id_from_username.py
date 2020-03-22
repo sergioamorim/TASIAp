@@ -1,12 +1,11 @@
 from argparse import ArgumentParser
 from re import findall
-from telnetlib import Telnet
 
 from common.mysql_common import supply_mysql_session, reauthorize_user
 from common.sqlite_common import find_onu_info, update_onu_info
 from common.string_common import sanitize_cto_vlan_name, format_datetime, format_onu_state
-from common.telnet_common import connect_su, str_to_telnet
-from config import mysqldb_config, telnet_config
+from common.telnet_common import str_to_telnet, supply_telnet_connection
+from config import mysqldb_config
 from logger import Log, get_logger
 from onu_id_from_serial import find_onu_by_serial
 from user_from_onu import find_user_by_onu
@@ -21,7 +20,8 @@ def get_onu_number(pon_mac_lookup):
   return None
 
 
-def get_onu_id_by_mac_and_pon(tn, mac, pon):
+@supply_telnet_connection
+def get_onu_id_by_mac_and_pon(mac, pon, tn=None):
   tn.write(str_to_telnet('cd gponline'))
   tn.read_until(b'Admin\\gponline# ', timeout=1)
   tn.write(str_to_telnet('show pon_mac {0} lookup {1}'.format(pon, mac.replace(':', ''))))
@@ -32,22 +32,22 @@ def get_onu_id_by_mac_and_pon(tn, mac, pon):
   return None
 
 
-def get_onu_id_by_mac(mac, pon):
-  with Telnet(telnet_config.ip, telnet_config.port) as tn:
-    connect_su(tn)
-    if pon:
-      if onu_id := get_onu_id_by_mac_and_pon(tn, mac, pon):
-        return onu_id
-    pon_list = get_pon_list(tn)
-    if pon:
-      pon_list.remove(pon)
-    for pon in pon_list:
-      if onu_id := get_onu_id_by_mac_and_pon(tn, mac, pon):
-        return onu_id
+@supply_telnet_connection
+def get_onu_id_by_mac(mac, pon, tn=None):
+  if pon:
+    if onu_id := get_onu_id_by_mac_and_pon(mac, pon, tn=tn):
+      return onu_id
+  pon_list = get_pon_list(tn=tn)
+  if pon:
+    pon_list.remove(pon)
+  for pon in pon_list:
+    if onu_id := get_onu_id_by_mac_and_pon(mac, pon, tn=tn):
+      return onu_id
   return ''
 
 
-def get_pon_list(tn):
+@supply_telnet_connection
+def get_pon_list(tn=None):
   tn.write(str_to_telnet('cd gponline'))
   tn.read_until(b'gponline# ', timeout=1)
   tn.write(str_to_telnet('show pon_auth all'))

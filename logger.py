@@ -1,3 +1,4 @@
+from functools import wraps
 from logging import getLogger, DEBUG, Formatter, FileHandler, StreamHandler
 from pathlib import Path
 
@@ -26,12 +27,15 @@ class Log(object):
     self.logger = logger
 
   def __call__(self, function):
+
+    @wraps(function)
     def log_wrapper(*args, **kwargs):
       calling_statement = '{0}({1})'.format(function.__name__, str(args)[1:-2])
       self.logger.debug(calling_statement)
       result = function(*args, **kwargs)
       self.logger.debug('{0}: {1}'.format(calling_statement, repr(result)))
       return result
+
     return log_wrapper
 
 

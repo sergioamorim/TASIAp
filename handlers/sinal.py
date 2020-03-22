@@ -1,7 +1,7 @@
 from re import findall
 
 from common.bot_common import is_user_authorized, get_signal
-from common.mysql_common import get_mysql_session, user_exists
+from common.mysql_common import supply_mysql_session, user_exists
 from common.string_common import is_onu_id_valid
 from logger import log_update, get_logger
 from onu_id_from_serial import find_onu_by_serial
@@ -11,7 +11,8 @@ from user_from_onu import is_cto_id
 logger = get_logger(__name__)
 
 
-def sinal(update, context):
+@supply_mysql_session
+def sinal(update, context, session=None):
   log_update(update, logger)
   if is_user_authorized(update.message.from_user.id):
     if not len(context.args):
@@ -19,7 +20,6 @@ def sinal(update, context):
                                 'verificar o sinal da ONU do usuário maria ou "/sinal FHTT0fab320e" para verificar o '
                                 'sinal da ONU com serial FHTT0fab320e.', quote=True)
     else:
-      session = get_mysql_session()
       if is_onu_id_valid(context.args[0]):
         cto_string = is_cto_id(session, context.args[0])
         signal = get_signal(context.args[0]).capitalize()
@@ -55,6 +55,5 @@ def sinal(update, context):
             quote=True)
       else:
         update.message.reply_text('ID da ONU, usuário ou serial inválido ou não encontrado.', quote=True)
-      session.close()
   else:
     update.message.reply_text('Você não tem permissão para acessar o menu /sinal.', quote=True)

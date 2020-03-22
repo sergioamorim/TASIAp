@@ -1,6 +1,6 @@
 from re import findall
 
-from common.mysql_common import get_mysql_session
+from common.mysql_common import supply_mysql_session
 from common.string_common import sanitize_cto_vlan_name, format_datetime
 from config import mysqldb_config
 from logger import Log, get_logger
@@ -45,9 +45,9 @@ def get_cto_last_online(session, cto_vlan_name):
   return session.execute(sql_query_string, {'ctovlanname': cto_vlan_name}).scalar()
 
 
+@supply_mysql_session
 @Log(logger)
-def find_cto_by_name(string_list):
-  session = get_mysql_session()
+def find_cto_by_name(string_list, session=None):
   query_results_all = get_query_results_all(session, string_list)
   query_results_online = get_query_results_online(session, string_list)
   ctos_found = []
@@ -68,7 +68,6 @@ def find_cto_by_name(string_list):
     if not included:
       last_online = get_cto_last_online(session, query_result['CalledStationID'])
       offline_ctos.append({'cto_name': cto_name, 'last_online': last_online})
-  session.close()
   for cto_dict in sorted(offline_ctos, key=lambda cto: cto['last_online'], reverse=True):
     last_online = format_datetime(cto_dict['last_online'])
     ctos_found.append('*{0} (clientes offline - {1})'.format(cto_dict['cto_name'], last_online))

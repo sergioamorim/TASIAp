@@ -1,5 +1,5 @@
 from common.bot_common import is_user_authorized
-from common.mysql_common import get_mysql_session
+from common.mysql_common import supply_mysql_session
 from common.string_common import is_serial_valid
 from logger import log_update, get_logger
 from onu_id_from_serial import find_onu_by_serial
@@ -8,14 +8,14 @@ from onu_id_from_username import find_onu_by_user
 logger = get_logger(__name__)
 
 
-def onuid(update, context):
+@supply_mysql_session
+def onuid(update, context, session=None):
   log_update(update, logger)
   if is_user_authorized(update.message.from_user.id):
     if len(context.args) != 1:
       update.message.reply_text('Envie "/onuid maria" para verificar o ID da ONU do usuario usuariologin ou "/onuid '
                                 'FHTT0fab320e" para verificar o ID da ONU de serial FHTT0fab320e.', quote=True)
     else:
-      session = get_mysql_session()
       if is_serial_valid(context.args[0]):
         if onu := find_onu_by_serial(context.args[0]):
           update.message.reply_text(onu['onu_id'], quote=True)
@@ -34,6 +34,5 @@ def onuid(update, context):
           update.message.reply_text(
             'Nenhuma conexão do usuário informado foi encontrada.\nTente novamente informando o serial da ONU.',
             quote=True)
-      session.close()
   else:
     update.message.reply_text('Você não tem permissão para acessar o menu /cto.', quote=True)

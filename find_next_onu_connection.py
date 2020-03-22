@@ -2,7 +2,7 @@ from datetime import timedelta
 from telnetlib import Telnet
 from time import sleep
 
-from common.mysql_common import get_mysql_session, reauthorize_user
+from common.mysql_common import supply_mysql_session, reauthorize_user
 from common.telnet_common import connect_su
 from config import mysqldb_config, telnet_config
 from logger import get_logger
@@ -63,8 +63,8 @@ def diagnose_connection(session, user):
   return None
 
 
-def find_onu_connection(onu_id):
-  session = get_mysql_session()
+@supply_mysql_session
+def find_onu_connection(onu_id, session=None):
   start_time = update_time = session.execute('SELECT NOW();').scalar() - timedelta(minutes=1)
   logger.debug('find_onu_connection: start_time: {0}'.format(start_time))
   board_number = '12' if onu_id[0] == '1' else '14'
@@ -108,11 +108,9 @@ def find_onu_connection(onu_id):
                   diagnostic = 'desconhecido.'
             user_data = {'username': user['user'], 'password': user['pass'], 'diagnostic': diagnostic}
             logger.debug('find_onu_connection: user_data: {0}'.format(user_data))
-            session.close()
             return user_data
     logger.debug('find_onu_connection: sleep: {0}'.format(checking_frequency))
     sleep(checking_frequency)
     if checking_frequency < 120:
       checking_frequency = checking_frequency + checking_frequency
-  session.close()
   return None

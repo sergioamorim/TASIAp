@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 
-from common.mysql_common import get_mysql_session
+from common.mysql_common import supply_mysql_session
 from common.sqlite_common import find_onu_info
 from common.string_common import get_enable_emoji, get_status_emoji, sanitize_cto_vlan_name, format_datetime, \
   sanitize_name
@@ -64,14 +64,12 @@ def format_login_info(username, login_info, connection_info=None):
   return login_info_string
 
 
+@supply_mysql_session
 @Log(logger)
-def find_login_info(username):
-  session = get_mysql_session()
+def find_login_info(username, session=None):
   if login_info := get_login_info(session, username):
     formatted_login_info = format_login_info(username, login_info, get_connection_info(session, username))
-    session.close()
     return formatted_login_info
-  session.close()
   return None
 
 

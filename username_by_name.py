@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 from common.mysql_common import supply_mysql_session
 from common.string_common import remove_accents, sanitize_dumb, sanitize_name
 from config import mysqldb_config
+from logger import Log
 
 
 def make_dict(clients):
@@ -16,6 +17,7 @@ def make_dict(clients):
 
 
 @supply_mysql_session
+@Log
 def find_username_by_name(name, session=None):
   name = remove_accents(name.lower())
   query_string = "SELECT nome, endereco, numero, complemento, referencia, observacao, status, user, pass, enable, " \
@@ -23,7 +25,6 @@ def find_username_by_name(name, session=None):
                  "enable = 1) AND nome LIKE '%{2}%' OR endereco LIKE '%{2}%' OR complemento LIKE '%{2}%' OR " \
                  "referencia LIKE '%{2}%' OR observacao LIKE '%{2}%' OR user LIKE '%{2}%' ORDER BY nome ASC;".format(
                   mysqldb_config.clientes_table, mysqldb_config.login_table, name)
-  final_result = None
   if query_result := session.execute(query_string):
     clients = []
     related_clients = []
@@ -32,8 +33,8 @@ def find_username_by_name(name, session=None):
         clients.append(client)
       else:
         related_clients.append(client)
-    final_result = {'direct': clients, 'related': related_clients}
-  return final_result
+    return {'direct': clients, 'related': related_clients}
+  return None
 
 
 def main():

@@ -1,3 +1,4 @@
+from datetime import timedelta, timezone
 from inspect import stack
 from re import search
 from unicodedata import normalize
@@ -65,7 +66,7 @@ def sanitize_cto_vlan_name(cto_vlan_name):
 
 
 def format_datetime(datetime_object):
-  return datetime_object.strftime('%d/%m/%Y %H:%M:%S')
+  return datetime_object.astimezone(timezone(timedelta(hours=-3))).strftime('%d/%m/%Y %H:%M:%S')
 
 
 def format_onu_state(onu_state):

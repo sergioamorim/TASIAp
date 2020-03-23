@@ -1,3 +1,4 @@
+from datetime import timedelta, timezone
 from inspect import stack
 from re import search
 from unicodedata import normalize
@@ -47,7 +48,7 @@ def get_caller_name():
   return stack()[2].function
 
 
-def get_onu_device_id(onu_device):
+def get_auth_onu_device_id(onu_device):
   board_id = '1' if onu_device.pon.board.board_id == '12' else '2'
   onu_number = onu_device.number if onu_device.number > 9 else '0{0}'.format(onu_device.number)
   return '{0}{1}{2}'.format(board_id, onu_device.pon.pon_id, onu_number)
@@ -65,7 +66,7 @@ def sanitize_cto_vlan_name(cto_vlan_name):
 
 
 def format_datetime(datetime_object):
-  return datetime_object.strftime('%d/%m/%Y %H:%M:%S')
+  return datetime_object.astimezone(timezone(timedelta(hours=-3))).strftime('%d/%m/%Y %H:%M:%S')
 
 
 def format_onu_state(onu_state):

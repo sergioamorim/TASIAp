@@ -83,7 +83,7 @@ def find_user_by_onu(onu_id, session=None):
         username_list.append(username)
     if username_list:
       if len(username_list) == 1:
-        update_onu_info(int(onu_id), username=username_list[0])
+        update_onu_info(onu_id=onu_id, username=username_list[0])
       usernames = ' '.join(username_list)
       return usernames
   elif cto := is_offline_cto_id(session, onu_id):

@@ -1,7 +1,8 @@
 from argparse import ArgumentParser
 from re import findall
 
-from common.string_common import is_int, is_vlan_id_valid, get_onu_device_id
+from common.sqlite_common import update_onu_info
+from common.string_common import is_int, is_vlan_id_valid
 from common.telnet_common import str_to_telnet, supply_telnet_connection
 from logger import Log, get_logger
 from onu_set_cvlan import set_cvlan
@@ -9,7 +10,7 @@ from onu_set_cvlan import set_cvlan
 logger = get_logger(__name__)
 
 
-class OnuDevice:
+class AuthOnuDevice:
   phy_id = None
   pon = None
   onu_type = None
@@ -18,8 +19,7 @@ class OnuDevice:
   authorization_id = None
 
   def set_cvlan(self, cvlan):
-    onu_id = get_onu_device_id(self)
-    if result := set_cvlan(onu_id, cvlan):
+    if result := set_cvlan(auth_onu_device=self, cvlan=cvlan):
       self.cvlan = result['cvlan']
 
   def __init__(self, authorization_id, onu_type, phy_id, pon):
@@ -29,7 +29,7 @@ class OnuDevice:
     self.authorization_id = authorization_id
 
   def __repr__(self):
-    return '<OnuDevice(phy_id={0},pon={1},onu_type={2},number={3},cvlan={4},authorization_id={5})>'.format(
+    return '<AuthOnuDevice(phy_id={0},pon={1},onu_type={2},number={3},cvlan={4},authorization_id={5})>'.format(
       repr(self.phy_id), repr(self.pon), repr(self.onu_type), repr(self.number), repr(self.cvlan),
       repr(self.authorization_id))
 
@@ -86,6 +86,7 @@ def authorize_onu_effective(onu, cvlan, tn=None):
                                            onu.onu_type)))
   if cvlan:
     onu.set_cvlan(cvlan)
+  update_onu_info(auth_onu_device=onu)
   return onu
 
 
@@ -151,7 +152,7 @@ def get_onu_list(discovery_list, tn=None):
         onu_authorization_id = str(int(onu_tuple[0]))
         onu_type = format_onu_type(onu_tuple[1])
         onu_phy_id = onu_tuple[2]
-        onu = OnuDevice(onu_authorization_id, onu_type, onu_phy_id, pon)
+        onu = AuthOnuDevice(onu_authorization_id, onu_type, onu_phy_id, pon)
         onu_list.append(onu)
   return onu_list
 
@@ -165,9 +166,9 @@ def authorize_onu(auth_onu=None, cvlan=None, tn=None):
     return None
   if not auth_onu:
     return onu_list
-  onu = find_onu_in_list(onu_list, auth_onu)
-  authorization_result = authorize_onu_effective(onu, cvlan, tn=tn) if onu else 'ERROR'
-  return authorization_result
+  if onu := find_onu_in_list(onu_list, auth_onu):
+    return authorize_onu_effective(onu, cvlan, tn=tn)
+  return 'ERROR'
 
 
 def main():

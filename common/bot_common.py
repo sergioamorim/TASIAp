@@ -1,7 +1,6 @@
 from threading import Thread
 
-from common.sqlite_common import update_onu_info
-from common.string_common import get_caller_name, is_query_update, get_onu_device_id
+from common.string_common import get_caller_name, is_query_update, get_auth_onu_device_id
 from config import bot_config
 from find_next_onu_connection import find_onu_connection
 from onu_signal_power import get_onu_power_signal_by_id
@@ -26,7 +25,7 @@ def get_onu_info_string(context, update, authorized_onu=None, onu_id=None, cvlan
   if authorized_onu:
     serial = authorized_onu.phy_id
     cvlan = authorized_onu.cvlan
-    onu_id = get_onu_device_id(authorized_onu)
+    onu_id = get_auth_onu_device_id(authorized_onu)
     signal = signal_job_caller(context, update, onu_id)
   else:
     signal = get_signal(onu_id)
@@ -63,7 +62,6 @@ def signal_job_caller(context, update, onu_id):
 def find_onu_connection_trigger(bot, update, onu_id):
   message = get_message_from_update(update)
   if connection_info := find_onu_connection(onu_id):
-    update_onu_info(int(onu_id), username=connection_info['username'])
     message_text = 'Roteador conectado na ONU ID {0}.\nUsuário: {1}\nSenha: {2}\n' \
                    'Status da conexão: {3}'.format(onu_id, connection_info['username'], connection_info['password'],
                                                    connection_info['diagnostic'])

@@ -6,6 +6,7 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
+from common.string_common import get_auth_onu_device_id
 from config import bot_config
 
 Base = declarative_base()
@@ -35,7 +36,7 @@ class OnuDevice(Base):
                                                                                      str(self.last_update))
 
   def __init__(self, onu_id, serial=None, username=None):
-    self.onu_id = onu_id
+    self.onu_id = int(onu_id)
     self.serial = serial
     self.username = username
     self.last_update = datetime.now()
@@ -62,8 +63,10 @@ def sqlite_session():
 
 
 @supply_sqlite_session
-def update_onu_info(onu_id, session=None, serial=None, username=None):
-  if not (onu_device := session.query(OnuDevice).filter(OnuDevice.onu_id.is_(onu_id)).first()):
+def update_onu_info(auth_onu_device=None, onu_id=None, session=None, serial=None, username=None):
+  if auth_onu_device:
+    onu_id = get_auth_onu_device_id(auth_onu_device)
+  if not (onu_device := session.query(OnuDevice).filter(OnuDevice.onu_id.is_(int(onu_id))).first()):
     onu_device = OnuDevice(onu_id, serial=serial, username=username)
   else:
     if serial:

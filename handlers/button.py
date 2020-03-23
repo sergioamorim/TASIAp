@@ -4,8 +4,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 
 from authorize_onu import authorize_onu
 from common.bot_common import get_onu_info_string
-from common.sqlite_common import update_onu_info
-from common.string_common import get_onu_device_id
+from common.string_common import get_auth_onu_device_id
 from config import bot_config
 from logger import log_update, get_logger
 from onu_restart import restart_onu_by_id
@@ -18,7 +17,6 @@ def button(update, context):
   log_update(update, logger)
   query = update.callback_query
   action = findall('<a=(.*?)>', query.data)[0]
-  logger.debug('action: {0}'.format(action))
   if action == 'ca':
     data_pattern = '<s=(.*?)><b=(.*?)><p=(.*?)>'
     regex_result = findall(data_pattern, query.data)
@@ -39,8 +37,7 @@ def button(update, context):
     serial = findall('<s=(.*?)>', query.data)[0]
     if authorized_onu := authorize_onu(serial):
       if authorized_onu != 'ERROR':
-        onu_id = get_onu_device_id(authorized_onu)
-        update_onu_info(int(onu_id), serial=serial)
+        onu_id = get_auth_onu_device_id(authorized_onu)
         callback_data = '<a=c><s={0}><i={1}>'.format(authorized_onu.phy_id, onu_id)
         keyboard = [[
           InlineKeyboardButton(text='CTO', callback_data='{0}{1}'.format(callback_data, '<c=cto>')),
@@ -67,7 +64,7 @@ def button(update, context):
     cvlan = regex_result[0][2]
     if cvlan != 'cto':
       cvlan = None
-    if result := set_cvlan(onu_id, cvlan):
+    if result := set_cvlan(onu_id=onu_id, cvlan=cvlan):
       cvlan_commited = result['cvlan']
     else:
       cvlan_commited = None
@@ -96,7 +93,7 @@ def button(update, context):
     regex_result = findall(data_pattern, query.data)
     onu_id = regex_result[0][0]
     cvlan = regex_result[0][1]
-    if result := set_cvlan(onu_id, cvlan):
+    if result := set_cvlan(onu_id=onu_id, cvlan=cvlan):
       cvlan_commited = result['cvlan']
     else:
       cvlan_commited = None

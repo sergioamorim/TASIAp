@@ -2,6 +2,7 @@ from datetime import timedelta
 from time import sleep
 
 from common.mysql_common import supply_mysql_session, reauthorize_user
+from common.sqlite_common import update_onu_info
 from common.telnet_common import supply_telnet_connection
 from config import mysqldb_config
 from logger import get_logger
@@ -68,6 +69,7 @@ def find_user_data(onu_id, users, vlan_name, session=None, tn=None):
   tn_formated_pon_name = format_pon_name(vlan_name)
   for user in users:
     if (onu_id_from_user := get_onu_id_by_mac_and_pon(user['CallingStationId'], tn_formated_pon_name, tn=tn)) == onu_id:
+      update_onu_info(onu_id=onu_id, username=user['user'])
       logger.debug('find_onu_connection: onu_id_from_user: {0}'.format(onu_id_from_user))
       diagnostic = diagnose_connection(session, user)
       logger.debug('find_onu_connection: diagnostic: {0}'.format(diagnostic))

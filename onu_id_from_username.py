@@ -65,7 +65,7 @@ def format_pon_name(vlan_name):
 
 def check_connection_by_onu_id_same_serial(onu_info, onu_state):
   if user_from_onu_id := find_user_by_onu(str(onu_info['onu_id'])):
-    update_onu_info(onu_info['onu_id'], serial=onu_info['serial'], username=user_from_onu_id)
+    update_onu_info(onu_id=onu_info['onu_id'], serial=onu_info['serial'], username=user_from_onu_id)
     return 'Informação pode estar incorreta pois o usuário {0} está conectado através da ONU ID {1} com serial {2} e ' \
            'a ONU está {3}.'.format(user_from_onu_id, onu_info['onu_id'], onu_info['serial'],
                                     format_onu_state(onu_state))
@@ -88,7 +88,7 @@ def diagnose_onu_not_found(pon, query_result, cto_name, onu_id, onu_info):
           checked_id = True
         else:
           if user_from_onu_id := find_user_by_onu(onu_id_by_serial['onu_id']):
-            update_onu_info(int(onu_id_by_serial['onu_id']), serial=onu_info['serial'], username=user_from_onu_id)
+            update_onu_info(onu_id=onu_id_by_serial['onu_id'], serial=onu_info['serial'], username=user_from_onu_id)
             diagnostic_fourth_addition = 'O usuário {0} está conectado na ONU ID {1} de serial {2}.'.format(
               user_from_onu_id, onu_id_by_serial['onu_id'], onu_info['serial'])
           else:
@@ -149,7 +149,7 @@ def get_onu_from_connection(session, query_result, username, do_diagnose_login=F
   cto_name = sanitize_cto_vlan_name(query_result['CalledStationId'])
   if onu_id := get_onu_id_by_mac(query_result['CallingStationId'], pon):
     if not cto_name:
-      update_onu_info(int(onu_id), username=username)
+      update_onu_info(onu_id=onu_id, username=username)
     if do_diagnose_login:
       diagnostic = diagnose_login(session, query_result, username)
   else:

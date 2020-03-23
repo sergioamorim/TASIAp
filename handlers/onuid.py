@@ -1,5 +1,4 @@
 from common.bot_common import is_user_authorized
-from common.mysql_common import supply_mysql_session
 from common.string_common import is_serial_valid
 from logger import log_update, get_logger
 from onu_id_from_serial import find_onu_by_serial
@@ -8,8 +7,7 @@ from onu_id_from_username import find_onu_by_user
 logger = get_logger(__name__)
 
 
-@supply_mysql_session
-def onuid(update, context, session=None):
+def onuid(update, context):
   log_update(update, logger)
   if is_user_authorized(update.message.from_user.id):
     if len(context.args) != 1:

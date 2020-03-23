@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 from subprocess import run
 
-from common.string_common import is_onu_id_valid, is_vlan_id_valid
+from common.string_common import is_onu_id_valid, is_vlan_id_valid, get_auth_onu_device_id
 from config import snmp_config
 from logger import Log, get_logger
 
@@ -29,17 +29,24 @@ def assure_two_octet_hexstr(hexstr):
 
 
 def can_cvlan_be_set(onu_id, cvlan):
-  return (not cvlan or (cvlan == 'cto' or is_vlan_id_valid(cvlan))) and onu_id and is_onu_id_valid(onu_id)
+  return is_vlan_id_valid(cvlan) and onu_id and is_onu_id_valid(onu_id)
+
+
+def treat_cvlan(cvlan, onu_id):
+  if not cvlan:
+    return int(onu_id[:2] + '00')
+  elif cvlan == 'cto':
+    return snmp_config.cto_default_cvlan
+  return cvlan
 
 
 @Log(logger)
-def set_cvlan(onu_id, cvlan=None):
+def set_cvlan(auth_onu_device=None, onu_id=None, cvlan=None):
+  if auth_onu_device:
+    onu_id = get_auth_onu_device_id(auth_onu_device)
+  cvlan = treat_cvlan(cvlan, onu_id)
   if not can_cvlan_be_set(onu_id, cvlan):
     return None
-  if not cvlan:
-    cvlan = int(onu_id[:2] + '00')
-  elif cvlan == 'cto':
-    cvlan = snmp_config.cto_default_cvlan
   board_id = 12 if onu_id[:1] == '1' else 14
   pon_id = int(onu_id[1:2])
   onu_number = int(onu_id[2:])
@@ -66,7 +73,7 @@ def main():
   parser.add_argument('-c', '--cvlan', dest='c', help='CVLAN a ser configurada na ONU', default=None)
   args = parser.parse_args()
 
-  print(set_cvlan(args.i, args.c))
+  print(set_cvlan(onu_id=args.i, cvlan=args.c))
 
   return 0
 

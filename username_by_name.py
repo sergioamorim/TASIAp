@@ -3,7 +3,9 @@ from argparse import ArgumentParser
 from common.mysql_common import supply_mysql_session
 from common.string_common import remove_accents, sanitize_dumb, sanitize_name
 from config import mysqldb_config
-from logger import Log
+from logger import Log, get_logger
+
+logger = get_logger(__name__)
 
 
 def make_dict(clients):
@@ -17,7 +19,7 @@ def make_dict(clients):
 
 
 @supply_mysql_session
-@Log
+@Log(logger)
 def find_username_by_name(name, session=None):
   name = remove_accents(name.lower())
   query_string = "SELECT nome, endereco, numero, complemento, referencia, observacao, status, user, pass, enable, " \

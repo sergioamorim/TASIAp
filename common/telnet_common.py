@@ -10,7 +10,7 @@ def supply_telnet_connection(function):
     if 'tn' not in kwargs:
       with Telnet(telnet_config.ip, telnet_config.port) as tn:
         connect_su(tn)
-        return function(tn=tn, *args, **kwargs)
+        return function(*args, **kwargs, tn=tn)
     return function(*args, **kwargs)
   return telnet_connection_wrapper
 

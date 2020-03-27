@@ -1,9 +1,11 @@
 from argparse import ArgumentParser
+from re import findall
 
 from common.mysql_common import supply_mysql_session
 from common.string_common import is_onu_id_valid
 from common.telnet_common import supply_telnet_connection, str_to_telnet
 from config import mysqldb_config
+from config import bot_config
 from logger import get_logger, Log
 
 logger = get_logger(__name__)
@@ -14,7 +16,17 @@ def get_login_password(username, session=None):
   sql_query = 'SELECT pass FROM {0} WHERE user = :username;'.format(mysqldb_config.login_table)
   if login_password := session.scalar(sql_query, {'username': username}):
     return login_password.replace('=3F', '?')
-  logger.error('get_login_password: password for user {0} not found').format(username)
+  return generate_pppoe_login_password(username, session=session)
+
+
+@supply_mysql_session
+def generate_pppoe_login_password(username, session=None):
+  sql_query = 'SELECT user FROM {0} WHERE user = :username;'.format(mysqldb_config.login_table)
+  if session.scalar(sql_query, {'username': username}):
+    sql_query = 'UPDATE {0} SET pass = :password WHERE user = :username'.format(mysqldb_config.login_table)
+    session.execute(sql_query, {'username': username, 'password': bot_config.default_pppoe_login_password})
+    return bot_config.default_pppoe_login_password
+  logger.error('generate_pppoe_login_password: user {0} not found').format(username)
   return None
 
 
@@ -28,38 +40,21 @@ def get_encoded_login_password(username):
   return None
 
 
-def can_set_router_onu_username(onu_id, encoded_password):
-  return is_onu_id_valid(onu_id) and encoded_password
-
-
-def generate_cvlan(onu_id):
-  if is_onu_id_valid(onu_id):
-    return int(onu_id[:2] + '00')
-  return None
+def generate_cvlan(board_id, pon_id):
+  board_id_id = '1' if board_id == '12' else '2'
+  return '{0}{1}00'.format(board_id_id, pon_id)
 
 
 def get_onu_number(onu_id):
-  if is_onu_id_valid(onu_id):
-    return int(onu_id[2:])
-  return None
+  return int(onu_id[2:])
 
 
 def get_pon_id(onu_id):
-  if is_onu_id_valid(onu_id):
-    return onu_id[1:2]
-  return None
+  return onu_id[1:2]
 
 
 def get_board_id(onu_id):
-  if is_onu_id_valid(onu_id):
-    return '12' if onu_id[:1] == '1' else '14'
-  return None
-
-
-def get_onu_id(board_id, pon_id, onu_number):
-  board_onu_id = '1' if board_id == '12' else '2'
-  onu_onu_id = '{0}{1}'.format('0' if int(onu_number) < 10 else '', onu_number)
-  return '{0}{1}{2}'.format(board_onu_id, pon_id, onu_onu_id)
+  return '12' if onu_id[:1] == '1' else '14'
 
 
 @supply_telnet_connection
@@ -74,25 +69,107 @@ def set_router_onu_username_effective(board_id, pon_id, onu_number, cvlan, usern
   tn.write(str_to_telnet(telnet_command_string))
   if 'failed' not in tn.read_until(b'Admin\\epononu\\qinq# ', timeout=1).decode('ascii'):
     return True
-  logger.error('set_router_onu_username_effective: onu {0} not found'.format(get_onu_id(board_id, pon_id, onu_number)))
+  logger.error('set_router_onu_username_effective: onu s{0} p{1} o{2} not found'.format(board_id, pon_id, onu_number))
   return None
 
 
-def set_router_onu_username(onu_id, username):
+def set_router_onu_username(board_id, pon_id, onu_number, username):
   encoded_password = get_encoded_login_password(username)
-  if can_set_router_onu_username(onu_id, encoded_password):
-    board_id = get_board_id(onu_id)
-    pon_id = get_pon_id(onu_id)
-    onu_number = get_onu_number(onu_id)
-    cvlan = generate_cvlan(onu_id)
+  if encoded_password:
+    cvlan = generate_cvlan(board_id, pon_id)
     return set_router_onu_username_effective(board_id, pon_id, onu_number, cvlan, username, encoded_password)
+  return None
+
+
+@supply_telnet_connection
+def set_router_onu_wifi_effective(board_id, pon_id, onu_number, formatted_ssid, password, tn=None):
+  telnet_command_string = 'set wifi_serv_wlan slot {0} link {1} onu {2}  index 1 ssid enable {3} hide disable ' \
+                          'authmode wpa2psk encrypt_type aes wpakey {4} interval 0'.format(
+                           board_id, pon_id, onu_number, formatted_ssid, password)
+  tn.write(str_to_telnet('cd gpononu'))
+  tn.read_until(b'Admin\\gpononu# ')
+  tn.write(str_to_telnet(telnet_command_string))
+  if 'ERR -506' not in tn.read_until(b'Admin\\gpononu# ').decode('ascii'):
+    return True
+  logger.error('set_router_onu_wifi_effective: onu s{0} p{1} o{2} not found'.format(board_id, pon_id, onu_number))
+  return None
+
+
+@supply_telnet_connection
+def get_wifi_data_effective(board_id, pon_id, onu_number, tn=None):
+  tn.write(str_to_telnet('cd gpononu'))
+  tn.read_until(b'Admin\\gpononu# ')
+  tn.write(str_to_telnet('show wifi_serv slot {0} link {1} onu {2}'.format(board_id, pon_id, onu_number)))
+  return tn.read_until(b'Admin\\gpononu# ').decode('ascii')
+
+
+@supply_telnet_connection
+def apply_default_wifi_config_effective(board_id, pon_id, onu_number, tn=None):
+  telnet_command_string = 'set wifi_serv_cfg slot {0} link {1} onu {2} wifi enable district brazil channel 0'.format(
+    board_id, pon_id, onu_number)
+  tn.write(str_to_telnet('cd gpononu'))
+  tn.read_until(b'Admin\\gpononu# ')
+  tn.write(str_to_telnet(telnet_command_string))
+  if 'ERR -506' not in tn.read_until(b'Admin\\gpononu# ').decode('ascii'):
+    return True
+  logger.error('apply_default_wifi_config_effective: onu s{0} p{1} o{2} not found'.format(board_id, pon_id, onu_number))
+  return None
+
+
+@supply_telnet_connection
+def get_password(board_id, pon_id, onu_number, tn=None):
+  password_pattern = '\\*\\*WPA Share Key:(.*?)\\n'
+  wifi_data = get_wifi_data_effective(board_id, pon_id, onu_number, tn=tn)
+  if password := findall(password_pattern, wifi_data):
+    return password[0].replace('\r', '')
+  return None
+
+
+@supply_telnet_connection
+def get_formatted_ssid(board_id, pon_id, onu_number, tn=None):
+  ssid_pattern = '\\*\\*SSID:(.*?)\\n'
+  wifi_data = get_wifi_data_effective(board_id, pon_id, onu_number, tn=tn)
+  if ssid := findall(ssid_pattern, wifi_data):
+    return format_ssid(ssid[0].replace('\r', ''))
+  return None
+
+
+def format_ssid(ssid):
+  return ''.join([chr(31) if value == 32 else chr(value) for value in ssid.encode('ascii')])
+
+
+@supply_telnet_connection
+def set_router_onu_wifi(board_id, pon_id, onu_number, ssid=None, password=None, tn=None):
+  if ssid:
+    if apply_default_wifi_config_effective(board_id, pon_id, onu_number, tn=tn):
+      formatted_ssid = format_ssid(ssid)
+      if not password:
+        if not (password := get_password(board_id, pon_id, onu_number, tn=tn)):
+          logger.error('set_router_onu_wifi: onu s{0} p{1} o{2} no password'.format(board_id, pon_id, onu_number))
+          return None
+      return set_router_onu_wifi_effective(board_id, pon_id, onu_number, formatted_ssid, password, tn=tn)
+  if password:
+    if formatted_ssid := get_formatted_ssid(board_id, pon_id, onu_number, tn=tn):
+      return set_router_onu_wifi_effective(board_id, pon_id, onu_number, formatted_ssid, password, tn=tn)
+    logger.error('set_router_onu_wifi: onu s{0} p{1} o{2} no ssid'.format(board_id, pon_id, onu_number))
+    return None
   return None
 
 
 @Log(logger)
 def update_router_onu_config(onu_id, ssid=None, password=None, username=None):
-  if username:
-    return set_router_onu_username(onu_id, username)
+  if is_onu_id_valid(onu_id):
+    board_id = get_board_id(onu_id)
+    pon_id = get_pon_id(onu_id)
+    onu_number = get_onu_number(onu_id)
+    if username:
+      return set_router_onu_username(board_id, pon_id, onu_number, username)
+    if ssid and password:
+      return set_router_onu_wifi(board_id, pon_id, onu_number, ssid=ssid, password=password)
+    if ssid:
+      return set_router_onu_wifi(board_id, pon_id, onu_number, ssid=ssid)
+    if password:
+      return set_router_onu_wifi(board_id, pon_id, onu_number, password=password)
   return None
 
 

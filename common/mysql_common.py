@@ -5,7 +5,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from common.string_common import is_int
-from config import mysqldb_config
+from config import mysqldb_config, bot_config
+from logger import get_logger
+
+logger = get_logger(__name__)
 
 
 def supply_mysql_session(function):
@@ -60,3 +63,22 @@ def reauthorize_user(session, username):
   insert_into_radius_login(session, 'C', username, 'User-Password', ':=', login_info['pass'])
   if login_info['ip']:
     insert_into_radius_login(session, 'R', username, 'Framed-IP-Address', '==', login_info['ip'])
+
+
+@supply_mysql_session
+def generate_pppoe_login_password(username, session=None):
+  sql_query = 'SELECT user FROM {0} WHERE user = :username;'.format(mysqldb_config.login_table)
+  if session.scalar(sql_query, {'username': username}):
+    sql_query = 'UPDATE {0} SET pass = :password WHERE user = :username'.format(mysqldb_config.login_table)
+    session.execute(sql_query, {'username': username, 'password': bot_config.default_pppoe_login_password})
+    return bot_config.default_pppoe_login_password
+  logger.error('generate_pppoe_login_password: user {0} not found').format(username)
+  return None
+
+
+@supply_mysql_session
+def get_login_password(username, session=None):
+  sql_query = 'SELECT pass FROM {0} WHERE user = :username;'.format(mysqldb_config.login_table)
+  if login_password := session.scalar(sql_query, {'username': username}):
+    return login_password.replace('=3F', '?')
+  return generate_pppoe_login_password(username, session=session)

@@ -1,33 +1,12 @@
 from argparse import ArgumentParser
 from re import findall
 
-from common.mysql_common import supply_mysql_session
-from common.string_common import is_onu_id_valid
+from common.mysql_common import get_login_password
+from common.string_common import is_onu_id_valid, get_board_id, get_pon_id, get_onu_number_from_id, generate_cvlan
 from common.telnet_common import supply_telnet_connection, str_to_telnet
-from config import mysqldb_config
-from config import bot_config
 from logger import get_logger, Log
 
 logger = get_logger(__name__)
-
-
-@supply_mysql_session
-def get_login_password(username, session=None):
-  sql_query = 'SELECT pass FROM {0} WHERE user = :username;'.format(mysqldb_config.login_table)
-  if login_password := session.scalar(sql_query, {'username': username}):
-    return login_password.replace('=3F', '?')
-  return generate_pppoe_login_password(username, session=session)
-
-
-@supply_mysql_session
-def generate_pppoe_login_password(username, session=None):
-  sql_query = 'SELECT user FROM {0} WHERE user = :username;'.format(mysqldb_config.login_table)
-  if session.scalar(sql_query, {'username': username}):
-    sql_query = 'UPDATE {0} SET pass = :password WHERE user = :username'.format(mysqldb_config.login_table)
-    session.execute(sql_query, {'username': username, 'password': bot_config.default_pppoe_login_password})
-    return bot_config.default_pppoe_login_password
-  logger.error('generate_pppoe_login_password: user {0} not found').format(username)
-  return None
 
 
 def encode_login_password(password):
@@ -38,23 +17,6 @@ def get_encoded_login_password(username):
   if login_password := get_login_password(username):
     return encode_login_password(login_password)
   return None
-
-
-def generate_cvlan(board_id, pon_id):
-  board_id_id = '1' if board_id == '12' else '2'
-  return '{0}{1}00'.format(board_id_id, pon_id)
-
-
-def get_onu_number(onu_id):
-  return int(onu_id[2:])
-
-
-def get_pon_id(onu_id):
-  return onu_id[1:2]
-
-
-def get_board_id(onu_id):
-  return '12' if onu_id[:1] == '1' else '14'
 
 
 @supply_telnet_connection
@@ -161,7 +123,7 @@ def update_router_onu_config(onu_id, ssid=None, password=None, username=None):
   if is_onu_id_valid(onu_id):
     board_id = get_board_id(onu_id)
     pon_id = get_pon_id(onu_id)
-    onu_number = get_onu_number(onu_id)
+    onu_number = get_onu_number_from_id(onu_id)
     if username:
       return set_router_onu_username(board_id, pon_id, onu_number, username)
     if ssid and password:

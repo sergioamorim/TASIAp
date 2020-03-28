@@ -3,6 +3,7 @@
 token = 'bOt-T0keN_ExaMplE'
 default_chat = '012345678'
 default_pppoe_login_password = 'defaultpass'
+default_web_config_password = 'defaultwebpass'
 permissions = {
   'autorizar': [1234567, 89012345],
   'authorize': [1234567],

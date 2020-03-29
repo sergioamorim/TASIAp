@@ -8,7 +8,7 @@ from common.string_common import get_auth_onu_device_id
 from config import bot_config
 from logger import log_update, get_logger
 from onu_restart import restart_onu_by_id
-from onu_set_cvlan import set_cvlan
+from snmp.onu_set_cvlan import set_cvlan
 
 logger = get_logger(__name__)
 

@@ -23,8 +23,6 @@ def set_web_config_effective(board_id, pon_id, onu_number):
             '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00"'.format(
              snmp_config.community, snmp_config.ip, int_to_hexoctetstr(board_id), int_to_hexoctetstr(pon_id),
              int_to_hexoctetstr(onu_number), string_to_hex_octects(bot_config.default_web_config_password, 32))
-  print(command)
-
   run(command, shell=True)
   return True
 

@@ -10,7 +10,7 @@ from logger import Log, get_logger
 logger = get_logger(__name__)
 
 
-def set_wan_service_effective(board_id, pon_id, onu_number, cvlan, username, password):
+def set_wan_service_effective(board_id, pon_id, onu_number, cvlan, username, login_password):
   command = 'snmpset -v 2c -c {0} {1} 1.3.6.1.4.1.5875.91.1.8.1.1.1.13.1 x "42 47 4D 50 01 00 00 00 00 00 00 8A B0 ' \
             'A7 0C AE 48 2B 00 00 00 00 00 00 00 00 CC CC CC CC 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '\
             '00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 01 00 00 00 01 00 00 01 1F 00 00 00 00 00 00 00 00 00 00 00 '\
@@ -25,11 +25,9 @@ def set_wan_service_effective(board_id, pon_id, onu_number, cvlan, username, pas
              snmp_config.community, snmp_config.ip, int_to_hexoctetstr(board_id), int_to_hexoctetstr(pon_id),
              int_to_hexoctetstr(onu_number), string_to_hex_octects(cvlan, 4),
              assure_two_octet_hexstr(int_to_hexoctetstr(int(cvlan))), string_to_hex_octects(username, 32),
-             string_to_hex_octects(password, 32))
-  print(command)
-
+             string_to_hex_octects(login_password, 32))
   run(command, shell=True)
-  return True
+  return {'cvlan': cvlan, 'username': username, 'password': login_password}
 
 
 @Log(logger)
@@ -39,8 +37,8 @@ def set_wan_service(onu_id, username):
     pon_id = get_pon_id(onu_id)
     onu_number = get_onu_number_from_id(onu_id)
     cvlan = generate_cvlan(board_id, pon_id)
-    password = get_login_password(username)
-    return set_wan_service_effective(board_id, pon_id, onu_number, cvlan, username, password)
+    login_password = get_login_password(username)
+    return set_wan_service_effective(board_id, pon_id, onu_number, cvlan, username, login_password)
   logger.error('set_wan_service: invalid onu id')
   return None
 

@@ -26,16 +26,16 @@ def get_router_onu_info(onu_id, tn=None):
 
 
 @Log(logger)
-def update_router_onu_config(onu_id, ssid=None, password=None, username=None):
+def update_router_onu_config(onu_id, ssid=None, wifi_password=None, username=None):
   if is_onu_id_valid(onu_id):
     if username:
       return {'set_web_config': set_web_config(onu_id), 'set_wan_service': set_wan_service(onu_id, username)}
-    if ssid and password:
-      return set_wifi(onu_id, ssid=ssid, wifi_password=password)
+    if ssid and wifi_password:
+      return set_wifi(onu_id, ssid=ssid, wifi_password=wifi_password)
     if ssid:
       return set_wifi(onu_id, ssid=ssid)
-    if password:
-      return set_wifi(onu_id, wifi_password=password)
+    if wifi_password:
+      return set_wifi(onu_id, wifi_password=wifi_password)
   logger.error('update_router_onu_config: onu id is invalid')
   return None
 

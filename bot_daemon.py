@@ -17,6 +17,7 @@ from handlers.sinal import sinal
 from handlers.start import start
 from handlers.usuario import usuario
 from handlers.vlan import vlan
+from handlers.wifi import wifi
 from logger import get_logger
 
 logger = get_logger(__name__)
@@ -36,6 +37,7 @@ def main():
   updater.dispatcher.add_handler(CommandHandler("onuid", onuid))
   updater.dispatcher.add_handler(CommandHandler("cto", cto))
   updater.dispatcher.add_handler(CommandHandler("vlan", vlan))
+  updater.dispatcher.add_handler(CommandHandler("wifi", wifi))
   updater.dispatcher.add_handler(CommandHandler("link", link))
   updater.dispatcher.add_handler(CallbackQueryHandler(button))
   updater.dispatcher.add_handler(CommandHandler("help", help_handler))

@@ -11,8 +11,8 @@ logger = get_logger(__name__)
 
 def reply_instructions(update):
   message = 'Envie "/wifi 1234 usuario maria" para configurar a ONU roteador de ID 1234 com o usuário maria (a ' \
-            'senha dos usuarios user, useradmin a admin será configurada como "{0}").\n\nEnvie "/wifi 1234 rede ' \
-            '<@Loja da Maria@> senha <:senha123:>" para configurar a ONU roteador de ID 1234 com o SSID "Loja da ' \
+            'senha dos usuarios user, useradmin e admin será configurada como "{0}").\n\nEnvie "/wifi 1234 rede ' \
+            '<!Loja da Maria!> senha <:senha123:>" para configurar a ONU roteador de ID 1234 com o SSID "Loja da ' \
             'Maria" e a senha "senha123".\nÉ possivel enviar somente o nome da rede ou somente a senha a ser ' \
             'configurada seguindo a mesma estrutura.\n\nEnvie "/wifi 1234" para receber as configurações atuais ' \
             'da ONU roteador de ID 1234.'.format(bot_config.default_web_config_password)
@@ -23,18 +23,26 @@ def get_web_config_description(result):
   return '{0}'.format(bot_config.default_web_config_password) if result['set_web_config'] else 'erro ao configurar'
 
 
-def reply_character_limit_exceeded(update, character_limit):
-  update.message.reply_text('Limite de caracteres excedido (máximo {0}).'.format(character_limit), quote=True)
+def reply_character_limit(update, lower_limit, upper_limit):
+  update.message.reply_text('Limite caracteres (mínimo {0} máximo {1}).'.format(lower_limit, upper_limit), quote=True)
 
 
 def get_ssid_from_args(args):
   args_string = ' '.join(args)
-  return findall('<@(.*)@>', args_string)
+  if ssid := findall('<!(.*)!>', args_string):
+    return ssid[0]
+  return None
 
 
 def get_wifi_password_from_args(args):
   args_string = ' '.join(args)
-  return findall('<:(.*):>', args_string)
+  if wifi_password := findall('<:(.*):>', args_string):
+    return wifi_password[0]
+  return None
+
+
+def is_wifi_password_valid(wifi_password):
+  return 8 <= len(wifi_password) <= 64
 
 
 def wifi(update, context):
@@ -53,34 +61,36 @@ def wifi(update, context):
           if context.args[1] == 'usuario':
             username = context.args[2]
             if len(username) > 32:
-              reply_character_limit_exceeded(update, 32)
+              reply_character_limit(update, 1, 32)
             else:
               result = update_router_onu_config(onu_id, username=username)
               web_config_password = get_web_config_description(result)
-              update.message.reply_text('Senha web (user, useradmin, admin): {0}\nUsuário PPPoE: {1}\nSenha PPPoE: '
-                                        '{2}'.format(web_config_password, result['set_wan_service']['username'],
-                                                     result['set_wan_service']['password']), quote=True)
+              update.message.reply_text('Configurações enviadas.\nSenha web (user, useradmin, admin): {0}\nUsuário'
+                                        ' PPPoE: {1}\nSenha PPPoE: {2}'.format(web_config_password,
+                                                                               result['set_wan_service']['username'],
+                                                                               result['set_wan_service']['password']),
+                                        quote=True)
           elif context.args[1] == 'rede':
-            if ssid := get_ssid_from_args(context.args[2]):
+            if ssid := get_ssid_from_args(context.args):
               if len(ssid) > 32:
-                reply_character_limit_exceeded(update, 32)
+                reply_character_limit(update, 1, 32)
               if wifi_password := get_wifi_password_from_args(context.args):
-                if len(wifi_password) > 64:
-                  reply_character_limit_exceeded(update, 64)
+                if not is_wifi_password_valid(wifi_password):
+                  reply_character_limit(update, 8, 64)
                 else:
                   result = update_router_onu_config(onu_id, ssid=ssid, wifi_password=wifi_password)
-                  update.message.reply_text('Rede: {0}\nSenha: {1}'.format(result['ssid'],
-                                                                           result['wifi_password']), quote=True)
+                  update.message.reply_text('Configurações enviadas.\nRede: {0}\nSenha: {1}'.format(result['ssid'],
+                                            result['wifi_password']), quote=True)
               else:
                 result = update_router_onu_config(onu_id, ssid=ssid)
-                update.message.reply_text('Rede: {0}\nSenha: {1}'.format(result['ssid'], result['wifi_password']),
-                                          quote=True)
+                update.message.reply_text('Configurações enviadas.\nRede: {0}\nSenha: {1}'.format(
+                                           result['ssid'], result['wifi_password']), quote=True)
             else:
               reply_instructions(update)
           elif context.args[1] == 'senha':
             if wifi_password := get_wifi_password_from_args(context.args):
-              if len(wifi_password) > 64:
-                reply_character_limit_exceeded(update, 64)
+              if not is_wifi_password_valid(wifi_password):
+                reply_character_limit(update, 8, 64)
               else:
                 result = update_router_onu_config(onu_id, wifi_password=wifi_password)
                 update.message.reply_text('Rede: {0}\nSenha: {1}'.format(result['ssid'],

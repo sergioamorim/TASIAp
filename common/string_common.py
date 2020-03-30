@@ -9,9 +9,10 @@ from telegram import MAX_MESSAGE_LENGTH
 def is_query_update(update):
   try:
     update.message.chat
-    return False
-  except:
+  except AttributeError:
     return True
+  else:
+    return False
 
 
 def format_strhexoctet(strhexoctet):
@@ -49,7 +50,7 @@ def str_char_to_hex_octect(str_char):
 def string_to_hex_octects(string, length):
   string_list = list(string)
   hex_list = list(map(str_char_to_hex_octect, string_list))
-  hex_list.extend(['00' for i in range(0, length-len(string_list))])
+  hex_list.extend(['00']*(length-len(string_list)))
   return ' '.join(hex_list)
 
 

@@ -27,8 +27,8 @@ def authorize(update, context):
         update.message.reply_text('Nenhuma ONU foi encontrada. Envie /authorize para verificar novamente se há novas '
                                   'ONUs.', quote=True)
     elif is_int(context.args[0]):
-      if args_len == 2 and ((args_1_lower := context.args[1].lower()) == 'cto' or is_vlan_id_valid(context.args[1])):
-        authorized_onu = authorize_onu(context.args[0], args_1_lower)
+      if args_len == 2 and (context.args[1].lower() == 'cto' or is_vlan_id_valid(context.args[1])):
+        authorized_onu = authorize_onu(context.args[0], context.args[1].lower())
       else:
         authorized_onu = authorize_onu(context.args[0])
       if authorized_onu:

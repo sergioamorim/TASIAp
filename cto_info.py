@@ -6,16 +6,8 @@ from fpdf import FPDF
 from requests import post
 
 from common.mysql_common import supply_mysql_session
-from common.string_common import sanitize_name
-from config import bot_config
-
-
-def to_int(string):
-  try:
-    integer = int(string)
-  except ValueError:
-    integer = None
-  return integer
+from common.string_common import sanitize_name, sanitize_cto_vlan_name
+from config import bot_config, mysqldb_config
 
 
 def get_acct_stop_time(result_row):
@@ -41,19 +33,6 @@ def sanitize_dumb(string):
     ' / ', ', ').replace('  ', ' ')
 
 
-def sanitize_to_terminal(string):
-  return string.replace(
-    chr(0xC2), '\xC3\x82').replace(chr(0xA0), '').replace(chr(0xC3), '\xC3\x83').replace(chr(0xBA), '\xC2\xBA').replace(
-    chr(0xD3), '\xC3\x93').replace(chr(0xC7), '\xC3\x87').replace(chr(0xD5), '\xC3\x95').replace(
-    chr(0xC9), '\xC3\x89').replace(chr(0xAA), '\xC2\xAA').replace(chr(0xD4), '\xC3\x94').replace(
-    chr(0xED), '\xC3\xAD').replace(chr(0xCD), '\xC3\x8D').replace(chr(0xC0), '\xC3\x80').replace(
-    chr(0xC1), '\xC3\x81').replace(chr(0xB0), '\xC2\xB0').replace(chr(0xE2), '\xC3\xA2').replace(
-    chr(0xCA), '\xC3\x8A').replace(chr(0xE9), '\xC3\xA9').replace(chr(0xEA), '\xC3\xAA').replace(
-    chr(0xDA), '\xC3\x9A').replace(chr(0xE1), '\xC3\xA1').replace(chr(0xF3), '\xC3\xB3').replace(
-    chr(0xF4), '\xC3\xB4').replace(chr(0xE3), '\xC3\xA3').replace(chr(0xFA), '\xC3\xBA').replace(
-    chr(0xE7), '\xC3\xA7').replace(chr(0xB4), '\xC2\xB4')
-
-
 @supply_mysql_session
 def get_clientes_dict(users, session=None):
   if users:
@@ -76,78 +55,121 @@ def plural_s(count):
 
 
 @supply_mysql_session
-def do_things(cto_id, tech_report, session=None):
-  row_cto_name = session.execute(
-    'SELECT CalledStationId FROM radius_acct WHERE CalledStationId LIKE :cto ORDER BY AcctStartTime DESC LIMIT 1',
-    {'cto': '%{0}%'.format(cto_id)}).first()
-  usernames = session.execute(
-    'SELECT DISTINCT UserName FROM radius_acct WHERE CalledStationId LIKE :cto AND UserName IN (SELECT user FROM '
-    'login WHERE cliente_id IN (SELECT id FROM clientes WHERE status = 1))',
-    {'cto': '%{0}%'.format(cto_id)})
-  rows = []
+def get_cto_name(cto_id, session=None):
+  query = 'SELECT CalledStationId FROM {0} WHERE CalledStationId LIKE :cto ORDER BY AcctStartTime DESC LIMIT 1'
+  if cto_name := session.scalar(query.format(mysqldb_config.radius_acct_table), {'cto': '%{0}%'.format(cto_id)}):
+    return sanitize_cto_vlan_name(cto_name)
+  return cto_id
+
+
+@supply_mysql_session
+def get_usernames(cto_id, session=None):
+  query = 'SELECT DISTINCT UserName FROM {0} WHERE CalledStationId LIKE :cto AND UserName IN (SELECT user ' \
+          'FROM login WHERE cliente_id IN (SELECT id FROM clientes WHERE status = 1))'
+  if usernames := session.execute(query.format(mysqldb_config.radius_acct_table), {'cto': '%{0}%'.format(cto_id)}):
+    return usernames
+  return None
+
+
+@supply_mysql_session
+def get_last_cto(username, session=None):
+  query = 'SELECT CalledStationId FROM {0} WHERE UserName = :username ORDER BY AcctStartTime DESC LIMIT 1'
+  if len(username):
+    if last_cto := session.scalar(query.format(mysqldb_config.radius_acct_table), {'username': username[0]}):
+      return last_cto
+  return None
+
+
+@supply_mysql_session
+def get_connection_info(username, session=None):
+  query = 'SELECT UserName, AcctStartTime, AcctStopTime FROM {0} WHERE UserName = :username ORDER BY AcctStartTime ' \
+          'DESC LIMIT 1'.format(mysqldb_config.radius_acct_table)
+  if len(username):
+    if connection_info := session.execute(query, {'username': username[0]}).first():
+      return connection_info
+  return None
+
+
+@supply_mysql_session
+def get_connections_info(cto_id, session=None):
+  usernames = get_usernames(cto_id, session=session)
+  connections_info = []
   for username in usernames:
-    last_cto = session.execute(
-      'SELECT CalledStationId FROM radius_acct WHERE UserName = :username ORDER BY AcctStartTime DESC LIMIT 1',
-      {'username': username[0]}).first()[0]
+    last_cto = get_last_cto(username, session=session)
     if cto_id in last_cto:
-      row = session.execute(
-        'SELECT UserName, AcctStartTime, AcctStopTime FROM radius_acct WHERE UserName = :username ORDER BY '
-        'AcctStartTime DESC LIMIT 1',
-        {'username': username[0]}).first()
-      rows.append(row)
-  sorted_rows = sorted(rows, key=get_acct_stop_time, reverse=True)
-  users_offline = []
-  users_online = []
-  for row in sorted_rows:
-    if row['AcctStopTime'] is None:
-      users_online.append(row['UserName'])
+      connection_info = get_connection_info(username, session=session)
+      connections_info.append(connection_info)
+  ordered_connections_info = sorted(connections_info, key=get_acct_stop_time, reverse=True)
+  return ordered_connections_info
+
+
+@supply_mysql_session
+def get_clients(cto_id, session=None):
+  connections_info = get_connections_info(cto_id, session=session)
+  online = offline = []
+  for connection_info in connections_info:
+    if connection_info['AcctStopTime'] is None:
+      online.append(connection_info['UserName'])
     else:
-      users_offline.append(row['UserName'])
-  users_offline_count = len(users_offline)
-  users_online_count = len(users_online)
-  if users_offline:
-    clientes_offline_dict = get_clientes_dict(users_offline)
-  if users_online:
-    clientes_online_dict = get_clientes_dict(users_online)
-  cto_name = row_cto_name['CalledStationId']
-  cto_number, cto_legible_name = cto_name[1:5], cto_name[30:].replace('-', ' ')
-  datetime_now = datetime.now()
+      offline.append(connection_info['UserName'])
+  online_dict = get_clientes_dict(online)
+  offline_dict = get_clientes_dict(offline)
+  return {'online': online_dict, 'offline': offline_dict}
+
+
+def get_report_summary(users_online_count, users_offline_count):
+  total_users_count = users_online_count + users_offline_count
+  if users_offline_count and users_offline_count != total_users_count:
+    return '{0} cliente{1} offline de um total de {2} cliente{3} ({4} cliente{5} online).'.format(
+            users_offline_count, plural_s(users_offline_count), total_users_count, plural_s(total_users_count),
+            users_online_count, plural_s(users_online_count))
+  elif users_offline_count > 1 and not users_online_count:
+    return 'Todos os {0} clientes offline.'.format(users_offline_count)
+  elif users_offline_count and not users_online_count:
+    return 'O \xC3\xBAnico cliente da ONU est\xC3\xA1 offline.'
+  elif not users_offline_count and users_online_count > 1:
+    return 'Todos os {0} cliente{1} online.'.format(users_online_count, plural_s(users_online_count))
+  elif not users_offline_count and users_online_count:
+    return 'O \xC3\xBAnico cliente da ONU est\xC3\xA1 online.'
+  else:
+    return 'Resumo não disponível'
+
+
+def get_time_generated_phrase(now):
+  return ' '*16 + 'Relatório gerado às {0} de {1}'.format(now.strftime('%H:%M:%S'), now.strftime('%d/%m/%Y'))
+
+
+def get_pdf_page():
   pdf = FPDF(format='a3')
   pdf.add_page(orientation='L')
   pdf.add_font('Calibri', '', 'fonts/CALIBRI.TTF', uni=True)
   pdf.add_font('Calibri', 'B', 'fonts/CALIBRIB.TTF', uni=True)
   pdf.set_font('Calibri', '', 13)
-  pdf.write(0, 'CTO ')
-  pdf.set_font('Calibri', 'B', 13)
-  pdf.write(0, cto_number)
-  pdf.set_font('Calibri', '', 13)
-  pdf.write(0, cto_legible_name)
+  return pdf
+
+
+@supply_mysql_session
+def do_things(cto_id, tech_report, session=None):
+  now = datetime.now()
+  cto_name = get_cto_name(cto_id, session=session)
+  clients = get_clients(cto_id, session=session)
+  users_online_count = len(clients['online'])
+  users_offline_count = len(clients['offline'])
+  pdf = get_pdf_page()
+  pdf.write(0, cto_name)
   pdf.set_font('Calibri', '', 9)
-  pdf.write(0, '                Relatório gerado às {0} de {1}'.format(datetime_now.strftime('%H:%M:%S'),
-                                                                       datetime_now.strftime('%d/%m/%Y')))
+  pdf.write(0, get_time_generated_phrase(now))
   pdf.ln(5)
-  total_users_count = users_online_count + users_offline_count
-  if users_offline_count and users_offline_count != total_users_count:
-    pdf.write(0, '{0} cliente{1} offline de um total de {2} cliente{3} ({4} cliente{5} online).'.format(
-      users_offline_count, plural_s(users_offline_count), total_users_count, plural_s(total_users_count),
-      users_online_count, plural_s(users_online_count)))
-  elif users_offline_count > 1 and not users_online_count:
-    pdf.write(0, 'Todos os {0} clientes offline.'.format(users_offline_count))
-  elif users_offline_count and not users_online_count:
-    pdf.write(0, 'O \xC3\xBAnico cliente da ONU est\xC3\xA1 offline.')
-  elif not users_offline_count and users_online_count > 1:
-    pdf.write(0, 'Todos os {0} cliente{1} online.'.format(users_online_count, plural_s(users_online_count)))
-  elif not users_offline_count and users_online_count:
-    pdf.write(0, 'O \xC3\xBAnico cliente da ONU est\xC3\xA1 online.')
+  pdf.write(0, get_report_summary(users_online_count, users_offline_count))
   pdf.ln(6)
   pdf.set_font('Calibri', '', 11)
-  if users_offline:
+  if clients['offine']:
     pdf.write(0, 'Clientes offline: {0}'.format(users_offline_count))
     pdf.ln(4)
     if tech_report:
-      sorted_dict = sorted(clientes_offline_dict, key=get_rua)
+      sorted_dict = sorted(clients['offline'], key=get_rua)
     else:
-      sorted_dict = sorted(clientes_offline_dict, key=get_nome)
+      sorted_dict = sorted(clients['offline'], key=get_nome)
     pdf.set_font('Calibri', '', 9)
     for cliente in sorted_dict:
       pdf.write(0,
@@ -161,14 +183,14 @@ def do_things(cto_id, tech_report, session=None):
   pdf.set_font('Calibri', '', 11)
   pdf.set_text_color(120, 120, 120)
   pdf.ln(3)
-  if users_online:
+  if clients['online']:
     pdf.write(0, 'Clientes online: {0}'.format(users_online_count))
     pdf.ln(4)
     if tech_report:
-      sorted_dict = sorted(clientes_online_dict, key=get_numero)
+      sorted_dict = sorted(clients['online'], key=get_numero)
       sorted_dict = sorted(sorted_dict, key=get_rua)
     else:
-      sorted_dict = sorted(clientes_online_dict, key=get_nome)
+      sorted_dict = sorted(clients['online'], key=get_nome)
     pdf.set_font('Calibri', '', 9)
     for cliente in sorted_dict:
       pdf.write(0,
@@ -179,8 +201,7 @@ def do_things(cto_id, tech_report, session=None):
   else:
     pdf.write(0, 'Nenhum cliente online.')
     pdf.ln(4)
-  filename = 'rel-cto_{0}-{1}_{2}.pdf'.format(cto_number, cto_legible_name[1:].lower().replace(' ', '-'),
-                                              datetime_now.strftime('%Y-%m-%d_%H-%M-%S'))
+  filename = 'rel-{0}-{1}_{2}.pdf'.format(cto_id, cto_name.lower().replace(' ', '-'), now.strftime('%Y-%m-%d_%H-%M-%S'))
   pdf.output(filename, 'F')
   with open(filename, 'rb') as document:
     post('https://api.telegram.org/bot{0}/sendDocument'.format(bot_config.token),
@@ -194,12 +215,12 @@ def main():
   parser.add_argument("-t", "--tecnico", dest="t", help="Ordenar clientes de acordo com endereço no PDF")
   args = parser.parse_args()
 
-  if not args.c:
-    print('Informe o código da CTO.')
-    return 1
+  if args.c:
+    do_things(args.c, args.t)
+    return 0
 
-  do_things(args.c, args.t)
-  return 0
+  print('Informe o código da CTO.')
+  return 1
 
 
 if __name__ == '__main__':

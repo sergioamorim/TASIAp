@@ -14,13 +14,61 @@ def is_query_update(update):
     return True
 
 
+def format_strhexoctet(strhexoctet):
+  return strhexoctet.zfill(2).upper()
+
+
+def hexstr_to_hexoctetstr(hexstr):
+  if len(hexstr) > 2:
+    return hexstr_to_hexoctetstr(hexstr[:-2]) + ' ' + format_strhexoctet(hexstr[-2:])
+  return format_strhexoctet(hexstr[-2:])
+
+
+def int_to_hexoctetstr(intvalue):
+  return hexstr_to_hexoctetstr(format(int(intvalue), 'x'))
+
+
+def assure_two_octet_hexstr(hexstr):
+  if len(hexstr) == 2:
+    return '00 ' + hexstr
+  return hexstr
+
+
+def get_onu_number_from_id(onu_id):
+  return int(onu_id[2:])
+
+
+def get_pon_id(onu_id):
+  return onu_id[1:2]
+
+
+def str_char_to_hex_octect(str_char):
+  return hex(ord(str_char))[2:].upper()
+
+
+def string_to_hex_octects(string, length):
+  string_list = list(string)
+  hex_list = list(map(str_char_to_hex_octect, string_list))
+  hex_list.extend(['00' for i in range(0, length-len(string_list))])
+  return ' '.join(hex_list)
+
+
+def generate_cvlan(board_id, pon_id):
+  board_id_id = '1' if board_id == '12' else '2'
+  return '{0}{1}00'.format(board_id_id, pon_id)
+
+
+def get_board_id(onu_id):
+  return '12' if onu_id[:1] == '1' else '14'
+
+
 def is_onu_id_valid(onu_id):
   return is_int(onu_id) and 1100 < int(onu_id) < 3900 and int(onu_id[2:]) > 0 and int(
     onu_id[1:2]) > 0 and int(onu_id[1:2]) < 9
 
 
 def is_vlan_id_valid(vlan_id):
-  return is_int(vlan_id) and 0 < int(vlan_id) < 4096
+  return is_int(vlan_id) and 0 < int(vlan_id) < 4086
 
 
 def is_serial_valid(serial):

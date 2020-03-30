@@ -2,6 +2,8 @@
 
 token = 'bOt-T0keN_ExaMplE'
 default_chat = '012345678'
+default_pppoe_login_password = 'defaultpass'
+default_web_config_password = 'defaultwebpass'
 permissions = {
   'autorizar': [1234567, 89012345],
   'authorize': [1234567],
@@ -13,7 +15,8 @@ permissions = {
   'login': [1234567],
   'link': [1234567],
   'cto': [1234567],
-  'vlan': [1234567]
+  'vlan': [1234567],
+  'wifi': [1234567]
 }
 mk_link = {
   'ssh': {

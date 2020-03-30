@@ -1,31 +1,12 @@
 from argparse import ArgumentParser
 from subprocess import run
 
-from common.string_common import is_onu_id_valid, is_vlan_id_valid, get_auth_onu_device_id
+from common.string_common import is_onu_id_valid, is_vlan_id_valid, get_auth_onu_device_id, int_to_hexoctetstr, \
+  assure_two_octet_hexstr
 from config import snmp_config
 from logger import Log, get_logger
 
 logger = get_logger(__name__)
-
-
-def format_strhexoctet(strhexoctet):
-  return strhexoctet.zfill(2).upper()
-
-
-def hexstr_to_hexoctetstr(hexstr):
-  if len(hexstr) > 2:
-    return hexstr_to_hexoctetstr(hexstr[:-2]) + ' ' + format_strhexoctet(hexstr[-2:])
-  return format_strhexoctet(hexstr[-2:])
-
-
-def int_to_hexoctetstr(intvalue):
-  return hexstr_to_hexoctetstr(format(intvalue, 'x'))
-
-
-def assure_two_octet_hexstr(hexstr):
-  if len(hexstr) == 2:
-    return '00 ' + hexstr
-  return hexstr
 
 
 def can_cvlan_be_set(onu_id, cvlan):

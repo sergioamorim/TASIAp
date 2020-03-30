@@ -5,7 +5,7 @@ from common.sqlite_common import update_onu_info
 from common.string_common import is_int, is_vlan_id_valid
 from common.telnet_common import str_to_telnet, supply_telnet_connection
 from logger import Log, get_logger
-from onu_set_cvlan import set_cvlan
+from snmp.onu_set_cvlan import set_cvlan
 
 logger = get_logger(__name__)
 

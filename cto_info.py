@@ -1,12 +1,14 @@
 from argparse import ArgumentParser
 from datetime import datetime
 from os import remove
+from re import match
 
 from fpdf import FPDF
 from requests import post
 
 from common.mysql_common import supply_mysql_session
-from common.string_common import sanitize_name, sanitize_cto_vlan_name
+from common.string_common import sanitize_name, sanitize_cto_vlan_name, format_datetime, get_board_id, get_pon_id, \
+  is_vlan_id_valid
 from config import bot_config, mysqldb_config
 
 
@@ -54,11 +56,22 @@ def plural_s(count):
   return 's' if count > 1 else ''
 
 
+def is_pon_id(cto_id):
+  if match('[1-3][1-9]00', cto_id):
+    return True
+  return False
+
+
 @supply_mysql_session
 def get_cto_name(cto_id, session=None):
+  if is_pon_id(cto_id):
+    board_id = get_board_id(cto_id)
+    pon_id = get_pon_id(cto_id)
+    return 'Placa {0} PON {1}'.format(board_id, pon_id)
   query = 'SELECT CalledStationId FROM {0} WHERE CalledStationId LIKE :cto ORDER BY AcctStartTime DESC LIMIT 1'
   if cto_name := session.scalar(query.format(mysqldb_config.radius_acct_table), {'cto': '%{0}%'.format(cto_id)}):
-    return sanitize_cto_vlan_name(cto_name)
+    if sanitized_cto_name := sanitize_cto_vlan_name(cto_name):
+      return sanitized_cto_name
   return cto_id
 
 
@@ -106,7 +119,8 @@ def get_connections_info(cto_id, session=None):
 @supply_mysql_session
 def get_clients(cto_id, session=None):
   connections_info = get_connections_info(cto_id, session=session)
-  online = offline = []
+  online = []
+  offline = []
   for connection_info in connections_info:
     if connection_info['AcctStopTime'] is None:
       online.append(connection_info['UserName'])
@@ -126,17 +140,27 @@ def get_report_summary(users_online_count, users_offline_count):
   elif users_offline_count > 1 and not users_online_count:
     return 'Todos os {0} clientes offline.'.format(users_offline_count)
   elif users_offline_count and not users_online_count:
-    return 'O \xC3\xBAnico cliente da ONU est\xC3\xA1 offline.'
+    return 'O único cliente está offline.'
   elif not users_offline_count and users_online_count > 1:
     return 'Todos os {0} cliente{1} online.'.format(users_online_count, plural_s(users_online_count))
   elif not users_offline_count and users_online_count:
-    return 'O \xC3\xBAnico cliente da ONU est\xC3\xA1 online.'
+    return 'O único cliente está online.'
   else:
-    return 'Resumo não disponível'
+    return 'Nenhum cliente encontrado.'
 
 
-def get_time_generated_phrase(now):
-  return ' '*16 + 'Relatório gerado às {0} de {1}'.format(now.strftime('%H:%M:%S'), now.strftime('%d/%m/%Y'))
+def get_time_generated_phrase(datetime_obj):
+  return ' '*16 + 'Relatório gerado às {0}'.format(format_datetime(datetime_obj, readable=True))
+
+
+def get_filename(cto_name, datetime_obj):
+  return 'rel-{0}-{1}.pdf'.format(cto_name.lower().replace(' ', '-'), format_datetime(datetime_obj, safename=True))
+
+
+def get_clients_count(clients):
+  if not clients:
+    return 0
+  return len(clients)
 
 
 def get_pdf_page():
@@ -153,8 +177,8 @@ def do_things(cto_id, tech_report, session=None):
   now = datetime.now()
   cto_name = get_cto_name(cto_id, session=session)
   clients = get_clients(cto_id, session=session)
-  users_online_count = len(clients['online'])
-  users_offline_count = len(clients['offline'])
+  users_online_count = get_clients_count(clients['online'])
+  users_offline_count = get_clients_count(clients['offline'])
   pdf = get_pdf_page()
   pdf.write(0, cto_name)
   pdf.set_font('Calibri', '', 9)
@@ -163,7 +187,7 @@ def do_things(cto_id, tech_report, session=None):
   pdf.write(0, get_report_summary(users_online_count, users_offline_count))
   pdf.ln(6)
   pdf.set_font('Calibri', '', 11)
-  if clients['offine']:
+  if clients['offline']:
     pdf.write(0, 'Clientes offline: {0}'.format(users_offline_count))
     pdf.ln(4)
     if tech_report:
@@ -201,7 +225,7 @@ def do_things(cto_id, tech_report, session=None):
   else:
     pdf.write(0, 'Nenhum cliente online.')
     pdf.ln(4)
-  filename = 'rel-{0}-{1}_{2}.pdf'.format(cto_id, cto_name.lower().replace(' ', '-'), now.strftime('%Y-%m-%d_%H-%M-%S'))
+  filename = get_filename(cto_name, now)
   pdf.output(filename, 'F')
   with open(filename, 'rb') as document:
     post('https://api.telegram.org/bot{0}/sendDocument'.format(bot_config.token),
@@ -216,8 +240,11 @@ def main():
   args = parser.parse_args()
 
   if args.c:
-    do_things(args.c, args.t)
-    return 0
+    if is_vlan_id_valid(args.c):
+      do_things(args.c, args.t)
+      return 0
+    print('Código inválido.')
+    return 1
 
   print('Informe o código da CTO.')
   return 1

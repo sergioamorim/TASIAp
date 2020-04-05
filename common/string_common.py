@@ -114,8 +114,14 @@ def sanitize_cto_vlan_name(cto_vlan_name):
   return ''
 
 
-def format_datetime(datetime_object):
-  return datetime_object.astimezone(timezone(timedelta(hours=-3))).strftime('%d/%m/%Y %H:%M:%S')
+def format_datetime(datetime_object, safename=False, readable=False):
+  if safename:
+    datetime_format = '%Y-%m-%d_%H-%M-%S'
+  elif readable:
+    datetime_format = '%H:%M:%S de %d/%m/%Y'
+  else:
+    datetime_format = '%d/%m/%Y %H:%M:%S'
+  return datetime_object.astimezone(timezone(timedelta(hours=-3))).strftime(datetime_format)
 
 
 def format_onu_state(onu_state):

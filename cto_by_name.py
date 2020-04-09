@@ -1,74 +1,77 @@
-from re import findall
+from argparse import ArgumentParser
 
 from common.mysql_common import supply_mysql_session
-from common.string_common import sanitize_cto_vlan_name, format_datetime
+from common.string_common import get_onu_id_from_cto_vlan_name, get_cto_name_from_cto_vlan_name, \
+  get_vlan_id_from_cto_vlan_name
 from config import mysqldb_config
 from logger import Log, get_logger
 
 logger = get_logger(__name__)
 
 
-def get_cto_ids(cto_name):
-  return findall('([0-9]{4})', cto_name)
+class Cto(object):
+
+  def __init__(self, query_result):
+    self.onu_id = get_onu_id_from_cto_vlan_name(query_result[0])
+    self.vlan_id = get_vlan_id_from_cto_vlan_name(query_result[0])
+    self.cto_name = get_cto_name_from_cto_vlan_name(query_result[0])
+    self.last_connected = query_result[1] if len(query_result) > 1 else None
+
+  def __hash__(self):
+    return int(self.onu_id)
+
+  def __eq__(self, other):
+    return True if self.onu_id == other.onu_id else False
+
+  def __lt__(self, other):
+    if self.last_connected and not other.last_connected:
+      return True
+    if not self.last_connected and other.last_connected:
+      return False
+    return True if self.last_connected < other.last_connected else False
+
+  def __repr__(self):
+    return '<Cto(onu_id={0},vlan_id={1},cto_name={2},last_connected={3})>'.format(
+      repr(self.onu_id), repr(self.vlan_id), repr(self.cto_name), repr(self.last_connected))
 
 
-def remove_cto_duplicates(cto_names):
-  new_cto_names = []
-  cropped_new_cto_names = []
-  for cto_name in sorted(cto_names, key=len, reverse=True):
-    if len(cto_name) > 28:
-      new_cto_names.append(cto_name)
-      cropped_new_cto_names.append(cto_name[:28])
-      cto_names.remove(cto_name)
-  for cto_name in cto_names:
-    if cto_name not in cropped_new_cto_names:
-      new_cto_names.append(cto_name)
-  return new_cto_names
-
-
-def get_query_results_online(session, string_list):
+@supply_mysql_session
+def get_query_results_online(cto_name, session=None):
   sql_query_string_online = "SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%' AND " \
                             "AcctStopTime = '0000-00-00 00:00:00';".format(mysqldb_config.radius_acct_table,
-                                                                           '%'.join(string_list))
+                                                                           cto_name.replace(' ', '%'))
   return session.execute(sql_query_string_online)
 
 
-def get_query_results_all(session, string_list):
-  sql_query_string_all = "SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%'".format(
-    mysqldb_config.radius_acct_table, '%'.join(string_list))
-  return session.execute(sql_query_string_all)
-
-
-def get_cto_last_online(session, cto_vlan_name):
-  sql_query_string = 'SELECT AcctStopTime FROM {0} WHERE CalledStationId = :ctovlanname ORDER BY AcctStopTime DESC ' \
-                     'LIMIT 1'.format(mysqldb_config.radius_acct_table)
-  return session.execute(sql_query_string, {'ctovlanname': cto_vlan_name}).scalar()
+@supply_mysql_session
+def get_query_results_all(cto_name, session=None):
+  sql_query_string_all = "SELECT CalledStationId, max(AcctStopTime) last_connected FROM {0} WHERE CalledStationId " \
+                         "LIKE '%{1}%' GROUP BY CalledStationId ORDER BY last_connected DESC;"
+  return session.execute(sql_query_string_all.format(mysqldb_config.radius_acct_table, cto_name.replace(' ', '%')))
 
 
 @supply_mysql_session
 @Log(logger)
-def find_cto_by_name(string_list, session=None):
-  query_results_all = get_query_results_all(session, string_list)
-  query_results_online = get_query_results_online(session, string_list)
-  ctos_found = []
-  ctos_included = []
-  for query_result in query_results_online:
-    cto_name = sanitize_cto_vlan_name(query_result['CalledStationID'])
-    ctos_included.extend(get_cto_ids(cto_name))
-    ctos_found.append(cto_name)
-  ctos_found = remove_cto_duplicates(ctos_found)
-  offline_ctos = []
-  for query_result in query_results_all:
-    cto_name = sanitize_cto_vlan_name(query_result['CalledStationID'])
-    cto_ids = get_cto_ids(cto_name)
-    included = False
-    for cto_id in cto_ids:
-      if cto_id in ctos_included:
-        included = True
-    if not included:
-      last_online = get_cto_last_online(session, query_result['CalledStationID'])
-      offline_ctos.append({'cto_name': cto_name, 'last_online': last_online})
-  for cto_dict in sorted(offline_ctos, key=lambda cto: cto['last_online'], reverse=True):
-    last_online = format_datetime(cto_dict['last_online'])
-    ctos_found.append('*{0} (clientes offline - {1})'.format(cto_dict['cto_name'], last_online))
-  return ctos_found
+def find_cto_by_name(cto_name, session=None):
+  query_results_all = list(get_query_results_all(cto_name, session=session))
+  query_results_all.extend(list(get_query_results_online(cto_name, session=session)))
+  ctos_list = [Cto(query_result) for query_result in query_results_all]
+  ctos = set(sorted(ctos_list, reverse=True))
+  return ctos
+
+
+def main():
+  parser = ArgumentParser()
+  parser.add_argument('-n', '--name', dest='n', help='Nome da CTO a ser buscada.')
+  args = parser.parse_args()
+
+  if args.n:
+    print(repr(find_cto_by_name(args.n)))
+    return 0
+
+  print('Informe a CTO a ser buscada.')
+  return 1
+
+
+if __name__ == '__main__':
+  main()

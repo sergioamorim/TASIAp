@@ -103,13 +103,26 @@ def get_auth_onu_device_id(onu_device):
   return '{0}{1}{2}'.format(board_id, onu_device.pon.pon_id, onu_number)
 
 
+def get_onu_id_from_cto_vlan_name(cto_vlan_name):
+  board_id = '1' if cto_vlan_name[7:9] == '12' else '2'
+  return '{0}{1}{2}'.format(board_id, cto_vlan_name[13:14], cto_vlan_name[18:20])
+
+
+def get_cto_name_from_cto_vlan_name(cto_vlan_name):
+  return cto_vlan_name[31:].replace('-', ' ')
+
+
+def get_vlan_id_from_cto_vlan_name(cto_vlan_name):
+  return cto_vlan_name[1:5]
+
+
 def sanitize_cto_vlan_name(cto_vlan_name):
   if len(cto_vlan_name) > 32:
-    board_id = '1' if cto_vlan_name[7:9] == '12' else '2'
-    onu_id = '{0}{1}{2}'.format(board_id, cto_vlan_name[13:14], cto_vlan_name[18:20])
-    cto_actual_name = cto_vlan_name[31:].replace('-', ' ')
-    vlan = '({0}) '.format(cto_vlan_name[:5]) if cto_vlan_name[1:5] != onu_id else ''
-    cto_sanitized_name = 'CTO {0} {1}{2}'.format(onu_id, vlan, cto_actual_name)
+    onu_id = get_onu_id_from_cto_vlan_name(cto_vlan_name)
+    cto_actual_name = get_cto_name_from_cto_vlan_name(cto_vlan_name)
+    vlan_id = get_vlan_id_from_cto_vlan_name(cto_vlan_name)
+    vlan_reference = '(v{0}) '.format(vlan_id) if vlan_id != onu_id else ''
+    cto_sanitized_name = 'CTO {0} {1}{2}'.format(onu_id, vlan_reference, cto_actual_name)
     return cto_sanitized_name
   return ''
 

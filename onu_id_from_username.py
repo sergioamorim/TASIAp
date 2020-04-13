@@ -13,6 +13,7 @@ from user_from_onu import find_user_by_onu
 logger = get_logger(__name__)
 
 
+@Log(logger)
 def get_onu_number(pon_mac_lookup):
   onu_number_pattern = 'OnuId:([0-9]*)'
   if onu_number := findall(onu_number_pattern, pon_mac_lookup):

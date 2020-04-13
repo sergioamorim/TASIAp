@@ -28,6 +28,8 @@ class Cto(object):
       return True
     if not self.last_connected and other.last_connected:
       return False
+    if not self.last_connected and not other.last_connected:
+      return self.onu_id < other.onu_id
     return True if self.last_connected < other.last_connected else False
 
   def __repr__(self):
@@ -55,7 +57,7 @@ def get_query_results_all(cto_name, session=None):
 def find_cto_by_name(cto_name, session=None):
   query_results_all = list(get_query_results_all(cto_name, session=session))
   query_results_all.extend(list(get_query_results_online(cto_name, session=session)))
-  ctos_list = [Cto(query_result) for query_result in query_results_all]
+  ctos_list = [Cto(query_result) for query_result in sorted(query_results_all, reverse=True)]
   ctos = set(sorted(ctos_list, reverse=True))
   return ctos
 

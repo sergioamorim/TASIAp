@@ -92,6 +92,7 @@ def find_user_data(onu_id, users, vlan_name, session=None, tn=None):
       user_data = {'username': user['user'], 'password': user['pass'], 'diagnostic': diagnostic}
       logger.debug('find_onu_connection: user_data: {0}'.format(user_data))
       return user_data
+    return None
 
 
 @supply_mysql_session

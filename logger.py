@@ -34,7 +34,7 @@ class Log(object):
       calling_statement = '{0}({1}{2})'.format(function.__name__, str(args)[1:-2], kwargs_string)
       self.logger.debug(calling_statement)
       result = function(*args, **kwargs)
-      self.logger.debug('{0}: {1}'.format(calling_statement, repr(result)))
+      self.logger.debug('{0}: {1!r}'.format(calling_statement, result))
       return result
 
     return log_wrapper

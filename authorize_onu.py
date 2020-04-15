@@ -29,9 +29,8 @@ class AuthOnuDevice:
     self.authorization_id = authorization_id
 
   def __repr__(self):
-    return '<AuthOnuDevice(phy_id={0},pon={1},onu_type={2},number={3},cvlan={4},authorization_id={5})>'.format(
-      repr(self.phy_id), repr(self.pon), repr(self.onu_type), repr(self.number), repr(self.cvlan),
-      repr(self.authorization_id))
+    return '<AuthOnuDevice(phy_id={0!r},pon={1!r},onu_type={2!r},number={3!r},cvlan={4!r},authorization_id={5!r})>'. \
+            format(self.phy_id, self.pon, self.onu_type, self.number, self.cvlan, self.authorization_id)
 
 
 class Pon:
@@ -57,8 +56,8 @@ class Pon:
     self.autoset_last_authorized_number(tn=tn)
 
   def __repr__(self):
-    return '<Pon(pon_id={0},board={1},last_authorized_onu_number={2})>'.format(repr(self.pon_id), repr(self.board),
-                                                                               repr(self.last_authorized_onu_number))
+    return '<Pon(pon_id={0!r},board={1!r},last_authorized_onu_number={2!r})>'.format(self.pon_id, self.board,
+                                                                                     self.last_authorized_onu_number)
 
 
 class Board:
@@ -68,7 +67,7 @@ class Board:
     self.board_id = board_id
 
   def __repr__(self):
-    return '<Board(board_id={0})>'.format(repr(self.board_id))
+    return '<Board(board_id={0!r})>'.format(self.board_id)
 
 
 @supply_telnet_connection

@@ -33,8 +33,9 @@ class Cto(object):
     return True if self.last_connected < other.last_connected else False
 
   def __repr__(self):
-    return '<Cto(onu_id={0},vlan_id={1},cto_name={2},last_connected={3})>'.format(
-      repr(self.onu_id), repr(self.vlan_id), repr(self.cto_name), repr(self.last_connected))
+    return '<Cto(onu_id={0!r},vlan_id={1!r},cto_name={2!r},last_connected={3!r})>'.format(self.onu_id, self.vlan_id,
+                                                                                          self.cto_name,
+                                                                                          self.last_connected)
 
 
 @supply_mysql_session

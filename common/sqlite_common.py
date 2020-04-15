@@ -30,10 +30,9 @@ class OnuDevice(Base):
   last_update = Column(DateTime)
 
   def __repr__(self):
-    return '<OnuDevice=(onu_id={0},serial={1},username={2},last_update={3})>'.format(repr(self.onu_id),
-                                                                                     repr(self.serial),
-                                                                                     repr(self.username),
-                                                                                     str(self.last_update))
+    return '<OnuDevice=(onu_id={0!r},serial={1!r},username={2!r},last_update={3!r})>'.format(self.onu_id, self.serial,
+                                                                                             self.username,
+                                                                                             self.last_update)
 
   def __init__(self, onu_id, serial=None, username=None):
     self.onu_id = int(onu_id)

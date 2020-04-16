@@ -111,8 +111,8 @@ def find_onu_connection(onu_id, session=None):
                                                                                         update_time))
     update_time = session.execute('SELECT NOW();').scalar() - timedelta(minutes=1)
     logger.debug('find_onu_connection: users: {0}'.format(users))
-    if len(users):
-      return find_user_data(onu_id, users, vlan_name, session=session)
+    if len(users) and (user_data := find_user_data(onu_id, users, vlan_name, session=session)):
+      return user_data
     logger.debug('find_onu_connection: sleep: {0}'.format(checking_frequency))
     sleep(checking_frequency)
     if checking_frequency < 120:

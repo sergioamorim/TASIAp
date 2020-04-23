@@ -49,9 +49,24 @@ class OnuDevice(Base):
     self.last_update = datetime.now()
 
 
+class UserLogin(Base):
+  __tablename__ = 'user_login'
+  username = Column(String, primary_key=True)
+  password = Column(String)
+
+  def __init__(self, username, password=None):
+    self.username = username
+    self.password = password
+
+  def __repr__(self):
+    return '<UserLogin(username={username!r},password={password!r})>'.format(
+            username=self.username, password=self.password)
+
+
 @contextmanager
 def sqlite_session():
   engine = create_engine('sqlite:///{0}'.format(bot_config.sqlite_db_path), encoding='latin1')
+  Base.metadata.create_all(bind=engine)
   session_maker = sessionmaker(bind=engine)
   session = session_maker()
   try:

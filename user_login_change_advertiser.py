@@ -88,7 +88,7 @@ def send_advertising_message(username, change, password=None, session=None):
               '<code>{password}</code>'.format(client_name=client_name, username=username, password=password)
   }
   post('https://api.telegram.org/bot{0}/sendMessage'.format(bot_config.token),
-       data={'chat_id': bot_config.default_chat, 'text': message[change], 'parse_mode': 'HTML'})
+       data={'chat_id': bot_config.default_group_chat, 'text': message[change], 'parse_mode': 'HTML'})
   return True
 
 

@@ -1,7 +1,8 @@
 # The config file needs to be named 'bot_config.py'
 
 token = 'bOt-T0keN_ExaMplE'
-default_chat = '012345678'
+default_chat = '12345678'
+default_group_chat = '-123456789012'
 default_pppoe_login_password = 'defaultpass'
 default_web_config_password = 'defaultwebpass'
 permissions = {

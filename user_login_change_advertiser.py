@@ -45,10 +45,14 @@ def get_cached_info_set(session=None):
 
 @supply_mysql_session
 def get_client_name(username, session=None):
-  return session.scalar('SELECT nome FROM {login_table} INNER JOIN {clientes_table} ON cliente_id = '
-                        'clientes.id WHERE user = :username'.format(login_table=mysqldb_config.login_table,
-                                                                    clientes_table=mysqldb_config.clientes_table), {
-                                                                    'username': username})
+  query_statement = 'SELECT nome, sexo FROM {login_table} INNER JOIN {clientes_table} ON cliente_id = clientes.id ' \
+                    'WHERE user = :username'.format(login_table=mysqldb_config.login_table,
+                                                    clientes_table=mysqldb_config.clientes_table)
+  if client_info := session.execute(query_statement, {'username': username}).first():
+    treatment = 'a' if client_info['sexo'] == 'F' else 'o'
+    client_name = sanitize_name(name=client_info['nome'])
+    return '{treatment} cliente {client_name}'.format(treatment=treatment, client_name=client_name)
+  return None
 
 
 @supply_sqlite_session
@@ -79,12 +83,12 @@ def delete_cached_user_login(username, mysql_session, session=None):
 @Log(logger)
 @supply_mysql_session
 def send_advertising_message(username, change, password=None, session=None):
-  client_name = sanitize_name(name=get_client_name(username=username, session=session)) if change != 'delete' else None
+  client_name = get_client_name(username=username, session=session) if change != 'delete' else None
   message = {
-    'add': '🔹 Novo login criado para o cliente {client_name}.\nUsuário: <code>{username}</code>\nSenha: '
+    'add': '🔹 Novo login criado para {client_name}.\nUsuário: <code>{username}</code>\nSenha: '
            '<code>{password}</code>'.format(client_name=client_name, username=username, password=password),
     'delete': '❌ Login deletado.\nUsuário: <code>{username}</code>'.format(username=username),
-    'update': '🔸 Senha de login do cliente {client_name} modificada.\nUsuário: <code>{username}</code>\nNova senha: '
+    'update': '🔸 Senha de login d{client_name} modificada.\nUsuário: <code>{username}</code>\nNova senha: '
               '<code>{password}</code>'.format(client_name=client_name, username=username, password=password)
   }
   post('https://api.telegram.org/bot{0}/sendMessage'.format(bot_config.token),

@@ -5,6 +5,7 @@ from common.sqlite_common import update_onu_info
 from common.string_common import is_int, is_vlan_id_valid
 from common.telnet_common import str_to_telnet, supply_telnet_connection
 from logger import Log, get_logger
+from onu_set_veip import set_veip
 from snmp.onu_set_cvlan import set_cvlan
 
 logger = get_logger(__name__)
@@ -19,8 +20,12 @@ class AuthOnuDevice:
   authorization_id = None
 
   def set_cvlan(self, cvlan):
-    if result := set_cvlan(auth_onu_device=self, cvlan=cvlan):
-      self.cvlan = result['cvlan']
+    if self.phy_id[:4] == 'PACE':
+      if result := set_veip(auth_onu_device=self):
+        self.cvlan = result['cvlan']
+    else:
+      if result := set_cvlan(auth_onu_device=self, cvlan=cvlan):
+        self.cvlan = result['cvlan']
 
   def __init__(self, authorization_id, onu_type, phy_id, pon):
     self.phy_id = phy_id

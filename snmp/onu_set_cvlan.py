@@ -32,7 +32,7 @@ def set_cvlan(auth_onu_device=None, onu_id=None, cvlan=None):
   if not can_cvlan_be_set(onu_id, cvlan):
     return None
   if cvlan == '600':
-    return set_veip(auth_onu_device=auth_onu_device)
+    return set_veip(onu_id=onu_id)
   board_id = 12 if onu_id[:1] == '1' else 14
   pon_id = int(onu_id[1:2])
   onu_number = int(onu_id[2:])

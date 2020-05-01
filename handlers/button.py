@@ -64,6 +64,8 @@ def button(update, context):
     cvlan = regex_result[0][2]
     if cvlan != 'cto':
       cvlan = None
+    if serial[:4] == 'PACE':
+      cvlan = '600'
     if result := set_cvlan(onu_id=onu_id, cvlan=cvlan):
       cvlan_commited = result['cvlan']
     else:

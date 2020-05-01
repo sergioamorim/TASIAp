@@ -80,6 +80,7 @@ def sqlite_session():
 def update_onu_info(auth_onu_device=None, onu_id=None, session=None, serial=None, username=None):
   if auth_onu_device:
     onu_id = get_auth_onu_device_id(auth_onu_device)
+    serial = auth_onu_device.phy_id
   if not (onu_device := session.query(OnuDevice).filter(OnuDevice.onu_id.is_(int(onu_id))).first()):
     onu_device = OnuDevice(onu_id, serial=serial, username=username)
   else:

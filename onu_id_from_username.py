@@ -28,8 +28,9 @@ def get_onu_id_by_mac_and_pon(mac, pon, tn=None):
   tn.write(str_to_telnet('show pon_mac {0} lookup {1}'.format(pon, mac.replace(':', ''))))
   pon_mac_lookup = tn.read_until(b'Admin\\gponline# ', timeout=1).decode('ascii')
   if onu_number := get_onu_number(pon_mac_lookup):
-    board_id = '1' if pon[5:7] == '12' else '2'
-    return '{0}{1}{2}{3}'.format(board_id, pon[13:], '0' if int(onu_number) < 10 else '', onu_number)
+    board_id = get_board_id(pon_name=pon)
+    pon_id = get_pon_id(pon_name=pon)
+    return '{0}{1}{2}{3}'.format(board_id, pon_id, '0' if int(onu_number) < 10 else '', onu_number)
   return None
 
 

@@ -39,8 +39,12 @@ def get_onu_number_from_id(onu_id):
   return int(onu_id[2:])
 
 
-def get_pon_id(onu_id):
-  return onu_id[1:2]
+def get_pon_id(onu_id=None, pon_name=None):
+  if onu_id:
+    return onu_id[1:2]
+  if pon_name:
+    return pon_name[13:]
+  return None
 
 
 def str_char_to_hex_octect(str_char):
@@ -59,8 +63,12 @@ def generate_cvlan(board_id, pon_id):
   return '{0}{1}00'.format(board_id_id, pon_id)
 
 
-def get_board_id(onu_id):
-  return '12' if onu_id[:1] == '1' else '14'
+def get_board_id(onu_id=None, pon_name=None):
+  if onu_id:
+    return '12' if onu_id[:1] == '1' else '14'
+  if pon_name:
+    return '1' if pon_name[5:7] == '12' else '2'
+  return None
 
 
 def is_onu_id_valid(onu_id):

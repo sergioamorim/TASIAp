@@ -96,15 +96,12 @@ def find_user_data(onu_id, users, session=None, tn=None):
 
 
 @supply_mysql_session
-def find_onu_connection(onu_id, cvlan, session=None):
+def find_onu_connection(onu_id, session=None):
   start_time = update_time = session.execute('SELECT NOW();').scalar() - timedelta(minutes=1)
   logger.debug('find_onu_connection: start_time: {0}'.format(start_time))
   checking_frequency = 4
-  if cvlan == '600':
-    vlan_name = 'v600-PACE-G5500'
-  else:
-    board_number = '12' if onu_id[0] == '1' else '14'
-    vlan_name = 'v{0}00-P{1}-PON{2}-CLIENTES-FIBRA'.format(onu_id[0:2], board_number, onu_id[1])
+  board_number = '12' if onu_id[0] == '1' else '14'
+  vlan_name = 'v{0}00-P{1}-PON{2}-CLIENTES-FIBRA'.format(onu_id[0:2], board_number, onu_id[1])
   while not one_day_has_passed(start_time, update_time):
     query_string = 'SELECT user, pass, sucess, CallingStationId FROM {0} WHERE CalledStationId = :vlanname ' \
                    'AND date > :updatetime ORDER BY date DESC;'.format(mysqldb_config.radius_postauth_table)
@@ -114,8 +111,9 @@ def find_onu_connection(onu_id, cvlan, session=None):
                                                                                         update_time))
     update_time = session.execute('SELECT NOW();').scalar() - timedelta(minutes=1)
     logger.debug('find_onu_connection: users: {0}'.format(users))
-    if len(users) and (user_data := find_user_data(onu_id, users, session=session)):
-      return user_data
+    if len(users):
+      if user_data := find_user_data(onu_id, users, session=session):
+        return user_data
     logger.debug('find_onu_connection: sleep: {0}'.format(checking_frequency))
     sleep(checking_frequency)
     if checking_frequency < 120:

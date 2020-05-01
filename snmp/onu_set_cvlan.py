@@ -5,6 +5,7 @@ from common.string_common import is_onu_id_valid, is_vlan_id_valid, get_auth_onu
   assure_two_octet_hexstr
 from config import snmp_config
 from logger import Log, get_logger
+from onu_set_veip import set_veip
 
 logger = get_logger(__name__)
 
@@ -24,6 +25,8 @@ def treat_cvlan(cvlan, onu_id):
 @Log(logger)
 def set_cvlan(auth_onu_device=None, onu_id=None, cvlan=None):
   if auth_onu_device:
+    if auth_onu_device.phy_id[:4] == 'PACE':
+      return set_veip(auth_onu_device=auth_onu_device)
     onu_id = get_auth_onu_device_id(auth_onu_device)
   cvlan = treat_cvlan(cvlan, onu_id)
   if not can_cvlan_be_set(onu_id, cvlan):

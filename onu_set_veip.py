@@ -1,8 +1,8 @@
 from argparse import ArgumentParser
 from subprocess import run
 
-from common.string_common import is_onu_id_valid, get_board_id, get_pon_id, get_onu_number_from_id, int_to_hexoctetstr, \
-  get_auth_onu_device_id
+from common.string_common import is_onu_id_valid, get_board_id, get_pon_id, get_onu_number_from_id, \
+                                 int_to_hexoctetstr, get_auth_onu_device_id
 from logger import get_logger, Log
 from config import snmp_config
 
@@ -10,7 +10,7 @@ logger = get_logger(__name__)
 
 
 def set_veip_effective(board_id, pon_id, onu_number):
-  command = 'snmpset -v 2c -c {snmp_community} {snmp_ip} 1.3.6.1.4.1.5875.91.1.8.1.1.1.13.1 x "42 47 4D 50 01 00 00 ' \
+  command = 'snmpset -v 2c -c {snmp_community} {snmp_ip} 1.3.6.1.4.1.5875.91.1.23.1.1.1.21.1 x "42 47 4D 50 01 00 00 ' \
             '00 00 00 00 30 B0 A7 0C AE 48 2B 00 00 00 00 00 00 00 00 CC CC CC CC 00 00 00 00 00 00 00 00 00 00 00 ' \
             '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 01 00 00 00 01 00 00 01 58 00 00 00 ' \
             '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ' \

@@ -65,8 +65,8 @@ def diagnose_connection(session, user):
 
 @supply_telnet_connection
 @supply_mysql_session
-def find_user_data(onu_id, users, vlan_name, session=None, tn=None):
-  tn_formated_pon_name = format_pon_name(vlan_name)
+def find_user_data(onu_id, users, session=None, tn=None):
+  tn_formated_pon_name = format_pon_name(onu_id=onu_id)
   for user in users:
     if (onu_id_from_user := get_onu_id_by_mac_and_pon(user['CallingStationId'], tn_formated_pon_name, tn=tn)) == onu_id:
       update_onu_info(onu_id=onu_id, username=user['user'])
@@ -114,7 +114,7 @@ def find_onu_connection(onu_id, cvlan, session=None):
                                                                                         update_time))
     update_time = session.execute('SELECT NOW();').scalar() - timedelta(minutes=1)
     logger.debug('find_onu_connection: users: {0}'.format(users))
-    if len(users) and (user_data := find_user_data(onu_id, users, vlan_name, session=session)):
+    if len(users) and (user_data := find_user_data(onu_id, users, session=session)):
       return user_data
     logger.debug('find_onu_connection: sleep: {0}'.format(checking_frequency))
     sleep(checking_frequency)

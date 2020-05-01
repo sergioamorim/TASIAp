@@ -3,7 +3,7 @@ from re import findall
 
 from common.mysql_common import supply_mysql_session, reauthorize_user
 from common.sqlite_common import find_onu_info, update_onu_info
-from common.string_common import sanitize_cto_vlan_name, format_datetime, format_onu_state
+from common.string_common import sanitize_cto_vlan_name, format_datetime, format_onu_state, get_board_id, get_pon_id
 from common.telnet_common import str_to_telnet, supply_telnet_connection
 from config import mysqldb_config
 from logger import Log, get_logger
@@ -58,9 +58,13 @@ def get_pon_list(tn=None):
   return pon_list
 
 
-def format_pon_name(vlan_name):
-  if len(vlan_name) > 13 and vlan_name[5:7] == '-P' and vlan_name[9:13] == '-PON':
-    return 'slot {0} link {1}'.format(vlan_name[7:9], vlan_name[13:14])
+def format_pon_name(vlan_name=None, onu_id=None):
+  if onu_id:
+    return 'slot {board_id} link {pon_id}'.format(board_id=get_board_id(onu_id=onu_id),
+                                                  pon_id=get_pon_id(onu_id=onu_id))
+  if vlan_name:
+    if len(vlan_name) > 13 and vlan_name[5:7] == '-P' and vlan_name[9:13] == '-PON':
+      return 'slot {0} link {1}'.format(vlan_name[7:9], vlan_name[13:14])
   return None
 
 
@@ -146,7 +150,7 @@ def diagnose_login(session, query_result, username):
 
 def get_onu_from_connection(session, query_result, username, do_diagnose_login=False):
   diagnostic = ''
-  pon = format_pon_name(query_result['CalledStationId'])
+  pon = format_pon_name(vlan_name=query_result['CalledStationId'])
   cto_name = sanitize_cto_vlan_name(query_result['CalledStationId'])
   if onu_id := get_onu_id_by_mac(query_result['CallingStationId'], pon):
     if not cto_name:

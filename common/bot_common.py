@@ -32,7 +32,7 @@ def get_onu_info_string(context, update, authorized_onu=None, onu_id=None, cvlan
     if signal == 'sem sinal.':
       signal = signal_job_caller(context, update, onu_id)
   if cvlan and cvlan[2:] == '00' and cvlan != '4000' or cvlan == '600':
-    Thread(target=find_onu_connection_trigger, args=(context.bot, update, onu_id)).start()
+    Thread(target=find_onu_connection_trigger, args=(context.bot, update, onu_id, cvlan)).start()
   return 'ID: {0}{1}\nSerial: {2}{3}'.format(onu_id, '\nCVLAN: {0}'.format(cvlan) if cvlan else '', serial,
                                              '\nSinal: {0}'.format(signal))
 
@@ -59,9 +59,9 @@ def signal_job_caller(context, update, onu_id):
   return 'ainda em processo de autorização, o sinal será enviado em 10 segundos.'
 
 
-def find_onu_connection_trigger(bot, update, onu_id):
+def find_onu_connection_trigger(bot, update, onu_id, cvlan):
   message = get_message_from_update(update)
-  if connection_info := find_onu_connection(onu_id):
+  if connection_info := find_onu_connection(onu_id, cvlan):
     message_text = 'Roteador conectado na ONU ID {0}.\nUsuário: {1}\nSenha: {2}\n' \
                    'Status da conexão: {3}'.format(onu_id, connection_info['username'], connection_info['password'],
                                                    connection_info['diagnostic'])

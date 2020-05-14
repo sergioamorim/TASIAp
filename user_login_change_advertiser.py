@@ -1,9 +1,10 @@
 from datetime import datetime
+from re import findall
 
 from requests import post
 
 from common.mysql_common import supply_mysql_session
-from common.sqlite_common import supply_sqlite_session, UserLogin
+from common.sqlite_common import supply_sqlite_session, UserLogin, UserLoginChangeAdvertiser
 from common.string_common import sanitize_name
 from config import mysqldb_config, bot_config
 from logger import get_logger, Log
@@ -11,44 +12,12 @@ from logger import get_logger, Log
 logger = get_logger('user_login_change_advertiser')
 
 
-class UserLoginInfo:
-
-  def __init__(self, username, password):
-    self.username = username
-    self.password = password
-
-  def __repr__(self):
-    return '<UserLoginInfo(username={username!r},password={password!r})>'.format(
-            username=self.username, password=self.password)
-
-  def __hash__(self):
-    return hash(self.username)
-
-  def __eq__(self, other):
-    return self.username == other.username and self.password == other.password
-
-  def __lt__(self, other):
-    return self.username < other.username
-
-
 @supply_mysql_session
-def get_live_info_set(session=None):
-  query_results = session.execute('SELECT user, pass FROM {login_table}'.format(login_table=mysqldb_config.login_table))
-  return set(UserLoginInfo(username=result['user'], password=result['pass']) for result in query_results)
-
-
-@supply_sqlite_session
-def get_cached_info_set(session=None):
-  user_logins = session.query(UserLogin)
-  return set(UserLoginInfo(username=user_login.username, password=user_login.password) for user_login in user_logins)
-
-
-@supply_mysql_session
-def get_client_name(username, session=None):
+def get_client_name(username, mysql_session=None):
   query_statement = 'SELECT nome, sexo FROM {login_table} INNER JOIN {clientes_table} ON cliente_id = clientes.id ' \
                     'WHERE user = :username'.format(login_table=mysqldb_config.login_table,
                                                     clientes_table=mysqldb_config.clientes_table)
-  if client_info := session.execute(query_statement, {'username': username}).first():
+  if client_info := mysql_session.execute(query_statement, {'username': username}).first():
     treatment = 'a' if client_info['sexo'] == 'F' else 'o'
     client_name = sanitize_name(name=client_info['nome'])
     return '{treatment} cliente {client_name}'.format(treatment=treatment, client_name=client_name)
@@ -56,34 +25,61 @@ def get_client_name(username, session=None):
 
 
 @supply_sqlite_session
-def update_cached_user_login(username, password, mysql_session, session=None):
-  user_login = session.query(UserLogin).filter_by(username=username).first()
+@supply_mysql_session
+def update_cached_user_login(username, password, mysql_session=None, sqlite_session=None):
+  user_login = sqlite_session.query(UserLogin).filter_by(username=username).first()
   user_login.password = password
-  session.add(user_login)
-  send_advertising_message(username=username, password=password, change='update', session=mysql_session)
+  sqlite_session.add(user_login)
+  send_advertising_message(username=username, password=password, change='update', mysql_session=mysql_session)
+  return True
+
+
+@supply_mysql_session
+def get_live_user_login(username, mysql_session=None):
+  query_statement = 'SELECT user, pass FROM {login_table} WHERE user = :username;'.format(
+                     login_table=mysqldb_config.login_table)
+  if user_login := mysql_session.execute(query_statement, {'username': username}).first():
+    return user_login
+  logger.error('get_live_user_login: user not found: {username}'.format(username=username))
+  return None
+
+
+@supply_sqlite_session
+def get_cached_user_login(username, trial=False, sqlite_session=None):
+  if cached_user_login := sqlite_session.query(UserLogin).filter_by(username=username).first():
+    return {'username': cached_user_login.username, 'password': cached_user_login.password}
+  if not trial:
+    logger.error('get_cached_user_login: user not found: {username}'.format(username=username))
+  return None
+
+
+@supply_sqlite_session
+def add_cached_user_login(username, password, mysql_session=None, sqlite_session=None):
+  if user_login := sqlite_session.query(UserLogin).filter_by(username=username).first():
+    if user_login.password == password:
+      return False
+    else:
+      return update_cached_user_login(username=username, password=user_login['pass'], mysql_session=mysql_session)
+  else:
+    user_login = UserLogin(username=username, password=password)
+  sqlite_session.add(user_login)
+  send_advertising_message(username=username, password=password, change='add', mysql_session=mysql_session)
   return True
 
 
 @supply_sqlite_session
-def add_cached_user_login(username, password, mysql_session, session=None):
-  user_login = UserLogin(username=username, password=password)
-  session.add(user_login)
-  send_advertising_message(username=username, password=password, change='add', session=mysql_session)
-  return True
-
-
-@supply_sqlite_session
-def delete_cached_user_login(username, mysql_session, session=None):
-  user_login = session.query(UserLogin).filter_by(username=username).first()
-  session.delete(user_login)
-  send_advertising_message(username=username, change='delete', session=mysql_session)
+@supply_mysql_session
+def delete_cached_user_login(username, mysql_session=None, sqlite_session=None):
+  user_login = sqlite_session.query(UserLogin).filter_by(username=username).first()
+  sqlite_session.delete(user_login)
+  send_advertising_message(username=username, change='delete', mysql_session=mysql_session)
   return True
 
 
 @Log(logger)
 @supply_mysql_session
-def send_advertising_message(username, change, password=None, session=None):
-  client_name = get_client_name(username=username, session=session) if change != 'delete' else None
+def send_advertising_message(username, change, password=None, mysql_session=None):
+  client_name = get_client_name(username=username, mysql_session=mysql_session) if change != 'delete' else None
   message = {
     'add': '🔹 Novo login criado para {client_name}.\nUsuário: <code>{username}</code>\nSenha: '
            '<code>{password}</code>'.format(client_name=client_name, username=username, password=password),
@@ -96,32 +92,71 @@ def send_advertising_message(username, change, password=None, session=None):
   return True
 
 
-def find_user_info_in_set(username, user_info_set):
-  for user_info in user_info_set:
-    if user_info.username == username:
-      return user_info
-  return None
+@supply_sqlite_session
+def get_last_count(sqlite_session=None):
+  if last_count := sqlite_session.query(UserLoginChangeAdvertiser).first():
+    return last_count
+  new_setup = UserLoginChangeAdvertiser(admlog_count=get_current_count())
+  sqlite_session.add(new_setup)
+  logger.info('Starting to advertise login changes from now...')
+  return new_setup
+
+
+@supply_sqlite_session
+def update_last_count(current_count, last_change, sqlite_session=None):
+  last_count_query = sqlite_session.query(UserLoginChangeAdvertiser).first()
+  last_count_query.last_count = current_count
+  last_count_query.last_change = last_change
+  sqlite_session.add(last_count_query)
+  return True
 
 
 @supply_mysql_session
-def advertise_changes(session=None):
-  start_time = datetime.now()
-  cached_info_set = get_cached_info_set()
-  live_info_set = get_live_info_set()
+def get_current_count(mysql_session=None):
+  query_statement = 'SELECT COUNT(id) FROM {admlog_table};'.format(admlog_table=mysqldb_config.admlog_table)
+  return mysql_session.execute(query_statement).scalar()
 
-  if changes := cached_info_set.symmetric_difference(live_info_set):
-    updated_usernames = set()
-    for user_info in changes:
-      if cached_user_info := find_user_info_in_set(username=user_info.username, user_info_set=cached_info_set):
-        if live_user_info := find_user_info_in_set(username=user_info.username, user_info_set=live_info_set):
-          if cached_user_info.password != live_user_info.password and user_info.username not in updated_usernames:
-            update_cached_user_login(username=user_info.username, password=live_user_info.password,
-                                     mysql_session=session)
-            updated_usernames.add(user_info.username)
-        else:
-          delete_cached_user_login(username=user_info.username, mysql_session=session)
-      else:
-        add_cached_user_login(username=user_info.username, password=user_info.password, mysql_session=session)
+
+@supply_mysql_session
+def get_changes(last_change, mysql_session=None):
+  query_statement = 'SELECT console, info, timestamp FROM {admlog_table} WHERE timestamp > {last_change} AND ' \
+                    '(console = :new OR console = :update OR console = :delete) AND info LIKE :userdefined ORDER BY ' \
+                    'timestamp;'.format(admlog_table=mysqldb_config.admlog_table, last_change=last_change)
+  return mysql_session.execute(query_statement, {'new': 'client_login_new', 'update': 'client_login_open_edit',
+                                                 'delete': 'client_login_open_delete',
+                                                 'userdefined': 'Usuário: %'}).fetchall()
+
+
+def is_username_defined(info):
+  if username := findall('Usuário: ([^\n]*)\n', info):
+    return username[0]
+  return None
+
+
+@supply_sqlite_session
+@supply_mysql_session
+def advertise_changes(mysql_session=None, sqlite_session=None):
+  start_time = datetime.now()
+  current_count = get_current_count(mysql_session=mysql_session)
+  last_count = get_last_count(sqlite_session=sqlite_session)
+
+  if current_count != last_count.admlog_count:
+    if changes := get_changes(last_change=last_count.last_change, mysql_session=mysql_session):
+      for change in changes:
+        if username := is_username_defined(info=change['info']):
+          if change['console'] == 'client_login_new':
+            if user_login := get_live_user_login(username=username, mysql_session=mysql_session):
+              add_cached_user_login(username=user_login['user'], password=user_login['pass'],
+                                    mysql_session=mysql_session)
+          elif change['console'] == 'client_login_open_delete':
+            delete_cached_user_login(username=username, mysql_session=mysql_session)
+          elif change['console'] == 'client_login_open_edit':
+            if user_login := get_live_user_login(username=username, mysql_session=mysql_session):
+              if cached_user_login := get_cached_user_login(username=username, sqlite_session=sqlite_session):
+                if user_login['pass'] != cached_user_login['password']:
+                  update_cached_user_login(username=username, password=user_login['pass'], mysql_session=mysql_session)
+      update_last_count(current_count=current_count, last_change=changes[-1]['timestamp'],
+                        sqlite_session=sqlite_session)
   return datetime.now()-start_time
 
 

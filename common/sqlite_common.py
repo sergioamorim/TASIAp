@@ -1,3 +1,5 @@
+from inspect import signature
+
 from contextlib import contextmanager
 from datetime import datetime
 from functools import wraps
@@ -15,9 +17,15 @@ Base = declarative_base()
 def supply_sqlite_session(function):
   @wraps(function)
   def sqlite_session_supplier(*args, **kwargs):
-    if 'session' not in kwargs:
-      with sqlite_session() as session:
-        return function(session=session, *args, **kwargs)
+    available_args = signature(function).parameters.keys()
+    if 'sqlite_session' in available_args:
+      if 'sqlite_session' not in kwargs:
+        with sqlite_session_factory() as sqlite_session:
+          return function(sqlite_session=sqlite_session, *args, **kwargs)
+    elif 'session' in available_args:
+      if 'session' not in kwargs:
+        with sqlite_session_factory() as sqlite_session:
+          return function(session=sqlite_session, *args, **kwargs)
     return function(*args, **kwargs)
   return sqlite_session_supplier
 
@@ -63,8 +71,26 @@ class UserLogin(Base):
             username=self.username, password=self.password)
 
 
+class UserLoginChangeAdvertiser(Base):
+  __tablename__ = 'user_login_change_advertiser'
+  admlog_count = Column(Integer, primary_key=True)
+  last_change = Column(Integer, primary_key=True)
+
+  def __init__(self, admlog_count):
+    self.admlog_count = admlog_count
+    self.last_change = get_epoch_timestamp_now()
+
+  def __repr__(self):
+    return '<UserLoginChangeAdvertiser(admlog_count={admlog_count!r},last_check={last_change!r})>'.format(
+            admlog_count=self.admlog_count, last_change=self.last_change)
+
+
+def get_epoch_timestamp_now():
+  return int((datetime.now() - datetime.utcfromtimestamp(0)).total_seconds())
+
+
 @contextmanager
-def sqlite_session():
+def sqlite_session_factory():
   engine = create_engine('sqlite:///{0}'.format(bot_config.sqlite_db_path), encoding='latin1')
   Base.metadata.create_all(bind=engine)
   session_maker = sessionmaker(bind=engine)
@@ -116,3 +142,11 @@ def print_all_onu_devices(session=None):
   print('List of OnuDevices:')
   for onu_device in onu_devices:
     print(repr(onu_device))
+
+
+@supply_sqlite_session
+def print_all_user_logins(sqlite_session=None):
+  user_logins = sqlite_session.query(UserLogin).all()
+  print('List of UserLogins:')
+  for user_login in user_logins:
+    print(repr(user_login))

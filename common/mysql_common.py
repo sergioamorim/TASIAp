@@ -1,3 +1,5 @@
+from inspect import signature
+
 from contextlib import contextmanager
 from functools import wraps
 
@@ -14,15 +16,21 @@ logger = get_logger(__name__)
 def supply_mysql_session(function):
   @wraps(function)
   def mysql_session_supplier(*args, **kwargs):
-    if 'session' not in kwargs:
-      with mysql_session() as session:
-        return function(session=session, *args, **kwargs)
+    available_args = signature(function).parameters.keys()
+    if 'mysql_session' in available_args:
+      if 'mysql_session' not in kwargs:
+        with mysql_session_factory() as mysql_session:
+          return function(mysql_session=mysql_session, *args, **kwargs)
+    elif 'session' in available_args:
+      if 'session' not in kwargs:
+        with mysql_session_factory() as mysql_session:
+          return function(session=mysql_session, *args, **kwargs)
     return function(*args, **kwargs)
   return mysql_session_supplier
 
 
 @contextmanager
-def mysql_session():
+def mysql_session_factory():
   engine_parameters = 'mysql://{0}:{1}@{2}:{3}/{4}'.format(mysqldb_config.username, mysqldb_config.password,
                                                            mysqldb_config.host, mysqldb_config.port,
                                                            mysqldb_config.database)

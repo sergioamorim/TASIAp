@@ -35,12 +35,13 @@ def update_cached_user_login(username, password, mysql_session=None, sqlite_sess
 
 
 @supply_mysql_session
-def get_live_user_login(username, mysql_session=None):
+def get_live_user_login(username, trial=False, mysql_session=None):
   query_statement = 'SELECT user, pass FROM {login_table} WHERE user = :username;'.format(
                      login_table=mysqldb_config.login_table)
   if user_login := mysql_session.execute(query_statement, {'username': username}).first():
     return user_login
-  logger.error('get_live_user_login: user not found: {username}'.format(username=username))
+  if not trial:
+    logger.error('get_live_user_login: user not found: {username}'.format(username=username))
   return None
 
 
@@ -60,8 +61,7 @@ def add_cached_user_login(username, password, mysql_session=None, sqlite_session
       return False
     else:
       return update_cached_user_login(username=username, password=user_login['pass'], mysql_session=mysql_session)
-  else:
-    user_login = UserLogin(username=username, password=password)
+  user_login = UserLogin(username=username, password=password)
   sqlite_session.add(user_login)
   send_advertising_message(username=username, password=password, change='add', mysql_session=mysql_session)
   return True
@@ -70,10 +70,19 @@ def add_cached_user_login(username, password, mysql_session=None, sqlite_session
 @supply_sqlite_session
 @supply_mysql_session
 def delete_cached_user_login(username, mysql_session=None, sqlite_session=None):
-  user_login = sqlite_session.query(UserLogin).filter_by(username=username).first()
-  sqlite_session.delete(user_login)
-  send_advertising_message(username=username, change='delete', mysql_session=mysql_session)
-  return True
+  if live_user_login := get_live_user_login(username, trial=True, mysql_session=mysql_session):
+    if cached_user_login := get_cached_user_login(username, trial=True, sqlite_session=sqlite_session):
+      if live_user_login['pass'] != cached_user_login['password']:
+        return update_cached_user_login(username=username, password=live_user_login['pass'],
+                                        mysql_session=mysql_session, sqlite_session=sqlite_session)
+    return add_cached_user_login(username=username, password=live_user_login['pass'],
+                                 mysql_session=mysql_session, sqlite_session=sqlite_session)
+  if user_login := sqlite_session.query(UserLogin).filter_by(username=username).first():
+    sqlite_session.delete(user_login)
+    send_advertising_message(username=username, change='delete', mysql_session=mysql_session)
+    return True
+  logger.error('delete_cached_user_login: user not found: {username}'.format(username=username))
+  return False
 
 
 @Log(logger)

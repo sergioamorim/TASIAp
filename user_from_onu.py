@@ -3,7 +3,8 @@ from re import findall
 
 from common.mysql_common import supply_mysql_session
 from common.sqlite_common import update_onu_info
-from common.string_common import sanitize_cto_vlan_name, is_onu_id_valid
+from common.string_common import sanitize_cto_vlan_name, is_onu_id_valid, get_board_id, get_pon_id, \
+  get_onu_number_from_id
 from common.telnet_common import str_to_telnet, supply_telnet_connection
 from config import mysqldb_config
 from logger import Log, get_logger
@@ -91,6 +92,29 @@ def find_user_by_onu(onu_id, session=None):
   return None
 
 
+def interactive_interface():
+  onu_id = True
+  while onu_id:
+    onu_id = input('ONU ID: ')
+    if is_onu_id_valid(onu_id=onu_id):
+      if username := find_user_by_onu(onu_id):
+        board_id = get_board_id(onu_id=onu_id)
+        pon_id = get_pon_id(onu_id=onu_id)
+        onu_number = get_onu_number_from_id(onu_id=onu_id)
+        string_format = 'P{board_id} PON{pon_id} ONU{leading_zero}{onu_number} CLIENTE {username}'
+        leading_zero = '0' if int(onu_number) < 10 else ''
+        string_filled_out = string_format.format(board_id=board_id, pon_id=pon_id, leading_zero=leading_zero,
+                                                 onu_number=onu_number, username=username.upper())
+        print(string_filled_out)
+      else:
+        print('Not found.')
+    elif onu_id == 'exit' or onu_id == 'quit':
+      onu_id = None
+    else:
+      print('Invalid ONU ID.')
+  return 0
+
+
 def main():
   parser = ArgumentParser()
   parser.add_argument('-i', '--id', dest='i', help='ONU id to find the username from the user connected to it',
@@ -103,8 +127,7 @@ def main():
       return 0
     print('ID da ONU inválido.')
     return 1
-  print('Informe o ID da ONU.')
-  return 1
+  return interactive_interface()
 
 
 if __name__ == '__main__':

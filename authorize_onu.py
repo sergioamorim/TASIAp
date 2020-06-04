@@ -33,17 +33,21 @@ class AuthOnuDevice:
             format(self.phy_id, self.pon, self.onu_type, self.number, self.cvlan, self.authorization_id)
 
 
-def get_last_authorized_number(authorization_list, board_id, pon_id):
-  if authorized_onu_quantity := findall('ITEM=([0-9]*)', authorization_list):
-    if authorized_onu_quantity := int(authorized_onu_quantity[0]):
-      pattern = '{board_id} *{pon_id} *([0-9]*)'.format(board_id=board_id, pon_id=pon_id)
-      authorized_onu_numbers = findall(pattern=pattern, string=authorization_list)
-      final_authorized_onu_number = int(authorized_onu_numbers[-1])
-      if final_authorized_onu_number == authorized_onu_quantity:
-        return authorized_onu_quantity
-      else:
-        return get_first_missing_number_precedent(authorized_onu_numbers)
-    return 0
+def get_last_authorized_number(authorization_list):
+  if board_and_pon := findall('show authorization slot ([0-9]*) link ([0-9]*)', authorization_list):
+    board_id = board_and_pon[0][0]
+    pon_id = board_and_pon[0][1]
+    if authorized_onu_quantity := findall('ITEM=([0-9]*)', authorization_list):
+      if authorized_onu_quantity := int(authorized_onu_quantity[0]):
+        pattern = '{board_id} *{pon_id} *([0-9]*)'.format(board_id=board_id, pon_id=pon_id)
+        authorized_onu_numbers = findall(pattern=pattern, string=authorization_list)
+        final_authorized_onu_number = int(authorized_onu_numbers[-1])
+        if final_authorized_onu_number == authorized_onu_quantity:
+          return authorized_onu_quantity
+        else:
+          return get_first_missing_number_precedent(authorized_onu_numbers)
+      return 0
+    return None
   return None
 
 
@@ -55,8 +59,7 @@ class Pon:
   @supply_telnet_connection
   def autoset_last_authorized_number(self, tn=None):
     authorization_list = get_authorization_list(self, tn=tn)
-    self.last_authorized_onu_number = get_last_authorized_number(authorization_list=authorization_list,
-                                                                 board_id=self.board.board_id, pon_id=self.pon_id)
+    self.last_authorized_onu_number = get_last_authorized_number(authorization_list=authorization_list)
 
   @supply_telnet_connection
   def __init__(self, pon_id, board, authorization_list=None, tn=None):

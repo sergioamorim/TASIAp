@@ -124,14 +124,20 @@ def get_vlan_id_from_cto_vlan_name(cto_vlan_name):
   return cto_vlan_name[1:5]
 
 
+def get_vlan_type(vlan_name):
+  return vlan_name[21:24]
+
+
 def sanitize_cto_vlan_name(cto_vlan_name):
   if len(cto_vlan_name) > 32:
     onu_id = get_onu_id_from_cto_vlan_name(cto_vlan_name)
     cto_actual_name = get_cto_name_from_cto_vlan_name(cto_vlan_name)
     vlan_id = get_vlan_id_from_cto_vlan_name(cto_vlan_name)
-    vlan_reference = '(v{0}) '.format(vlan_id) if vlan_id != onu_id else ''
-    cto_sanitized_name = 'CTO {0} {1}{2}'.format(onu_id, vlan_reference, cto_actual_name)
-    return cto_sanitized_name
+    vlan_reference = '(v{vlan_id}) '.format(vlan_id=vlan_id) if vlan_id != onu_id else ''
+    vlan_type = get_vlan_type(cto_vlan_name)
+    vlan_sanitized_name_format = '{vlan_type} {onu_id} {vlan_reference}{cto_actual_name}'
+    return vlan_sanitized_name_format.format(vlan_type=vlan_type, onu_id=onu_id, vlan_reference=vlan_reference,
+                                             cto_actual_name=cto_actual_name)
   return ''
 
 
@@ -184,7 +190,7 @@ def format_clients_message(name, result):
     if len(message) + len(message_addition) < MAX_MESSAGE_LENGTH - 18:
       message = message + message_addition
     else:
-      return message + '\n\n<b>CROPED!</b>'
+      return message + '\n\n<b>CROPPED!</b>'
   message = message + '\n'
   for client in result['related']:
     message_addition = '{0} Nome: <u>{1}</u>\nEndereço: {2}, {3}\n'.format(get_status_emoji(client['status']),
@@ -193,33 +199,33 @@ def format_clients_message(name, result):
     if len(message) + len(message_addition) < MAX_MESSAGE_LENGTH - 18:
       message = message + message_addition
     else:
-      return message + '\n\n<b>CROPED!</b>'
+      return message + '\n\n<b>CROPPED!</b>'
     name = remove_accents(name.lower())
     if name in client['complemento'].lower():
       message_addition = 'Complemento: {0}\n'.format(sanitize_dumb(client['complemento']))
       if len(message) + len(message_addition) < MAX_MESSAGE_LENGTH - 18:
         message = message + message_addition
       else:
-        return message + '\n\n<b>CROPED!</b>'
+        return message + '\n\n<b>CROPPED!</b>'
     if name in client['referencia'].lower():
       message_addition = 'Referencia: {0}\n'.format(sanitize_dumb(client['referencia']))
       if len(message) + len(message_addition) < MAX_MESSAGE_LENGTH - 18:
         message = message + message_addition
       else:
-        return message + '\n\n<b>CROPED!</b>'
+        return message + '\n\n<b>CROPPED!</b>'
     if name in client['observacao'].lower():
       message_addition = 'Observacao: {0}\n'.format(sanitize_dumb(client['observacao']))
       if len(message) + len(message_addition) < MAX_MESSAGE_LENGTH - 18:
         message = message + message_addition
       else:
-        return message + '\n\n<b>CROPED!</b>'
+        return message + '\n\n<b>CROPPED!</b>'
     message_addition = 'Plano: {0}\n{1} <b>Usuário:</b> <code>{2}</code>\n'.format(client['groupname'],
                                                                                    get_enable_emoji(client['enable']),
                                                                                    client['user'])
     if len(message) + len(message_addition) < MAX_MESSAGE_LENGTH - 18:
       message = message + message_addition
     else:
-      return message + '\n\n<b>CROPED!</b>'
+      return message + '\n\n<b>CROPPED!</b>'
   if len(message) > 1:
     return message
   return 'Nenhum cliente encontrado com o termo informado.'

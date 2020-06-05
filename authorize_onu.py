@@ -62,10 +62,10 @@ class Pon:
     self.last_authorized_onu_number = get_last_authorized_number(authorization_list=authorization_list)
 
   @supply_telnet_connection
-  def __init__(self, pon_id, board, authorization_list=None, tn=None):
+  def __init__(self, pon_id, board, tn=None):
     self.pon_id = pon_id
     self.board = board
-    self.autoset_last_authorized_number(authorization_list=authorization_list, tn=tn)
+    self.autoset_last_authorized_number(tn=tn)
 
   def __repr__(self):
     return '<Pon(pon_id={0!r},board={1!r},last_authorized_onu_number={2!r})>'.format(self.pon_id, self.board,

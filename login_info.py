@@ -4,23 +4,20 @@ from common.mysql_common import supply_mysql_session
 from common.sqlite_common import find_onu_info
 from common.string_common import get_enable_emoji, get_status_emoji, sanitize_cto_vlan_name, format_datetime, \
   sanitize_name
-from config import mysqldb_config
 from logger import Log, get_logger
 
 logger = get_logger(__name__)
 
 
 def get_login_info(session, username):
-  login_query_string = 'SELECT nome, endereco, numero, status, pass, ip, groupname, enable, info FROM {0} INNER JOIN ' \
-                       '{1} ON cliente_id = clientes.id WHERE user = :username;'.format(mysqldb_config.clientes_table,
-                                                                                        mysqldb_config.login_table)
+  login_query_string = 'SELECT nome, endereco, numero, status, pass, ip, groupname, enable, info FROM clientes INNER ' \
+                       'JOIN login ON cliente_id = clientes.id WHERE user = :username;'
   return session.execute(login_query_string, {'username': username}).first()
 
 
 def get_connection_info(session, username):
-  radius_acct_query_string = 'SELECT FramedIPAddress, CalledStationId, AcctStartTime, AcctStopTime FROM {0} WHERE ' \
-                             'UserName = :username ORDER BY AcctStartTime DESC LIMIT 1;'.format(
-                              mysqldb_config.radius_acct_table)
+  radius_acct_query_string = 'SELECT FramedIPAddress, CalledStationId, AcctStartTime, AcctStopTime FROM radius_acct ' \
+                             'WHERE UserName = :username ORDER BY AcctStartTime DESC LIMIT 1;'
   return session.execute(radius_acct_query_string, {'username': username}).first()
 
 

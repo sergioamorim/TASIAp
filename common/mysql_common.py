@@ -1,12 +1,10 @@
-from inspect import signature
-
 from contextlib import contextmanager
 from functools import wraps
+from inspect import signature
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from common.string_common import is_int
 from config import mysqldb_config, bot_config
 from logger import get_logger
 
@@ -49,24 +47,19 @@ def user_exists(session, user):
 
 
 def insert_into_radius_login(session, rtype, username, attribute, op, value):
-  query_string = "INSERT INTO {0} (type, user, attribute, op, value, enable) VALUES ('{1}', '{2}', '{3}', '{4}', "
-  if is_int(value):
-    query_string = query_string + '{5}'
-  else:
-    query_string = query_string + "'{5}'"
-  query_string = query_string + ', 1);'
-  session.execute(query_string.format(mysqldb_config.login_radius_table, rtype, username, attribute, op, value))
+  clause = "INSERT INTO login_radius (type, user, attribute, op, value, enable) VALUES (:rtype, :username, " \
+           ":attribute, :op, :value, 1);"
+  params = {'rtype': rtype, 'username': username, 'attribute': attribute, 'op': op, 'value': value}
+  session.execute(clause=clause, params=params)
 
 
 def reauthorize_user(session, username):
   session.execute(
-    "UPDATE {0} SET mac = '', proxy = '', radsyncframedip = 0, radsyncmac = 0, radsyncsim = 0, radsyncmkurl = 0, "
-    "radnas_id = 0, accesspoint = 0 WHERE user = :username;".format(
-      mysqldb_config.login_table), {'username': username})
-  session.execute('DELETE FROM {0} WHERE user = :username;'.format(mysqldb_config.login_radius_table),
-                  {'username': username})
-  login_info = session.execute('SELECT ip, pass FROM {0} WHERE user = :username'.format(mysqldb_config.login_table),
-                               {'username': username}).first()
+    clause="UPDATE login SET mac = '', proxy = '', radsyncframedip = 0, radsyncmac = 0, radsyncsim = 0, radsyncmkurl = "
+           "0, radnas_id = 0, accesspoint = 0 WHERE user = :username;", params={'username': username})
+  session.execute(clause='DELETE FROM login_radius WHERE user = :username;', params={'username': username})
+  login_info = session.execute(clause='SELECT ip, pass FROM login WHERE user = :username',
+                               params={'username': username}).first()
   insert_into_radius_login(session, 'C', username, 'Simultaneous-Use', ':=', 1)
   insert_into_radius_login(session, 'C', username, 'User-Password', ':=', login_info['pass'])
   if login_info['ip']:
@@ -75,9 +68,9 @@ def reauthorize_user(session, username):
 
 @supply_mysql_session
 def generate_pppoe_login_password(username, session=None):
-  sql_query = 'SELECT user FROM {0} WHERE user = :username;'.format(mysqldb_config.login_table)
+  sql_query = 'SELECT user FROM login WHERE user = :username;'
   if session.scalar(sql_query, {'username': username}):
-    sql_query = 'UPDATE {0} SET pass = :password WHERE user = :username'.format(mysqldb_config.login_table)
+    sql_query = 'UPDATE login SET pass = :password WHERE user = :username'
     session.execute(sql_query, {'username': username, 'password': bot_config.default_pppoe_login_password})
     return bot_config.default_pppoe_login_password
   logger.error('generate_pppoe_login_password: user {0} not found').format(username)
@@ -86,7 +79,7 @@ def generate_pppoe_login_password(username, session=None):
 
 @supply_mysql_session
 def get_login_password(username, session=None):
-  sql_query = 'SELECT pass FROM {0} WHERE user = :username;'.format(mysqldb_config.login_table)
+  sql_query = 'SELECT pass FROM login WHERE user = :username;'
   if login_password := session.scalar(sql_query, {'username': username}):
     return login_password.replace('=3F', '?')
   return generate_pppoe_login_password(username, session=session)

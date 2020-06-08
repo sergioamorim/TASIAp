@@ -6,17 +6,15 @@ from common.sqlite_common import update_onu_info
 from common.string_common import sanitize_cto_vlan_name, is_onu_id_valid, get_board_id, get_pon_id, \
   get_onu_number_from_id
 from common.telnet_common import str_to_telnet, supply_telnet_connection
-from config import mysqldb_config
 from logger import Log, get_logger
 
 logger = get_logger(__name__)
 
 
 def is_cto_id(session, onu_id):
-  sql_query_string = "SELECT DISTINCT CalledStationID FROM {0} WHERE AcctStopTime = '0000-00-00 00:00:00' AND " \
-                     "CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT " \
-                     "1;".format(mysqldb_config.radius_acct_table, onu_id)
-  if cto_vlan_name := session.execute(sql_query_string).scalar():
+  clause = "SELECT DISTINCT CalledStationID FROM radius_acct WHERE AcctStopTime = '0000-00-00 00:00:00' AND " \
+           "CalledStationID LIKE :onu_id ORDER BY AcctStartTime DESC LIMIT 1;"
+  if cto_vlan_name := session.execute(clause=clause, params={'onu_id': '%{onu_id}%'.format(onu_id=onu_id)}).scalar():
     return sanitize_cto_vlan_name(cto_vlan_name)
   if onu_id[:1] == '1':
     board = '12'
@@ -25,18 +23,18 @@ def is_cto_id(session, onu_id):
   pon = onu_id[1:2]
   onu_number = onu_id[2:]
   cto_like_name = 'P{0}-PON{1}-ONU{2}'.format(board, pon, onu_number)
-  sql_query_string = "SELECT DISTINCT CalledStationID FROM {0} WHERE AcctStopTime = '0000-00-00 00:00:00' AND " \
-                     "CalledStationID LIKE '%{1}%' ORDER BY AcctStartTime DESC LIMIT 1;".format(
-                      mysqldb_config.radius_acct_table, cto_like_name)
-  if cto_vlan_name := session.execute(sql_query_string).scalar():
+  clause = "SELECT DISTINCT CalledStationID FROM radius_acct WHERE AcctStopTime = '0000-00-00 00:00:00' AND " \
+           "CalledStationID LIKE :cto_like_name ORDER BY AcctStartTime DESC LIMIT 1;"
+  params = {'cto_like_name': '%{cto_like_name}%'.format(cto_like_name=cto_like_name)}
+  if cto_vlan_name := session.execute(clause=clause, params=params).scalar():
     return sanitize_cto_vlan_name(cto_vlan_name)
   return None
 
 
 def is_offline_cto_id(session, onu_id):
-  sql_query_string = "SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%' ORDER BY " \
-                     "AcctStopTime DESC LIMIT 1;".format(mysqldb_config.radius_acct_table, onu_id)
-  if cto_vlan_name := session.execute(sql_query_string).scalar():
+  clause = "SELECT DISTINCT CalledStationID FROM radius_acct WHERE CalledStationID LIKE :onu_id ORDER BY " \
+           "AcctStopTime DESC LIMIT 1;"
+  if cto_vlan_name := session.execute(clause=clause, params={'onu_id': '%{onu_id}%'.format(onu_id=onu_id)}).scalar():
     return '{0} (offline)'.format(sanitize_cto_vlan_name(cto_vlan_name))
   if onu_id[:1] == '1':
     board = '12'
@@ -45,9 +43,10 @@ def is_offline_cto_id(session, onu_id):
   pon = onu_id[1:2]
   onu_number = onu_id[2:]
   cto_like_name = 'P{0}-PON{1}-ONU{2}'.format(board, pon, onu_number)
-  sql_query_string = "SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%' ORDER BY " \
-                     "AcctStopTime DESC LIMIT 1;".format(mysqldb_config.radius_acct_table, cto_like_name)
-  if cto_vlan_name := session.execute(sql_query_string).scalar():
+  clause = "SELECT DISTINCT CalledStationID FROM radius_acct WHERE CalledStationID LIKE :cto_like_name ORDER BY " \
+           "AcctStopTime DESC LIMIT 1;"
+  params = {'cto_like_name': '%{cto_like_name}%'.format(cto_like_name=cto_like_name)}
+  if cto_vlan_name := session.execute(clause=clause, params=params).scalar():
     return '{0} (offline)'.format(sanitize_cto_vlan_name(cto_vlan_name))
   return None
 
@@ -78,8 +77,8 @@ def find_user_by_onu(onu_id, session=None):
   if mac_list := get_mac_list_from_onu_id(onu_id):
     username_list = []
     for mac in mac_list:
-      sql_query_string = "SELECT DISTINCT UserName FROM {0} WHERE CallingStationID = :mac ORDER BY AcctStartTime " \
-                         "DESC LIMIT 1;".format(mysqldb_config.radius_acct_table)
+      sql_query_string = "SELECT DISTINCT UserName FROM radius_acct WHERE CallingStationID = :mac ORDER BY " \
+                         "AcctStartTime DESC LIMIT 1;"
       if username := session.execute(sql_query_string, {'mac': mac}).scalar():
         username_list.append(username)
     if username_list:

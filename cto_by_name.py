@@ -3,7 +3,6 @@ from argparse import ArgumentParser
 from common.mysql_common import supply_mysql_session
 from common.string_common import get_onu_id_from_cto_vlan_name, get_cto_name_from_cto_vlan_name, \
   get_vlan_id_from_cto_vlan_name
-from config import mysqldb_config
 from logger import Log, get_logger
 
 logger = get_logger(__name__)
@@ -40,17 +39,16 @@ class Cto(object):
 
 @supply_mysql_session
 def get_query_results_online(cto_name, session=None):
-  sql_query_string_online = "SELECT DISTINCT CalledStationID FROM {0} WHERE CalledStationID LIKE '%{1}%' AND " \
-                            "AcctStopTime = '0000-00-00 00:00:00';".format(mysqldb_config.radius_acct_table,
-                                                                           cto_name.replace(' ', '%'))
-  return session.execute(sql_query_string_online)
+  clause = "SELECT DISTINCT CalledStationID FROM radius_acct WHERE CalledStationID LIKE :cto_name AND AcctStopTime " \
+           "= '0000-00-00 00:00:00';"
+  return session.execute(clause=clause, params={'cto_name': '%{cto_name}%'.format(cto_name=cto_name.replace(' ', '%'))})
 
 
 @supply_mysql_session
 def get_query_results_all(cto_name, session=None):
-  sql_query_string_all = "SELECT CalledStationId, max(AcctStopTime) last_connected FROM {0} WHERE CalledStationId " \
-                         "LIKE '%{1}%' GROUP BY CalledStationId ORDER BY last_connected DESC;"
-  return session.execute(sql_query_string_all.format(mysqldb_config.radius_acct_table, cto_name.replace(' ', '%')))
+  clause = "SELECT CalledStationId, max(AcctStopTime) last_connected FROM radius_acct WHERE CalledStationId LIKE " \
+           ":cto_name GROUP BY CalledStationId ORDER BY last_connected DESC;"
+  return session.execute(clause=clause, params={'cto_name': cto_name.replace(' ', '%')})
 
 
 @supply_mysql_session

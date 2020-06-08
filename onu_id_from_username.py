@@ -5,7 +5,6 @@ from common.mysql_common import supply_mysql_session, reauthorize_user
 from common.sqlite_common import find_onu_info, update_onu_info
 from common.string_common import sanitize_cto_vlan_name, format_datetime, format_onu_state, get_board_id, get_pon_id
 from common.telnet_common import str_to_telnet, supply_telnet_connection
-from config import mysqldb_config
 from logger import Log, get_logger
 from onu_id_from_serial import find_onu_by_serial
 from user_from_onu import find_user_by_onu
@@ -171,10 +170,10 @@ def get_onu_from_connection(session, query_result, username, do_diagnose_login=F
 @supply_mysql_session
 @Log(logger)
 def find_onu_by_user(username, session=None):
-  query_acct = "SELECT CallingStationId, CalledStationId FROM {0} WHERE UserName = :username ORDER BY AcctStartTime " \
-               "DESC LIMIT 1;".format(mysqldb_config.radius_acct_table)
-  query_postauth = "SELECT sucess, pass, CallingStationId, CalledStationId FROM {0} WHERE user = :username ORDER BY " \
-                   "date DESC LIMIT 1;".format(mysqldb_config.radius_postauth_table)
+  query_acct = "SELECT CallingStationId, CalledStationId FROM radius_acct WHERE UserName = :username ORDER BY " \
+               "AcctStartTime DESC LIMIT 1;"
+  query_postauth = "SELECT sucess, pass, CallingStationId, CalledStationId FROM radius_postauth WHERE user = " \
+                   ":username ORDER BY date DESC LIMIT 1;"
   onu_info = {'onu_id': '', 'cto_name': '', 'diagnostic': ''}
   if query_result := session.execute(query_acct, {'username': username}).first():
     onu_info = get_onu_from_connection(session, query_result, username)

@@ -2,7 +2,6 @@ from argparse import ArgumentParser
 
 from common.mysql_common import supply_mysql_session
 from common.string_common import remove_accents, sanitize_dumb, sanitize_name
-from config import mysqldb_config
 from logger import Log, get_logger
 
 logger = get_logger(__name__)
@@ -22,12 +21,11 @@ def make_dict(clients):
 @Log(logger)
 def find_username_by_name(name, session=None):
   name = remove_accents(name.lower())
-  query_string = "SELECT nome, endereco, numero, complemento, referencia, observacao, status, user, pass, enable, " \
-                 "groupname FROM {0} INNER JOIN {1} ON {0}.id = {1}.cliente_id WHERE ((status = 1 OR status = 2) AND " \
-                 "enable = 1) AND nome LIKE '%{2}%' OR endereco LIKE '%{2}%' OR complemento LIKE '%{2}%' OR " \
-                 "referencia LIKE '%{2}%' OR observacao LIKE '%{2}%' OR user LIKE '%{2}%' ORDER BY nome ASC;".format(
-                  mysqldb_config.clientes_table, mysqldb_config.login_table, name)
-  if query_result := session.execute(query_string):
+  clause = "SELECT nome, endereco, numero, complemento, referencia, observacao, status, user, pass, enable, " \
+           "groupname FROM clientes INNER JOIN login ON clientes.id = login.cliente_id WHERE ((status = 1 OR status " \
+           "= 2) AND enable = 1) AND nome LIKE :name OR endereco LIKE :name OR complemento LIKE :name OR referencia " \
+           "LIKE :name OR observacao LIKE :name OR user LIKE :name ORDER BY nome;"
+  if query_result := session.execute(clause=clause, params={'name': '%{name}%'.format(name=name)}):
     clients = []
     related_clients = []
     for client in make_dict(query_result):

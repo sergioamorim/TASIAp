@@ -6,7 +6,7 @@ from requests import post
 from common.mysql_common import supply_mysql_session
 from common.sqlite_common import supply_sqlite_session, UserLogin, UserLoginChangeAdvertiser
 from common.string_common import sanitize_name
-from config import mysqldb_config, bot_config
+from config import bot_config
 from logger import get_logger, Log
 
 logger = get_logger('user_login_change_advertiser')
@@ -14,9 +14,8 @@ logger = get_logger('user_login_change_advertiser')
 
 @supply_mysql_session
 def get_client_name(username, mysql_session=None):
-  query_statement = 'SELECT nome, sexo FROM {login_table} INNER JOIN {clientes_table} ON cliente_id = clientes.id ' \
-                    'WHERE user = :username'.format(login_table=mysqldb_config.login_table,
-                                                    clientes_table=mysqldb_config.clientes_table)
+  query_statement = 'SELECT nome, sexo FROM login INNER JOIN clientes ON cliente_id = clientes.id WHERE user = ' \
+                    ':username'
   if client_info := mysql_session.execute(query_statement, {'username': username}).first():
     treatment = 'a' if client_info['sexo'] == 'F' else 'o'
     client_name = sanitize_name(name=client_info['nome'])
@@ -36,8 +35,7 @@ def update_cached_user_login(username, password, mysql_session=None, sqlite_sess
 
 @supply_mysql_session
 def get_live_user_login(username, trial=False, mysql_session=None):
-  query_statement = 'SELECT user, pass FROM {login_table} WHERE user = :username;'.format(
-                     login_table=mysqldb_config.login_table)
+  query_statement = 'SELECT user, pass FROM login WHERE user = :username;'
   if user_login := mysql_session.execute(query_statement, {'username': username}).first():
     return user_login
   if not trial:
@@ -122,18 +120,16 @@ def update_last_count(current_count, last_change, sqlite_session=None):
 
 @supply_mysql_session
 def get_current_count(mysql_session=None):
-  query_statement = 'SELECT COUNT(id) FROM {admlog_table};'.format(admlog_table=mysqldb_config.admlog_table)
+  query_statement = 'SELECT COUNT(id) FROM admlog;'
   return mysql_session.execute(query_statement).scalar()
 
 
 @supply_mysql_session
 def get_changes(last_change, mysql_session=None):
-  query_statement = 'SELECT console, info, timestamp FROM {admlog_table} WHERE timestamp > {last_change} AND ' \
-                    '(console = :new OR console = :update OR console = :delete) AND info LIKE :userdefined ORDER BY ' \
-                    'timestamp;'.format(admlog_table=mysqldb_config.admlog_table, last_change=last_change)
-  return mysql_session.execute(query_statement, {'new': 'client_login_new', 'update': 'client_login_open_edit',
-                                                 'delete': 'client_login_open_delete',
-                                                 'userdefined': 'Usuário: %'}).fetchall()
+  clause = "SELECT console, info, timestamp FROM admlog WHERE timestamp > :last_change AND (console = " \
+           "'client_login_new' OR console = 'client_login_open_edit' OR console = 'client_login_open_delete') AND " \
+           "info LIKE 'Usuário: %' ORDER BY timestamp;"
+  return mysql_session.execute(clause=clause, params={'last_change': last_change}).fetchall()
 
 
 def is_username_defined(info):

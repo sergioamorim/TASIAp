@@ -9,7 +9,7 @@ from requests import post
 from common.mysql_common import supply_mysql_session
 from common.string_common import sanitize_name, sanitize_cto_vlan_name, format_datetime, get_board_id, get_pon_id, \
   is_vlan_id_valid
-from config import bot_config, mysqldb_config
+from config import bot_config
 
 
 def get_acct_stop_time(result_row):
@@ -39,10 +39,10 @@ def sanitize_dumb(string):
 def get_clientes_dict(users, session=None):
   if users:
     clientes_dict = []
-    clientes = session.execute('SELECT clientes.nome, clientes.endereco, clientes.numero, clientes.complemento, '
+    clientes = session.execute(clause='SELECT clientes.nome, clientes.endereco, clientes.numero, clientes.complemento, '
                                'clientes.referencia, login.user FROM clientes INNER JOIN login ON clientes.id = '
-                               'login.cliente_id WHERE clientes.status = 1 AND login.user IN ({0})'.format(
-                                str(users)[1:-1]))
+                               'login.cliente_id WHERE clientes.status = 1 AND login.user IN :users',
+                               params={'users': users})
     for cliente in clientes:
       d = dict(cliente.items())
       d['nome'] = sanitize_name(d['nome'])
@@ -68,8 +68,8 @@ def get_cto_name(cto_id, session=None):
     board_id = get_board_id(cto_id)
     pon_id = get_pon_id(cto_id)
     return 'Placa {0} PON {1}'.format(board_id, pon_id)
-  query = 'SELECT CalledStationId FROM {0} WHERE CalledStationId LIKE :cto ORDER BY AcctStartTime DESC LIMIT 1'
-  if cto_name := session.scalar(query.format(mysqldb_config.radius_acct_table), {'cto': '%{0}%'.format(cto_id)}):
+  clause = 'SELECT CalledStationId FROM radius_acct WHERE CalledStationId LIKE :cto ORDER BY AcctStartTime DESC LIMIT 1'
+  if cto_name := session.scalar(clause=clause, params={'cto': '%{cto_id}%'.format(cto_id=cto_id)}):
     if sanitized_cto_name := sanitize_cto_vlan_name(cto_name):
       return sanitized_cto_name
   return cto_id
@@ -77,26 +77,26 @@ def get_cto_name(cto_id, session=None):
 
 @supply_mysql_session
 def get_usernames(cto_id, session=None):
-  query = 'SELECT DISTINCT UserName FROM {0} WHERE CalledStationId LIKE :cto AND UserName IN (SELECT user ' \
+  clause = 'SELECT DISTINCT UserName FROM radius_acct WHERE CalledStationId LIKE :cto AND UserName IN (SELECT user ' \
           'FROM login WHERE cliente_id IN (SELECT id FROM clientes WHERE status = 1))'
-  if usernames := session.execute(query.format(mysqldb_config.radius_acct_table), {'cto': '%{0}%'.format(cto_id)}):
+  if usernames := session.execute(clause=clause, params={'cto': '%{cto_id}%'.format(cto_id=cto_id)}):
     return usernames
   return None
 
 
 @supply_mysql_session
 def get_last_cto(username, session=None):
-  query = 'SELECT CalledStationId FROM {0} WHERE UserName = :username ORDER BY AcctStartTime DESC LIMIT 1'
+  clause = 'SELECT CalledStationId FROM radius_acct WHERE UserName = :username ORDER BY AcctStartTime DESC LIMIT 1'
   if len(username):
-    if last_cto := session.scalar(query.format(mysqldb_config.radius_acct_table), {'username': username[0]}):
+    if last_cto := session.scalar(clause=clause, params={'username': username[0]}):
       return last_cto
   return None
 
 
 @supply_mysql_session
 def get_connection_info(username, session=None):
-  query = 'SELECT UserName, AcctStartTime, AcctStopTime FROM {0} WHERE UserName = :username ORDER BY AcctStartTime ' \
-          'DESC LIMIT 1'.format(mysqldb_config.radius_acct_table)
+  query = 'SELECT UserName, AcctStartTime, AcctStopTime FROM radius_acct WHERE UserName = :username ORDER BY ' \
+          'AcctStartTime DESC LIMIT 1'
   if len(username):
     if connection_info := session.execute(query, {'username': username[0]}).first():
       return connection_info
@@ -172,6 +172,14 @@ def get_pdf_page():
   return pdf
 
 
+def write_client_info_line(cliente, pdf):
+  pdf.write(0,
+            '{0} - {1}, {2} {3} {4} Usuário: {5}'.format(get_nome(cliente), get_rua(cliente), get_numero(cliente),
+                                                         sanitize_dumb(cliente['complemento']),
+                                                         sanitize_dumb(cliente['referencia']), cliente['user']))
+  pdf.ln(3)
+
+
 @supply_mysql_session
 def do_things(cto_id, tech_report, session=None):
   now = datetime.now()
@@ -196,11 +204,7 @@ def do_things(cto_id, tech_report, session=None):
       sorted_dict = sorted(clients['offline'], key=get_nome)
     pdf.set_font('Calibri', '', 9)
     for cliente in sorted_dict:
-      pdf.write(0,
-                '{0} - {1}, {2} {3} {4} Usuário: {5}'.format(get_nome(cliente), get_rua(cliente), get_numero(cliente),
-                                                             sanitize_dumb(cliente['complemento']),
-                                                             sanitize_dumb(cliente['referencia']), cliente['user']))
-      pdf.ln(3)
+      write_client_info_line(cliente=cliente, pdf=pdf)
   else:
     pdf.write(0, 'Nenhum cliente offline.')
     pdf.ln(3)
@@ -217,11 +221,7 @@ def do_things(cto_id, tech_report, session=None):
       sorted_dict = sorted(clients['online'], key=get_nome)
     pdf.set_font('Calibri', '', 9)
     for cliente in sorted_dict:
-      pdf.write(0,
-                '{0} - {1}, {2} {3} {4} Usuário: {5}'.format(get_nome(cliente), get_rua(cliente), get_numero(cliente),
-                                                             sanitize_dumb(cliente['complemento']),
-                                                             sanitize_dumb(cliente['referencia']), cliente['user']))
-      pdf.ln(3)
+      write_client_info_line(cliente=cliente, pdf=pdf)
   else:
     pdf.write(0, 'Nenhum cliente online.')
     pdf.ln(4)

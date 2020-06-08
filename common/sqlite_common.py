@@ -1,8 +1,7 @@
-from inspect import signature
-
 from contextlib import contextmanager
 from datetime import datetime
 from functools import wraps
+from inspect import signature
 
 from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.ext.declarative import declarative_base

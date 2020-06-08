@@ -4,7 +4,6 @@ from time import sleep
 from common.mysql_common import supply_mysql_session, reauthorize_user
 from common.sqlite_common import update_onu_info
 from common.telnet_common import supply_telnet_connection
-from config import mysqldb_config
 from logger import get_logger
 from onu_id_from_username import get_onu_id_by_mac_and_pon, format_pon_name
 
@@ -16,8 +15,8 @@ def one_day_has_passed(start_time, actual_time):
 
 
 def diagnose_fail(session, user):
-  if result := session.execute('SELECT user, pass FROM {0} WHERE user = :username;'.format(mysqldb_config.login_table),
-                               {'username': user['user']}).first():
+  if result := session.execute(clause='SELECT user, pass FROM login WHERE user = :username;',
+                               params={'username': user['user']}).first():
     if result['pass']:
       if result['pass'] == user['pass']:
         return diagnose_account(session, user)
@@ -28,10 +27,10 @@ def diagnose_fail(session, user):
 
 
 def diagnose_account(session, user):
-  query_string = 'SELECT cliente_id, enable FROM {0} WHERE user = :username;'.format(mysqldb_config.login_table)
+  query_string = 'SELECT cliente_id, enable FROM login WHERE user = :username;'
   if login := session.execute(query_string, {'username': user['user']}).first():
     if login['enable'] == 1:
-      query_string = 'SELECT status FROM {0} WHERE id = :id;'.format(mysqldb_config.clientes_table)
+      query_string = 'SELECT status FROM clientes WHERE id = :id;'
       if (client_status := session.execute(query_string, {'id': login['cliente_id']}).scalar()) == 1:
         reauthorize_user(session, user['user'])
         return 'erro, reinicie o roteador.'
@@ -50,8 +49,8 @@ def diagnose_account(session, user):
 def diagnose_connection(session, user):
   if not user['sucess']:
     return diagnose_fail(session, user)
-  query_string = 'SELECT FramedIPAddress, AcctStopTime FROM {0} WHERE UserName = :username ORDER BY AcctStartTime ' \
-                 'DESC;'.format(mysqldb_config.radius_acct_table)
+  query_string = 'SELECT FramedIPAddress, AcctStopTime FROM radius_acct WHERE UserName = :username ORDER BY ' \
+                 'AcctStartTime DESC;'
   if connection_info := session.execute(query_string, {'username': user['user']}).first():
     logger.debug('diagnose_connection: connection_info: {0}'.format(connection_info))
     if connection_info['FramedIPAddress'][4:6] == '66':
@@ -82,8 +81,8 @@ def find_user_data(onu_id, users, session=None, tn=None):
           times_tried = times_tried + 1
         if not diagnostic:
           user = session.execute(
-            'SELECT user, pass, sucess, CallingStationId FROM {0} WHERE user = :username ORDER BY date '
-            'DESC;'.format(mysqldb_config.radius_postauth_table), {'username': user['user']}).first()
+            clause='SELECT user, pass, sucess, CallingStationId FROM radius_postauth WHERE user = :username ORDER BY'
+                   ' date DESC;', params={'username': user['user']}).first()
           logger.debug('find_onu_connection: user: {0}'.format(user))
           if not user['sucess']:
             diagnostic = diagnose_fail(session, user)
@@ -103,8 +102,8 @@ def find_onu_connection(onu_id, session=None):
   board_number = '12' if onu_id[0] == '1' else '14'
   vlan_name = 'v{0}00-P{1}-PON{2}-CLIENTES-FIBRA'.format(onu_id[0:2], board_number, onu_id[1])
   while not one_day_has_passed(start_time, update_time):
-    query_string = 'SELECT user, pass, sucess, CallingStationId FROM {0} WHERE CalledStationId = :vlanname ' \
-                   'AND date > :updatetime ORDER BY date DESC;'.format(mysqldb_config.radius_postauth_table)
+    query_string = 'SELECT user, pass, sucess, CallingStationId FROM radius_postauth WHERE CalledStationId = ' \
+                   ':vlanname AND date > :updatetime ORDER BY date DESC;'
     users = session.execute(query_string, {'vlanname': vlan_name, 'updatetime': update_time}).fetchall()
     logger.debug(
       'find_onu_connection: query_string: {0} - vlanname: {1} - updatetime: {2}'.format(query_string, vlan_name,

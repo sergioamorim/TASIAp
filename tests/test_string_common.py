@@ -1,11 +1,13 @@
-from unittest import TestCase, main
+from datetime import datetime
+from unittest import TestCase
 
 from authorize_onu import AuthOnuDevice, Pon, Board
 from common.string_common import get_auth_onu_device_id, sanitize_cto_vlan_name, format_strhexoctet, \
   hexstr_to_hexoctetstr, int_to_hexoctetstr, assure_two_octet_hexstr, get_onu_number_from_id, get_pon_id, \
   str_char_to_hex_octect, string_to_hex_octects, generate_cvlan, get_board_id, is_onu_id_valid, is_vlan_id_valid, \
   is_serial_valid, remove_accents, sanitize_dumb, is_int, get_caller_name, get_onu_id_from_cto_vlan_name, \
-  get_cto_name_from_cto_vlan_name
+  get_cto_name_from_cto_vlan_name, get_vlan_id_from_cto_vlan_name, get_vlan_type, format_datetime, format_onu_state, \
+  get_enable_emoji, get_status_emoji, sanitize_name, is_query_update
 from common.telnet_common import supply_telnet_connection
 
 
@@ -272,6 +274,69 @@ class TestStringFunctions(TestCase):
       cto_vlan_name='v1506-P12-PON6-ONU05-CTO-PPPOE-FARM-TRAB-AV-BELMIRO-AMORIM-ST-LUCIA'),
       second='FARM TRAB AV BELMIRO AMORIM ST LUCIA')
 
+  def test_get_vlan_id_from_cto_vlan_name(self):
+    self.assertEqual(first=get_vlan_id_from_cto_vlan_name(cto_vlan_name='v1108-P12-PON1-ONU08-CTO-PPPOE-IML'),
+                     second='1108')
 
-if __name__ == '__main__':
-  main()
+  def test_get_vlan_type(self):
+    self.assertEqual(first=get_vlan_type(vlan_name='v1108-P12-PON1-ONU08-CTO-PPPOE-IML'), second='CTO')
+    self.assertEqual(first=get_vlan_type(vlan_name='v2806-P14-PON8-ONU06-P2P-PPPOE-TONY'), second='P2P')
+
+  def test_format_datetime(self):
+    datetime_object = datetime(2020, 6, 8, 18, 34, 42, 14936)
+    self.assertEqual(first=format_datetime(datetime_object=datetime_object),
+                     second='08/06/2020 18:34:42')
+    self.assertEqual(first=format_datetime(datetime_object=datetime_object, safename=True),
+                     second='2020-06-08_18-34-42')
+    self.assertEqual(first=format_datetime(datetime_object=datetime_object, readable=True),
+                     second='18:34:42 de 08/06/2020')
+
+  def test_format_onu_state(self):
+    self.assertEqual(first=format_onu_state(onu_state='up'), second='online')
+    self.assertEqual(first=format_onu_state(onu_state='down'), second='offline')
+    self.assertEqual(first=format_onu_state(onu_state='dw'), second='offline')
+
+  def test_get_enable_emoji(self):
+    self.assertEqual(first=get_enable_emoji(enable=True), second='✅')
+    self.assertEqual(first=get_enable_emoji(enable=False), second='❌')
+
+  def test_get_status_emoji(self):
+    self.assertEqual(first=get_status_emoji(status=0), second='🚫')
+    self.assertEqual(first=get_status_emoji(status=1), second='🔹')
+    self.assertEqual(first=get_status_emoji(status=2), second='💲')
+    self.assertEqual(first=get_status_emoji(status=3), second='🔴')
+    self.assertEqual(first=get_status_emoji(status=5), second='🔴')
+
+  def test_sanitize_name(self):
+    self.assertEqual(first=sanitize_name(name='* NAME SURNAME'), second='NAME SURNAME')
+    self.assertEqual(first=sanitize_name(name='** NAME SURNAME'), second='NAME SURNAME')
+    self.assertEqual(first=sanitize_name(name='**NAME SURNAME'), second='NAME SURNAME')
+    self.assertEqual(first=sanitize_name(name='*NAME SURNAME'), second='NAME SURNAME')
+    self.assertEqual(first=sanitize_name(name='0-NAME SURNAME'), second='NAME SURNAME')
+    self.assertEqual(first=sanitize_name(name='0-NAME SURNAME'), second='NAME SURNAME')
+    self.assertEqual(first=sanitize_name(name='1 - NAME SURNAME'), second='NAME SURNAME')
+    self.assertEqual(first=sanitize_name(name='1 -NAME SURNAME'), second='NAME SURNAME')
+    self.assertEqual(first=sanitize_name(name='1-**NAME SURNAME'), second='NAME SURNAME')
+    self.assertEqual(first=sanitize_name(name='1-*NAME SURNAME'), second='NAME SURNAME')
+    self.assertEqual(first=sanitize_name(name='1-NAME SURNAME'), second='NAME SURNAME')
+    self.assertEqual(first=sanitize_name(name='F *NAME SURNAME'), second='NAME SURNAME')
+    self.assertEqual(first=sanitize_name(name='F* NAME SURNAME'), second='NAME SURNAME')
+    self.assertEqual(first=sanitize_name(name='F*NAME SURNAME'), second='NAME SURNAME')
+
+  def test_is_query_update(self):
+    class UpdateA:
+      class Message:
+        chat = None
+      message = Message()
+
+    class UpdateB:
+      message = None
+
+    update_a = UpdateA()
+    update_b = UpdateB()
+
+    self.assertFalse(expr=is_query_update(update=update_a))
+    self.assertTrue(expr=is_query_update(update=update_b))
+
+  def test_format_clients_message(self):
+    pass

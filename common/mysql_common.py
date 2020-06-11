@@ -73,7 +73,7 @@ def generate_pppoe_login_password(username, session=None):
     sql_query = 'UPDATE login SET pass = :password WHERE user = :username'
     session.execute(sql_query, {'username': username, 'password': bot_config.default_pppoe_login_password})
     return bot_config.default_pppoe_login_password
-  logger.error('generate_pppoe_login_password: user {0} not found').format(username)
+  logger.error(msg='generate_pppoe_login_password: user {username} not found'.format(username=username))
   return None
 
 

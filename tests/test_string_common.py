@@ -1,5 +1,6 @@
 from datetime import datetime
 from unittest import TestCase
+from unittest.mock import patch
 
 from authorize_onu import AuthOnuDevice, Pon, Board
 from common.string_common import get_auth_onu_device_id, sanitize_cto_vlan_name, format_strhexoctet, \
@@ -7,31 +8,35 @@ from common.string_common import get_auth_onu_device_id, sanitize_cto_vlan_name,
   str_char_to_hex_octect, string_to_hex_octects, generate_cvlan, get_board_id, is_onu_id_valid, is_vlan_id_valid, \
   is_serial_valid, remove_accents, sanitize_dumb, is_int, get_caller_name, get_onu_id_from_cto_vlan_name, \
   get_cto_name_from_cto_vlan_name, get_vlan_id_from_cto_vlan_name, get_vlan_type, format_datetime, format_onu_state, \
-  get_enable_emoji, get_status_emoji, sanitize_name, is_query_update
-from common.telnet_common import supply_telnet_connection
+  get_enable_emoji, get_status_emoji, sanitize_name, is_query_update, format_clients_message
 
 
 class TestStringFunctions(TestCase):
 
-  @supply_telnet_connection
-  def test_get_auth_onu_device_id(self, tn=None):
-    board_a = Board('14')
-    pon_a = Pon('1', board_a, tn=tn)
-    onu_a = AuthOnuDevice('1', 'AN5506-04-F1', 'FHTT1177bc38', pon_a)
-    onu_a.number = 4
+  def test_get_auth_onu_device_id(self):
 
-    board_b = Board('12')
-    pon_b = Pon('1', board_b, tn=tn)
-    onu_b = AuthOnuDevice('1', 'AN5506-04-F1', 'FHTT1177bc38', pon_b)
-    onu_b.number = 1
+    def mock_init_pon(pon, pon_id, board):
+      pon.pon_id = pon_id
+      pon.board = board
 
-    board_c = Board('14')
-    pon_c = Pon('8', board_c, tn=tn)
-    onu_c = AuthOnuDevice('1', 'AN5506-04-F1', 'FHTT1177bc38', pon_c)
-    onu_c.number = 99
-    self.assertEqual(get_auth_onu_device_id(onu_a), '2104')
-    self.assertEqual(get_auth_onu_device_id(onu_b), '1101')
-    self.assertEqual(get_auth_onu_device_id(onu_c), '2899')
+    with patch.object(Pon, '__init__', mock_init_pon):
+      board_a = Board('14')
+      pon_a = Pon('1', board_a)
+      onu_a = AuthOnuDevice('1', 'AN5506-04-F1', 'FHTT1177bc38', pon_a)
+      onu_a.number = 4
+
+      board_b = Board('12')
+      pon_b = Pon('1', board_b)
+      onu_b = AuthOnuDevice('1', 'AN5506-04-F1', 'FHTT1177bc38', pon_b)
+      onu_b.number = 1
+
+      board_c = Board('14')
+      pon_c = Pon('8', board_c)
+      onu_c = AuthOnuDevice('1', 'AN5506-04-F1', 'FHTT1177bc38', pon_c)
+      onu_c.number = 99
+      self.assertEqual(get_auth_onu_device_id(onu_a), '2104')
+      self.assertEqual(get_auth_onu_device_id(onu_b), '1101')
+      self.assertEqual(get_auth_onu_device_id(onu_c), '2899')
 
   def test_sanitize_cto_vlan_name(self):
     vlan_a = 'v1101-P12-PON1-ONU01-CTO-PPPOE-MERC-SANTANA'
@@ -339,4 +344,42 @@ class TestStringFunctions(TestCase):
     self.assertTrue(expr=is_query_update(update=update_b))
 
   def test_format_clients_message(self):
-    pass
+    name_a = 'NAME SURNAME A'
+    result_a = {'direct': [{'nome': 'NAME SURNAME A', 'endereco': 'address a', 'numero': '6a', 'complemento': '',
+                            'referencia': '', 'observacao': '', 'status': 1, 'user': 'username a', 'pass': '',
+                            'enable': 1, 'groupname': 'plan a'}], 'related': []}
+    message_a = '🔹 Nome: <u>NAME SURNAME A</u>\nEndereço: address a, 6a\nPlano: plan a\n✅ ' \
+                '<b>Usuário:</b> <code>username a</code>\n\n'
+    self.assertEqual(first=format_clients_message(name=name_a, result=result_a), second=message_a)
+
+    result_b = {'direct': [], 'related': []}
+    message_b = 'Nenhum cliente encontrado com o termo informado.'
+    self.assertEqual(first=format_clients_message(name=None, result=result_b), second=message_b)
+
+    name_c = 'NAME SURNAME C'
+    result_c = {'direct': [],
+                'related': [{'nome': 'some name c', 'endereco': 'address c', 'numero': '6c', 'complemento': '',
+                             'referencia': 'a aNAME SURNAME Cb b', 'observacao': '', 'status': 1, 'user': 'username c',
+                             'pass': '', 'enable': 1, 'groupname': 'plan c'}]}
+    message_c = '\n🔹 Nome: <u>some name c</u>\nEndereço: address c, 6c\nReferencia: a aNAME SURNAME Cb b' \
+                '\nPlano: plan c\n✅ <b>Usuário:</b> <code>username c</code>\n'
+    self.assertEqual(first=format_clients_message(name=name_c, result=result_c), second=message_c)
+
+    name_d = 'NAME SURNAME D'
+    result_d = {'direct': [],
+                'related': [{'nome': 'some name d', 'endereco': 'address d', 'numero': '6d', 'complemento': '',
+                             'referencia': '', 'observacao': 'a aNAME SURNAME Db b', 'status': 1, 'user': 'username d',
+                             'pass': '', 'enable': 1, 'groupname': 'plan d'}]}
+    message_d = '\n🔹 Nome: <u>some name d</u>\nEndereço: address d, 6d\nObservacao: a aNAME SURNAME Db b' \
+                '\nPlano: plan d\n✅ <b>Usuário:</b> <code>username d</code>\n'
+    self.assertEqual(first=format_clients_message(name=name_d, result=result_d), second=message_d)
+
+    name_e = 'NAME SURNAME E'
+    result_e = {'direct': [],
+                'related': [{'nome': 'some name e', 'endereco': 'address e', 'numero': '6e',
+                             'complemento': 'a aNAME SURNAME Eb b', 'referencia': '',
+                             'observacao': 'a aNAME SURNAME Eb b', 'status': 1, 'user': 'username e',
+                             'pass': '', 'enable': 1, 'groupname': 'plan e'}]}
+    message_e = '\n🔹 Nome: <u>some name e</u>\nEndereço: address e, 6e\nComplemento: a aNAME SURNAME Eb ' \
+                'b\nObservacao: a aNAME SURNAME Eb b\nPlano: plan e\n✅ <b>Usuário:</b> <code>username e</code>\n'
+    self.assertEqual(first=format_clients_message(name=name_e, result=result_e), second=message_e)

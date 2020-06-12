@@ -1,6 +1,6 @@
 import unittest
 
-from onu_id_from_username import get_onu_number
+from tasiap.onu_id_from_username import get_onu_number
 
 
 class TestOutputMethods(unittest.TestCase):

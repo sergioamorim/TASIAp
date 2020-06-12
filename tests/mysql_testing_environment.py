@@ -4,7 +4,7 @@ from subprocess import run
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from config import mysqldb_config, testing_config
+from config import testing_config, mysqldb_config
 
 
 def run_mysql_cmd(mysql_cmd_opts):
@@ -25,7 +25,7 @@ def create_testing_database():
 def setup_testing_database_structure():
   path = dirname(__file__)
   mysql_cmd_opts = '{database} < ' \
-                   '{path}/data/test_mysql_myauth_admin_database_structure.sql'.format(path=path,
+                   '{path}/data/myauth_admin_database_structure.sql'.format(path=path,
                                                                                        database=mysqldb_config.database)
   run_mysql_cmd(mysql_cmd_opts=mysql_cmd_opts)
 

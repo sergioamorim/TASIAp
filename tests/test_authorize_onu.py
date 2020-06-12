@@ -1,6 +1,6 @@
 from unittest import TestCase, main
 
-from authorize_onu import format_onu_type, get_last_authorized_number
+from tasiap.authorize_onu import format_onu_type, get_last_authorized_number
 
 
 class TestStringFunctions(TestCase):

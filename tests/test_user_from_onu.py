@@ -1,6 +1,6 @@
 from unittest import TestCase, main
 
-from user_from_onu import get_mac_list
+from tasiap.user_from_onu import get_mac_list
 
 
 class TestOutputMethods(TestCase):

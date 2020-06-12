@@ -1,6 +1,6 @@
 import unittest
 
-from onu_signal_power import get_signal_power
+from tasiap.onu_signal_power import get_signal_power
 
 
 class TestOutputMethods(unittest.TestCase):

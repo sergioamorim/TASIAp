@@ -1,15 +1,11 @@
 *_config.py
 screenlog.*
 __pycache__/
-*.log
+logs/
 .vscode
 *.db
 .idea/
 venv/
 .coverage
-pytest.ini
 .pytest_cache/
-venv/
 htmlcov/
-setup.cfg
-.coveragerc

@@ -1,0 +1,9 @@
+[run]
+source = tasiap
+branch = True
+omit = *example.py
+
+[report]
+fail_under = 100
+show_missing = True
+skip_covered = True

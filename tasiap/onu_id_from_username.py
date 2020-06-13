@@ -3,7 +3,8 @@ from re import findall
 
 from tasiap.common.mysql_common import supply_mysql_session, reauthorize_user
 from tasiap.common.sqlite_common import find_onu_info, update_onu_info
-from tasiap.common.string_common import sanitize_cto_vlan_name, format_datetime, format_onu_state, get_board_id, get_pon_id
+from tasiap.common.string_common import sanitize_cto_vlan_name, format_datetime, format_onu_state, get_board_id, \
+  get_pon_id
 from tasiap.common.telnet_common import str_to_telnet, supply_telnet_connection
 from tasiap.logger import Log, get_logger
 from tasiap.onu_id_from_serial import find_onu_by_serial

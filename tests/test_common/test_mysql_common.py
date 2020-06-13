@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from tasiap.common.mysql_common import mysql_session_factory, supply_mysql_session, user_exists, insert_into_radius_login, \
-  reauthorize_user, generate_pppoe_login_password, get_login_password
+from tasiap.common.mysql_common import mysql_session_factory, supply_mysql_session, user_exists, \
+  insert_into_radius_login, reauthorize_user, generate_pppoe_login_password, get_login_password
 from config import bot_config
 from tests.mysql_testing_environment import setup_mysql_testing_environment, shutdown_mysql_testing_environment
 
@@ -48,7 +48,7 @@ class TestMySQLFunctions(TestCase):
     def generic_non_mysql_session_dependant_function(**kwargs):
       return True if 'mysql_session' not in kwargs and 'session' not in kwargs else False
 
-    self.assertTrue(generic_non_mysql_session_dependant_function())
+    self.assertTrue(expr=generic_non_mysql_session_dependant_function())
 
   def test_user_exists(self):
     with mysql_session_factory() as session:

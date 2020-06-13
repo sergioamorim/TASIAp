@@ -8,7 +8,8 @@ from tasiap.common.string_common import get_auth_onu_device_id, sanitize_cto_vla
   str_char_to_hex_octect, string_to_hex_octects, generate_cvlan, get_board_id, is_onu_id_valid, is_vlan_id_valid, \
   is_serial_valid, remove_accents, sanitize_dumb, is_int, get_caller_name, get_onu_id_from_cto_vlan_name, \
   get_cto_name_from_cto_vlan_name, get_vlan_id_from_cto_vlan_name, get_vlan_type, format_datetime, format_onu_state, \
-  get_enable_emoji, get_status_emoji, sanitize_name, is_query_update, format_clients_message
+  get_enable_emoji, get_status_emoji, sanitize_name, is_query_update, format_clients_message, \
+  is_string_addition_too_big, get_client_info_message_block
 
 
 class TestStringFunctions(TestCase):
@@ -343,43 +344,57 @@ class TestStringFunctions(TestCase):
     self.assertFalse(expr=is_query_update(update=update_a))
     self.assertTrue(expr=is_query_update(update=update_b))
 
+  def test_get_client_info_message_block(self):
+    search_name = 'NAME SURNAME A'
+    client_a = {'nome': search_name, 'endereco': 'address a', 'numero': '6a', 'complemento': '', 'referencia': '',
+                'observacao': '', 'status': 1, 'user': 'username a', 'pass': '', 'enable': 1, 'groupname': 'plan a'}
+    result_a = '🔹 Nome: <u>NAME SURNAME A</u>\nEndereço: address a, 6a\nPlano: plan a\n✅ <b>Usuário:</b> ' \
+               '<code>username a</code>\n'
+    client_b = {'nome': search_name, 'endereco': 'address b', 'numero': '6b',
+                'complemento': 'bb' + search_name,
+                'referencia': search_name + 'b',
+                'observacao': 'b' + search_name,
+                'status': 1, 'user': 'username b', 'pass': '', 'enable': 1,
+                'groupname': 'plan b'}
+    result_b = '🔹 Nome: <u>NAME SURNAME A</u>\nEndereço: address b, 6b\nComplemento: bbNAME SURNAME ' \
+               'A\nReferencia: NAME SURNAME Ab\nObservacao: bNAME SURNAME A\nPlano: plan b\n✅ <b>Usuário:</b> ' \
+               '<code>username b</code>\n'
+    self.assertEqual(first=get_client_info_message_block(client=client_a), second=result_a)
+    self.assertEqual(first=get_client_info_message_block(client=client_a, search_name=search_name), second=result_a)
+    self.assertEqual(first=get_client_info_message_block(client=client_b, search_name=search_name), second=result_b)
+
+  def test_is_string_addition_too_big(self):
+    self.assertFalse(expr=is_string_addition_too_big(string='a', string_addition='b', character_limit=21))
+    self.assertTrue(expr=is_string_addition_too_big(string='c', string_addition='d', character_limit=20))
+
   def test_format_clients_message(self):
     name_a = 'NAME SURNAME A'
     result_a = {'direct': [{'nome': 'NAME SURNAME A', 'endereco': 'address a', 'numero': '6a', 'complemento': '',
                             'referencia': '', 'observacao': '', 'status': 1, 'user': 'username a', 'pass': '',
                             'enable': 1, 'groupname': 'plan a'}], 'related': []}
     message_a = '🔹 Nome: <u>NAME SURNAME A</u>\nEndereço: address a, 6a\nPlano: plan a\n✅ ' \
-                '<b>Usuário:</b> <code>username a</code>\n\n'
+                '<b>Usuário:</b> <code>username a</code>\n'
     self.assertEqual(first=format_clients_message(name=name_a, result=result_a), second=message_a)
 
     result_b = {'direct': [], 'related': []}
     message_b = 'Nenhum cliente encontrado com o termo informado.'
     self.assertEqual(first=format_clients_message(name=None, result=result_b), second=message_b)
 
-    name_c = 'NAME SURNAME C'
-    result_c = {'direct': [],
-                'related': [{'nome': 'some name c', 'endereco': 'address c', 'numero': '6c', 'complemento': '',
-                             'referencia': 'a aNAME SURNAME Cb b', 'observacao': '', 'status': 1, 'user': 'username c',
-                             'pass': '', 'enable': 1, 'groupname': 'plan c'}]}
-    message_c = '\n🔹 Nome: <u>some name c</u>\nEndereço: address c, 6c\nReferencia: a aNAME SURNAME Cb b' \
-                '\nPlano: plan c\n✅ <b>Usuário:</b> <code>username c</code>\n'
-    self.assertEqual(first=format_clients_message(name=name_c, result=result_c), second=message_c)
+    name = 'NAME SURNAME'
+    username = 'username{id}'
+    set_size = 39
+    clients_list = [{'nome': '{name} {id}'.format(name=name, id=i), 'endereco': 'address', 'numero': '6a',
+                     'complemento': '', 'referencia': '', 'observacao': '', 'status': 1, 'user': username.format(id=i),
+                     'pass': '', 'enable': 1, 'groupname': 'plan'} for i in range(0, set_size)]
 
-    name_d = 'NAME SURNAME D'
-    result_d = {'direct': [],
-                'related': [{'nome': 'some name d', 'endereco': 'address d', 'numero': '6d', 'complemento': '',
-                             'referencia': '', 'observacao': 'a aNAME SURNAME Db b', 'status': 1, 'user': 'username d',
-                             'pass': '', 'enable': 1, 'groupname': 'plan d'}]}
-    message_d = '\n🔹 Nome: <u>some name d</u>\nEndereço: address d, 6d\nObservacao: a aNAME SURNAME Db b' \
-                '\nPlano: plan d\n✅ <b>Usuário:</b> <code>username d</code>\n'
-    self.assertEqual(first=format_clients_message(name=name_d, result=result_d), second=message_d)
+    message = ''
+    for i in range(0, set_size - 1):
+      message += '🔹 Nome: <u>{name} {id}</u>\nEndereço: address, 6a\nPlano: plan\n✅ <b>Usuário:</b> ' \
+                 '<code>username{id}</code>\n'.format(name=name, id=i)
+    message += '\n\n<b>CROPPED!</b>'
 
-    name_e = 'NAME SURNAME E'
-    result_e = {'direct': [],
-                'related': [{'nome': 'some name e', 'endereco': 'address e', 'numero': '6e',
-                             'complemento': 'a aNAME SURNAME Eb b', 'referencia': '',
-                             'observacao': 'a aNAME SURNAME Eb b', 'status': 1, 'user': 'username e',
-                             'pass': '', 'enable': 1, 'groupname': 'plan e'}]}
-    message_e = '\n🔹 Nome: <u>some name e</u>\nEndereço: address e, 6e\nComplemento: a aNAME SURNAME Eb ' \
-                'b\nObservacao: a aNAME SURNAME Eb b\nPlano: plan e\n✅ <b>Usuário:</b> <code>username e</code>\n'
-    self.assertEqual(first=format_clients_message(name=name_e, result=result_e), second=message_e)
+    result_direct = {'direct': clients_list, 'related': []}
+    self.assertEqual(first=format_clients_message(name=name, result=result_direct), second=message)
+
+    result_related = {'direct': [], 'related': clients_list}
+    self.assertEqual(first=format_clients_message(name=name, result=result_related), second=message)

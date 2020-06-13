@@ -180,52 +180,55 @@ def sanitize_name(name):
   return remove_accents(name).upper()
 
 
+def get_client_info_message_block(client, search_name=None):
+  client_info_message_block_head = '{emoji_status} Nome: <u>{name}</u>\nEndereço: {street}, {number}\n'.format(
+                                    emoji_status=get_status_emoji(client['status']), name=client['nome'],
+                                    street=client['endereco'], number=client['numero'])
+  client_info_message_block_tail = 'Plano: {plan}\n{emoji_enable} <b>Usuário:</b> <code>{username}</code>\n'.format(
+                                    plan=client['groupname'], emoji_enable=get_enable_emoji(client['enable']),
+                                    username=client['user'])
+
+  if not search_name:
+    return client_info_message_block_head + client_info_message_block_tail
+
+  client_info_message_block = client_info_message_block_head
+  search_name = remove_accents(search_name.lower())
+
+  if search_name in client['complemento'].lower():
+    client_info_message_block += 'Complemento: {addition}\n'.format(addition=sanitize_dumb(client['complemento']))
+  if search_name in client['referencia'].lower():
+    client_info_message_block += 'Referencia: {reference}\n'.format(reference=sanitize_dumb(client['referencia']))
+  if search_name in client['observacao'].lower():
+    client_info_message_block += 'Observacao: {note}\n'.format(note=sanitize_dumb(client['observacao']))
+
+  client_info_message_block += client_info_message_block_tail
+
+  return client_info_message_block
+
+
+def is_string_addition_too_big(string, string_addition, character_limit):
+  return len(string) + len(string_addition) >= character_limit - 18
+
+
 def format_clients_message(name, result):
   message = ''
+  cropped_sign = '\n\n<b>CROPPED!</b>'
   for client in result['direct']:
-    message_addition = '{0} Nome: <u>{1}</u>\nEndereço: {2}, {3}\nPlano: {4}\n{5} <b>Usuário:</b> ' \
-                       '<code>{6}</code>\n'.format(get_status_emoji(client['status']), client['nome'],
-                                                   client['endereco'], client['numero'], client['groupname'],
-                                                   get_enable_emoji(client['enable']), client['user'])
-    if len(message) + len(message_addition) < MAX_MESSAGE_LENGTH - 18:
-      message = message + message_addition
-    else:
-      return message + '\n\n<b>CROPPED!</b>'
-  message = message + '\n'
+    client_info_message_block = get_client_info_message_block(client=client)
+
+    if is_string_addition_too_big(string=message, string_addition=client_info_message_block,
+                                  character_limit=MAX_MESSAGE_LENGTH):
+      return message + cropped_sign
+    message += client_info_message_block
+
   for client in result['related']:
-    message_addition = '{0} Nome: <u>{1}</u>\nEndereço: {2}, {3}\n'.format(get_status_emoji(client['status']),
-                                                                           client['nome'], client['endereco'],
-                                                                           client['numero'])
-    if len(message) + len(message_addition) < MAX_MESSAGE_LENGTH - 18:
-      message = message + message_addition
-    else:
-      return message + '\n\n<b>CROPPED!</b>'
-    name = remove_accents(name.lower())
-    if name in client['complemento'].lower():
-      message_addition = 'Complemento: {0}\n'.format(sanitize_dumb(client['complemento']))
-      if len(message) + len(message_addition) < MAX_MESSAGE_LENGTH - 18:
-        message = message + message_addition
-      else:
-        return message + '\n\n<b>CROPPED!</b>'
-    if name in client['referencia'].lower():
-      message_addition = 'Referencia: {0}\n'.format(sanitize_dumb(client['referencia']))
-      if len(message) + len(message_addition) < MAX_MESSAGE_LENGTH - 18:
-        message = message + message_addition
-      else:
-        return message + '\n\n<b>CROPPED!</b>'
-    if name in client['observacao'].lower():
-      message_addition = 'Observacao: {0}\n'.format(sanitize_dumb(client['observacao']))
-      if len(message) + len(message_addition) < MAX_MESSAGE_LENGTH - 18:
-        message = message + message_addition
-      else:
-        return message + '\n\n<b>CROPPED!</b>'
-    message_addition = 'Plano: {0}\n{1} <b>Usuário:</b> <code>{2}</code>\n'.format(client['groupname'],
-                                                                                   get_enable_emoji(client['enable']),
-                                                                                   client['user'])
-    if len(message) + len(message_addition) < MAX_MESSAGE_LENGTH - 18:
-      message = message + message_addition
-    else:
-      return message + '\n\n<b>CROPPED!</b>'
-  if len(message) > 1:
+    client_info_message_block = get_client_info_message_block(client=client, search_name=name)
+
+    if is_string_addition_too_big(string=message, string_addition=client_info_message_block,
+                                  character_limit=MAX_MESSAGE_LENGTH):
+      return message + cropped_sign
+    message += client_info_message_block
+
+  if message:
     return message
   return 'Nenhum cliente encontrado com o termo informado.'

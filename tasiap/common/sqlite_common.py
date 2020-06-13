@@ -133,19 +133,3 @@ def find_onu_info(session=None, onu_id=None, serial=None, username=None):
       return {'onu_id': onu_device.onu_id, 'serial': onu_device.serial, 'username': username,
               'last_update': onu_device.last_update}
   return None
-
-
-@supply_sqlite_session
-def print_all_onu_devices(session=None):
-  onu_devices = session.query(OnuDevice).all()
-  print('List of OnuDevices:')
-  for onu_device in onu_devices:
-    print(repr(onu_device))
-
-
-@supply_sqlite_session
-def print_all_user_logins(sqlite_session=None):
-  user_logins = sqlite_session.query(UserLogin).all()
-  print('List of UserLogins:')
-  for user_login in user_logins:
-    print(repr(user_login))

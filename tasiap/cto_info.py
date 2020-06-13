@@ -7,8 +7,8 @@ from fpdf import FPDF
 from requests import post
 
 from tasiap.common.mysql_common import supply_mysql_session
-from tasiap.common.string_common import sanitize_name, sanitize_cto_vlan_name, format_datetime, get_board_id, get_pon_id, \
-  is_vlan_id_valid
+from tasiap.common.string_common import sanitize_name, sanitize_cto_vlan_name, format_datetime, get_board_id, \
+  get_pon_id, is_vlan_id_valid
 from config import bot_config
 
 

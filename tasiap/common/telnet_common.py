@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from functools import wraps
 from re import findall
 from telnetlib import Telnet
@@ -12,11 +13,22 @@ def supply_telnet_connection(function):
   @wraps(function)
   def telnet_connection_wrapper(*args, **kwargs):
     if 'tn' not in kwargs:
-      with Telnet(telnet_config.ip, telnet_config.port) as tn:
-        connect_su(tn)
+      with telnet_connection_factory() as tn:
         return function(*args, **kwargs, tn=tn)
     return function(*args, **kwargs)
   return telnet_connection_wrapper
+
+
+@contextmanager
+def telnet_connection_factory():
+  tn = Telnet(telnet_config.ip, telnet_config.port)
+  connect_su(tn)
+  try:
+    yield tn
+  finally:
+    tn.write(b'quit\n')
+    tn.read_all()
+    tn.close()
 
 
 def str_to_telnet(string):

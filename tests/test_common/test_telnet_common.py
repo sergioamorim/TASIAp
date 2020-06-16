@@ -23,6 +23,8 @@ class TestTelnetFunctions(TestCase):
   def test_connect_su(self):
     with Telnet(host=telnet_config.ip, port=telnet_config.port) as tn:
       connect_su(tn=tn)
+      tn.write(b'quit\n')
+      tn.read_all()
 
   def test_supply_telnet_connection(self):
 
@@ -31,6 +33,9 @@ class TestTelnetFunctions(TestCase):
       return repr(tn)
 
     with Telnet(host=telnet_config.ip, port=telnet_config.port) as tn:
+      connect_su(tn=tn)
       self.assertEqual(first=generic_function(tn=tn), second=repr(tn))
+      tn.write(b'quit\n')
+      tn.read_all()
 
     self.assertNotEqual(first=generic_function(), second='None')

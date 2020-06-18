@@ -26,7 +26,3 @@ class TestOutputMethods(unittest.TestCase):
     self.assertEqual(get_signal_power(error_noauth), 'not found')
     self.assertEqual(get_signal_power(error_unknown), 'error')
     self.assertEqual(get_signal_power(fail_unknown), 'error')
-
-
-if __name__ == '__main__':
-    unittest.main()

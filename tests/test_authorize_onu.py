@@ -115,7 +115,3 @@ class TestStringFunctions(TestCase):
     self.assertEqual(get_last_authorized_number(authorization_list=authorization_list_d), 32)
     self.assertEqual(get_last_authorized_number(authorization_list=authorization_list_e), 15)
     self.assertEqual(get_last_authorized_number(authorization_list=authorization_list_f), 3)
-
-
-if __name__ == '__main__':
-  main()

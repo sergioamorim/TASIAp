@@ -10,6 +10,7 @@ from tasiap.common.string_common import get_auth_onu_device_id, sanitize_cto_vla
   get_cto_name_from_cto_vlan_name, get_vlan_id_from_cto_vlan_name, get_vlan_type, format_datetime, format_onu_state, \
   get_enable_emoji, get_status_emoji, sanitize_name, is_query_update, format_clients_message, \
   is_string_addition_too_big, get_client_info_message_block
+from tests.mock_classes import MessageUpdate, QueryUpdate
 
 
 class TestStringFunctions(TestCase):
@@ -332,19 +333,8 @@ class TestStringFunctions(TestCase):
     self.assertEqual(first=sanitize_name(name='F*NAME SURNAME'), second='NAME SURNAME')
 
   def test_is_query_update(self):
-    class UpdateA:
-      class Message:
-        chat = None
-      message = Message()
-
-    class UpdateB:
-      message = None
-
-    update_a = UpdateA()
-    update_b = UpdateB()
-
-    self.assertFalse(expr=is_query_update(update=update_a))
-    self.assertTrue(expr=is_query_update(update=update_b))
+    self.assertFalse(expr=is_query_update(update=MessageUpdate()))
+    self.assertTrue(expr=is_query_update(update=QueryUpdate()))
 
   def test_get_client_info_message_block(self):
     search_name = 'NAME SURNAME A'

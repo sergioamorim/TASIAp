@@ -14,7 +14,3 @@ class TestOutputMethods(unittest.TestCase):
 
     self.assertEqual(get_onu_number(success), '19')
     self.assertEqual(get_onu_number(error), None)
-
-
-if __name__ == '__main__':
-    unittest.main()

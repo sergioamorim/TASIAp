@@ -2,6 +2,7 @@ from unittest import TestCase
 
 from config import bot_config
 from tasiap.common.bot_common import is_user_authorized, get_message_from_update
+from tests.mock_classes import QueryUpdate, MessageUpdate, MessageFromCallbackQuery, MessageFromMessageUpdate
 
 
 class TestBotCommonFunctions(TestCase):
@@ -39,22 +40,15 @@ class TestBotCommonFunctions(TestCase):
     self.assertTrue(expr=login(user_id='1234567890'))
 
   def test_get_message_from_update(self):
-    class Message:
-      chat = None
+    message_from_callback_query_a = MessageFromCallbackQuery()
+    message_from_message_update_a = MessageFromMessageUpdate()
 
-    class MessageUpdate:
-      def __init__(self, message):
-        self.message = message
+    self.assertEqual(
+      first=get_message_from_update(update=QueryUpdate(message=message_from_callback_query_a)),
+      second=message_from_callback_query_a
+    )
 
-    class CallbackQuery:
-      def __init__(self, message):
-        self.message = message
-
-    class QueryUpdate:
-      def __init__(self, message):
-        self.callback_query = CallbackQuery(message=message)
-
-    message_a = Message()
-
-    self.assertEqual(first=get_message_from_update(update=QueryUpdate(message=message_a)), second=message_a)
-    self.assertEqual(first=get_message_from_update(update=MessageUpdate(message=message_a)), second=message_a)
+    self.assertEqual(
+      first=get_message_from_update(update=MessageUpdate(message=message_from_message_update_a)),
+      second=message_from_message_update_a
+    )

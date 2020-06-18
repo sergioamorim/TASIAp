@@ -44,7 +44,3 @@ class TestArgsFunctions(TestCase):
     self.assertEqual(get_wifi_password_from_args(args_b), expected_args_b_result)
     self.assertEqual(get_wifi_password_from_args(args_c), expected_args_c_result)
     self.assertEqual(get_wifi_password_from_args(args_d), expected_args_d_result)
-
-
-if __name__ == '__main__':
-  main()

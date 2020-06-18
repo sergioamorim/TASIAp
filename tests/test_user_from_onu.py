@@ -122,7 +122,3 @@ class TestOutputMethods(TestCase):
     self.assertEqual(get_mac_list(show_pon_mac, '26'), expected_26)
     self.assertEqual(get_mac_list(show_pon_mac, '99'), expected_99)
     self.assertEqual(get_mac_list(show_pon_mac, '1'), expected_1)
-
-
-if __name__ == '__main__':
-  main()

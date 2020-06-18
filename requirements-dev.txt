@@ -1,4 +1,2 @@
-pytest==5.4.3
 coverage==5.1
-pytest-cov==2.10.0
 telnetsrv==0.4.1

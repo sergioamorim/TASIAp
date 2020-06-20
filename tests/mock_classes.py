@@ -6,37 +6,23 @@ class PersonInfo:
     self.id = user_id
 
 
-class Chat(PersonInfo):
-  pass
-
-
-class FromUser(PersonInfo):
-  pass
-
-
-class HasChat:
-  def __init__(self, chat=Chat()):
+class Message:
+  def __init__(self, chat=PersonInfo(), data=None, from_user=PersonInfo(), text=None, from_message=False):
     self.chat = chat
-
-
-class MessageFromMessageUpdate(HasChat):
-  def __init__(self, chat=None, from_user=FromUser(), text=None):
-    self.from_user = from_user
-    self.text = text
-    super().__init__(chat=chat)
-
-
-class MessageFromCallbackQuery(HasChat):
-  pass
+    if from_message:
+      self.text = text
+      self.from_user = from_user
+    else:
+      self.data = data
 
 
 class MessageUpdate:
-  def __init__(self, message=MessageFromMessageUpdate()):
+  def __init__(self, message=Message(from_message=True)):
     self.message = message
 
 
 class CallbackQuery:
-  def __init__(self, message=MessageFromCallbackQuery(), data=None):
+  def __init__(self, message=Message(), data=None):
     self.message = message
     self.data = data
 

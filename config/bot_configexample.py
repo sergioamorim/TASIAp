@@ -1,4 +1,5 @@
 # The config file needs to be named 'bot_config.py'
+from logging import INFO
 
 token = 'bOt-T0keN_ExaMplE'
 default_chat = '12345678'
@@ -34,3 +35,4 @@ mk_link = {
 }
 sqlite_db_path = '/path/to/bot.db'
 logs_path = '../logs/'
+log_level = INFO

@@ -10,7 +10,7 @@ def get_logger(name):
   file_path = Path(bot_config.logs_path + name + '.log')
   Path(bot_config.logs_path).mkdir(parents=True, exist_ok=True)
   logger = getLogger(name)
-  logger.setLevel(DEBUG)
+  logger.setLevel(bot_config.log_level)
   formatter = Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
   file_handler = FileHandler(file_path, encoding='utf-8')
   file_handler.setFormatter(formatter)

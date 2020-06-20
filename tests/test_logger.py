@@ -1,8 +1,7 @@
 from unittest import TestCase
 
 from tasiap.logger import get_last_name, get_username
-from tests.mock_classes import Chat, MessageFromCallbackQuery, MessageFromMessageUpdate, QueryUpdate, MessageUpdate,\
-  FromUser
+from tests.mock_classes import Message, QueryUpdate, MessageUpdate, PersonInfo
 
 
 class TestLoggerFunctions(TestCase):
@@ -14,22 +13,20 @@ class TestLoggerFunctions(TestCase):
     cls.username_a = 'nickname a'
     cls.user_id_a = 123456
 
-    cls.chat_a = Chat(
+    cls.person_info = PersonInfo(
       first_name=cls.first_name_a,
       last_name=cls.last_name_a,
       username=cls.username_a,
       user_id=cls.user_id_a
     )
 
-    cls.from_user_a = FromUser(
-      first_name=cls.first_name_a,
-      last_name=cls.last_name_a,
-      username=cls.username_a,
-      user_id=cls.user_id_a
+    cls.message_from_message_update_a = Message(
+      chat=cls.person_info,
+      from_user=cls.person_info,
+      from_message=True
     )
 
-    cls.message_from_message_update_a = MessageFromMessageUpdate(chat=cls.chat_a, from_user=cls.from_user_a)
-    cls.message_from_query_update_a = MessageFromCallbackQuery(chat=cls.chat_a)
+    cls.message_from_query_update_a = Message(chat=cls.person_info)
     cls.query_update_a = QueryUpdate(message=cls.message_from_query_update_a)
     cls.message_update_a = MessageUpdate(message=cls.message_from_message_update_a)
 

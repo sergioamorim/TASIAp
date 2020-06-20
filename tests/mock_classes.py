@@ -28,5 +28,5 @@ class CallbackQuery:
 
 
 class QueryUpdate:
-  def __init__(self, message=None):
-    self.callback_query = CallbackQuery(message=message)
+  def __init__(self, message=None, data=None):
+    self.callback_query = CallbackQuery(message=message, data=data)

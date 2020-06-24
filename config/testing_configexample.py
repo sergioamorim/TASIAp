@@ -3,3 +3,4 @@
 mysql_sudo_username = 'sudo_username'
 mysql_sudo_password = 'sudo_password'
 mysql_client_binary_path = '/usr/bin/mysql'
+python_binary_path = '/usr/bin/python3.8'

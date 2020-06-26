@@ -36,19 +36,3 @@ def get_onu_power_signal_by_id(onu_id, tn=None):
   show_optic_module = tn.read_until(b'Admin\\gpononu# ', timeout=3).decode('ascii')
   signal_power = get_signal_power(show_optic_module)
   return signal_power
-
-
-def main():
-  parser = ArgumentParser()
-  parser.add_argument('-i', '--id', dest='i', help='ID da ONU a ser consultada', default=None)
-  args = parser.parse_args()
-
-  if not args.i:
-    return 1
-
-  print(get_onu_power_signal_by_id(args.i))
-  return 0
-
-
-if __name__ == '__main__':
-  main()

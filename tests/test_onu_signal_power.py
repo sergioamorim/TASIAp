@@ -1,13 +1,5 @@
 import unittest
-from os import unlink
-from os.path import abspath
-from shutil import copyfile
-from subprocess import run
 
-from config import telnet_config
-from config.telnet_config import password_sudo
-from config.testing_config import python_binary_path
-from tasiap import onu_signal_power
 from tasiap.onu_signal_power import get_signal_power, get_onu_power_signal_by_id
 from tests.data.telnet_testing_data import test_params, test_data
 from tests.telnet_testing_environment import TelnetTestingEnvironment
@@ -32,17 +24,7 @@ class TestOutputMethods(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
-    cls.original_sudo_password = password_sudo
-    cls.telnet_port = 23236
-    cls.telnet_username = 'a'
-    cls.telnet_password = 'b'
-
-    cls.telnet_testing_environment = TelnetTestingEnvironment(
-      port=cls.telnet_port,
-      username=cls.telnet_username,
-      password=cls.telnet_password
-    )
-
+    cls.telnet_testing_environment = TelnetTestingEnvironment(port=23236)
     cls.telnet_testing_environment.setup()
 
   @classmethod

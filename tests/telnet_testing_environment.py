@@ -126,8 +126,8 @@ class AN551606BMockHandler(TelnetHandler):
 
   @command
   def show(self, params):
-    pattern = '(wifi_serv|optic_module) slot (12|14) link ([1-8]) onu ([1-9][0-9]?)'
-    if onu_params := findall(string=params, pattern=pattern):
+    sub_command_onu_address_pattern = '(wifi_serv|optic_module) slot (12|14) link ([1-8]) onu ([1-9][0-9]?)'
+    if onu_params := findall(string=params, pattern=sub_command_onu_address_pattern):
       sub_command = onu_params[0][0]
       board_id = onu_params[0][1]
       pon_id = onu_params[0][2]
@@ -138,6 +138,8 @@ class AN551606BMockHandler(TelnetHandler):
         pon_id=pon_id,
         onu_number=onu_number,
       )
+    elif params == 'discovery slot all link all':
+      self.writeresponse(test_data['default']['discovery'])
     else:
       self.writeerror(text='invalid_params\n')
 

@@ -181,7 +181,8 @@ test_data = {
       '',
   },
   'default': {
-    'wifi_serv': 'dafault wifi_data response',
+    'wifi_serv': 'default wifi_data response',
     'optic_module': 'default optic_module response',
+    'discovery': 'show discovery slot all link all data',
   },
 }

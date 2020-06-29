@@ -1,9 +1,23 @@
-from unittest import TestCase, main
+from unittest import TestCase
 
-from tasiap.authorize_onu import format_onu_type, get_last_authorized_number
+from tasiap.authorize_onu import format_onu_type, get_last_authorized_number, get_first_missing_number_precedent, \
+  get_discovery_list
+from tests.data.telnet_testing_data import test_data
+from tests.telnet_testing_environment import TelnetTestingEnvironment
 
 
 class TestStringFunctions(TestCase):
+
+  telnet_testing_environment = None
+
+  @classmethod
+  def setUpClass(cls):
+    cls.telnet_testing_environment = TelnetTestingEnvironment(port=26326)
+    cls.telnet_testing_environment.setup()
+
+  @classmethod
+  def tearDownClass(cls):
+    cls.telnet_testing_environment.tear_down()
 
   def test_format_onu_type(self):
     onu_type_a = 'AN5506-01-A1'
@@ -108,6 +122,8 @@ class TestStringFunctions(TestCase):
                            '\n\r  14   7   2 HG260           A up  PACEd8a779e3            , \n\r  14   7   3 ' \
                            'AN5506-01-A1    A up  FHTT00026010            , \n\r\n\rA: Authorized  P: Preauthorized  ' \
                            'R: System Reserved\n\rAdmin\\gpononu# '
+    authorization_list_g = 'show authorization slot 14 link'
+    authorization_list_h = 'show authorization slot 14 link 7\r\n-----  ONU Auth Table ,SLOT=14 PON=7 ,ITEM'
 
     self.assertEqual(get_last_authorized_number(authorization_list=authorization_list_a), 0)
     self.assertEqual(get_last_authorized_number(authorization_list=authorization_list_b), 4)
@@ -115,3 +131,53 @@ class TestStringFunctions(TestCase):
     self.assertEqual(get_last_authorized_number(authorization_list=authorization_list_d), 32)
     self.assertEqual(get_last_authorized_number(authorization_list=authorization_list_e), 15)
     self.assertEqual(get_last_authorized_number(authorization_list=authorization_list_f), 3)
+
+    self.assertFalse(
+      expr=get_last_authorized_number(authorization_list=authorization_list_g)
+    )
+
+    self.assertFalse(
+      expr=get_last_authorized_number(authorization_list=authorization_list_h)
+    )
+
+  def test_get_first_missing_number_precedent(self):
+    tests = [
+      {
+        'numbers_list': [],
+        'first_missing_number_precedent': 0
+      },
+      {
+        'numbers_list': ['1'],
+        'first_missing_number_precedent': 1
+      },
+      {
+        'numbers_list': ['1', '3'],
+        'first_missing_number_precedent': 1
+      },
+      {
+        'numbers_list': ['1', '2', '3', '4', '5', '6', '7', '8', '9'],
+        'first_missing_number_precedent': 9
+      },
+      {
+        'numbers_list': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+        'first_missing_number_precedent': 10
+      },
+      {
+        'numbers_list': ['1', '2', '3', '4', '5', '6', '7', '8', '9', '11'],
+        'first_missing_number_precedent': 9
+      },
+    ]
+
+    for test in tests:
+      self.assertEqual(
+        first=test['first_missing_number_precedent'],
+        second=get_first_missing_number_precedent(numbers_list=test['numbers_list'])
+      )
+
+  def test_get_discovery_list(self):
+
+    expected_response = '\r\n{data}\r\nAdmin\\gpononu# '.format(
+      data=test_data['default']['discovery']
+    )
+
+    self.assertEqual(first=expected_response, second=get_discovery_list())

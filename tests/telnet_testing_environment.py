@@ -126,18 +126,31 @@ class AN551606BMockHandler(TelnetHandler):
 
   @command
   def show(self, params):
-    sub_command_onu_address_pattern = '(wifi_serv|optic_module) slot (12|14) link ([1-8]) onu ([1-9][0-9]?)'
+    link_address_pattern = 'slot (12|14) link ([1-8])'
+
+    sub_command_onu_address_pattern = '(wifi_serv|optic_module) {link_address_pattern} onu ([1-9][0-9]?)'.format(
+      link_address_pattern=link_address_pattern
+    )
+
+    sub_command_link_address_pattern = 'authorization {link_address_pattern}'.format(
+      link_address_pattern=link_address_pattern
+    )
+
     if onu_params := findall(string=params, pattern=sub_command_onu_address_pattern):
       sub_command = onu_params[0][0]
       board_id = onu_params[0][1]
       pon_id = onu_params[0][2]
       onu_number = onu_params[0][3]
+
       self.show_process_test(
         sub_command=sub_command,
         board_id=board_id,
         pon_id=pon_id,
         onu_number=onu_number,
       )
+
+    elif findall(string=params, pattern=sub_command_link_address_pattern):
+      self.writeresponse(test_data['default']['authorization'])
     elif params == 'discovery slot all link all':
       self.writeresponse(test_data['default']['discovery'])
     else:

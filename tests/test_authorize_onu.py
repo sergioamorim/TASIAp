@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from tasiap.authorize_onu import format_onu_type, get_last_authorized_number, get_first_missing_number_precedent, \
-  get_discovery_list
+  get_discovery_list, get_authorization_list
 from tests.data.telnet_testing_data import test_data
 from tests.telnet_testing_environment import TelnetTestingEnvironment
 
@@ -14,6 +14,8 @@ class TestStringFunctions(TestCase):
   def setUpClass(cls):
     cls.telnet_testing_environment = TelnetTestingEnvironment(port=26326)
     cls.telnet_testing_environment.setup()
+
+    cls.expected_generic_response_format = '\r\n{data}\r\nAdmin\\gpononu# '
 
   @classmethod
   def tearDownClass(cls):
@@ -176,8 +178,22 @@ class TestStringFunctions(TestCase):
 
   def test_get_discovery_list(self):
 
-    expected_response = '\r\n{data}\r\nAdmin\\gpononu# '.format(
+    expected_response = self.expected_generic_response_format.format(
       data=test_data['default']['discovery']
     )
 
     self.assertEqual(first=expected_response, second=get_discovery_list())
+
+  def test_get_authorization_list(self):
+    class Board:
+      board_id = 12
+
+    class Pon:
+      pon_id = 1
+      board = Board()
+
+    expected_response = self.expected_generic_response_format.format(
+      data=test_data['default']['authorization']
+    )
+
+    self.assertEqual(first=expected_response, second=get_authorization_list(pon=Pon()))

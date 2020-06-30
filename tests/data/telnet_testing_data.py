@@ -184,5 +184,6 @@ test_data = {
     'wifi_serv': 'default wifi_data response',
     'optic_module': 'default optic_module response',
     'discovery': 'show discovery slot all link all data',
+    'authorization': 'show authorization slot some link some data',
   },
 }

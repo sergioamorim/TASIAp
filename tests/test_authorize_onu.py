@@ -1,9 +1,14 @@
 from unittest import TestCase
+from unittest.mock import patch
 
 from tasiap.authorize_onu import format_onu_type, get_last_authorized_number, get_first_missing_number_precedent, \
-  get_discovery_list, get_authorization_list
+  get_discovery_list, get_authorization_list, Board, Pon
 from tests.data.telnet_testing_data import test_data
 from tests.telnet_testing_environment import TelnetTestingEnvironment
+
+
+class MockBoard:
+  board_id = 12
 
 
 class TestStringFunctions(TestCase):
@@ -185,15 +190,60 @@ class TestStringFunctions(TestCase):
     self.assertEqual(first=expected_response, second=get_discovery_list())
 
   def test_get_authorization_list(self):
-    class Board:
-      board_id = 12
 
-    class Pon:
+    class MockedPon:
       pon_id = 1
-      board = Board()
+      board = MockBoard()
 
     expected_response = self.expected_generic_response_format.format(
       data=test_data['default']['authorization']
     )
 
-    self.assertEqual(first=expected_response, second=get_authorization_list(pon=Pon()))
+    self.assertEqual(first=expected_response, second=get_authorization_list(pon=MockedPon()))
+
+
+class TestBoard(TestCase):
+
+  def setUp(self):
+    self.board_id_a = 12
+    self.board_a = Board(board_id=self.board_id_a)
+
+  def test_init(self):
+    self.assertEqual(first=self.board_id_a, second=self.board_a.board_id)
+
+  def test_repr(self):
+    repr_format = '<Board(board_id={board_id!r})>'
+    self.assertEqual(
+      first=repr_format.format(board_id=self.board_id_a),
+      second=repr(self.board_a)
+    )
+
+
+class TestPon(TestCase):
+
+  @patch(target='tasiap.authorize_onu.get_authorization_list')
+  @patch(target='tasiap.authorize_onu.get_last_authorized_number')
+  def setUp(self, mock_get_last_authorized_number, mock_get_authorization_list):
+    self.board_a = MockBoard()
+    self.pon_id_a = 6
+    self.last_authorized_number = mock_get_last_authorized_number()
+
+    self.pon_a = Pon(
+      board=self.board_a,
+      pon_id=self.pon_id_a,
+      tn='telnet connection'
+    )
+
+  def test_init(self):
+    self.assertEqual(first=self.board_a, second=self.pon_a.board)
+
+  def test_repr(self):
+    repr_format = '<Pon(pon_id={pon_id!r},board={board!r},last_authorized_onu_number={last_authorized_onu_number!r})>'
+    self.assertEqual(
+      first=repr_format.format(
+        pon_id=self.pon_id_a,
+        board=self.board_a,
+        last_authorized_onu_number=self.last_authorized_number
+      ),
+      second=repr(self.pon_a)
+    )

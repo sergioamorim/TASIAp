@@ -2,13 +2,19 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from tasiap.authorize_onu import format_onu_type, get_last_authorized_number, get_first_missing_number_precedent, \
-  get_discovery_list, get_authorization_list, Board, Pon
+  get_discovery_list, get_authorization_list, Board, Pon, AuthOnuDevice
 from tests.data.telnet_testing_data import test_data
 from tests.telnet_testing_environment import TelnetTestingEnvironment
 
 
 class MockBoard:
   board_id = 12
+
+
+class MockPon:
+  pon_id = 5
+  last_authorized_number = 8
+  board = MockBoard()
 
 
 class TestStringFunctions(TestCase):
@@ -222,11 +228,11 @@ class TestBoard(TestCase):
 class TestPon(TestCase):
 
   @patch(target='tasiap.authorize_onu.get_authorization_list')
-  @patch(target='tasiap.authorize_onu.get_last_authorized_number')
-  def setUp(self, mock_get_last_authorized_number, mock_get_authorization_list):
+  @patch(target='tasiap.authorize_onu.get_last_authorized_number', new=lambda authorization_list: 8)
+  def setUp(self, mock_get_last_authorized_number):
+    self.last_authorized_number = 8
     self.board_a = MockBoard()
     self.pon_id_a = 6
-    self.last_authorized_number = mock_get_last_authorized_number()
 
     self.pon_a = Pon(
       board=self.board_a,
@@ -246,4 +252,60 @@ class TestPon(TestCase):
         last_authorized_onu_number=self.last_authorized_number
       ),
       second=repr(self.pon_a)
+    )
+
+
+class TestAuthOnuDevice(TestCase):
+
+  def setUp(self):
+    self.authorization_id = 1
+    self.onu_type = '5506-01-a1'
+    self.phy_id = 'PACE0d4cfe07'
+    self.pon = MockPon()
+
+    self.onu_device = AuthOnuDevice(
+      authorization_id=self.authorization_id,
+      onu_type=self.onu_type,
+      phy_id=self.phy_id,
+      pon=self.pon
+    )
+
+  def test_init(self):
+    self.assertEqual(first=self.authorization_id, second=self.onu_device.authorization_id)
+    self.assertEqual(first=self.onu_type, second=self.onu_device.onu_type)
+    self.assertEqual(first=self.phy_id, second=self.onu_device.phy_id)
+    self.assertEqual(first=self.pon, second=self.onu_device.pon)
+
+  @patch(target='tasiap.authorize_onu.set_cvlan', side_effect=[None, {'cvlan': 1300}])
+  def test_set_cvlan(self, mock_set_cvlan):
+    cvlan_a = 1300
+    self.onu_device.set_cvlan(cvlan=cvlan_a)
+    mock_set_cvlan.assert_called_with(auth_onu_device=self.onu_device, cvlan=cvlan_a)
+    self.assertFalse(expr=self.onu_device.cvlan)
+
+    self.onu_device.set_cvlan(cvlan=cvlan_a)
+    self.assertEqual(first=cvlan_a, second=self.onu_device.cvlan)
+
+  def test_repr(self):
+    repr_format = '' \
+      '<AuthOnuDevice(' \
+        'phy_id={phy_id!r},' \
+        'pon={pon!r},' \
+        'onu_type={onu_type!r},' \
+        'number={number!r},' \
+        'cvlan={cvlan!r},' \
+        'authorization_id={authorization_id!r}' \
+      ')>' \
+      ''
+
+    self.assertEqual(
+      first=repr_format.format(
+        phy_id=self.onu_device.phy_id,
+        pon=self.onu_device.pon,
+        onu_type=self.onu_device.onu_type,
+        number=self.onu_device.number,
+        cvlan=self.onu_device.cvlan,
+        authorization_id=self.onu_device.authorization_id
+      ),
+      second=repr(self.onu_device)
     )

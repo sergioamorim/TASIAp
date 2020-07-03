@@ -2,7 +2,7 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from tasiap.authorize_onu import format_onu_type, get_last_authorized_number, get_first_missing_number_precedent, \
-  get_discovery_list, get_authorization_list, Board, Pon, AuthOnuDevice
+  get_discovery_list, get_authorization_list, Board, Pon, AuthOnuDevice, find_onu_in_list
 from tests.data.telnet_testing_data import test_data
 from tests.telnet_testing_environment import TelnetTestingEnvironment
 
@@ -17,7 +17,7 @@ class MockPon:
   board = MockBoard()
 
 
-class TestStringFunctions(TestCase):
+class TestFunctions(TestCase):
 
   telnet_testing_environment = None
 
@@ -197,15 +197,43 @@ class TestStringFunctions(TestCase):
 
   def test_get_authorization_list(self):
 
-    class MockedPon:
-      pon_id = 1
-      board = MockBoard()
-
     expected_response = self.expected_generic_response_format.format(
       data=test_data['default']['authorization']
     )
 
-    self.assertEqual(first=expected_response, second=get_authorization_list(pon=MockedPon()))
+    self.assertEqual(first=expected_response, second=get_authorization_list(pon=MockPon()))
+
+  def test_find_onu_in_list(self):
+
+    class MockAuthOnuDevice:
+      def __init__(self, authorization_id, phy_id):
+        self.authorization_id = authorization_id
+        self.phy_id = phy_id
+
+    onu_a = MockAuthOnuDevice(authorization_id=1, phy_id='a')
+    onu_b = MockAuthOnuDevice(authorization_id=2, phy_id='b')
+    onu_list = [onu_a, onu_b]
+
+    self.assertEqual(
+      first=onu_a,
+      second=find_onu_in_list(onu_list=onu_list, auth_onu=onu_a.authorization_id)
+    )
+    self.assertEqual(
+      first=onu_a,
+      second=find_onu_in_list(onu_list=onu_list, auth_onu=onu_a.phy_id)
+    )
+
+    self.assertEqual(
+      first=onu_b,
+      second=find_onu_in_list(onu_list=onu_list, auth_onu=onu_b.authorization_id)
+    )
+    self.assertEqual(
+      first=onu_b,
+      second=find_onu_in_list(onu_list=onu_list, auth_onu=onu_b.phy_id)
+    )
+
+    self.assertFalse(expr=find_onu_in_list(onu_list=onu_list, auth_onu=-6))
+    self.assertFalse(expr=find_onu_in_list(onu_list=onu_list, auth_onu='non existent'))
 
 
 class TestBoard(TestCase):

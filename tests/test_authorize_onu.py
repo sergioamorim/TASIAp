@@ -2,7 +2,7 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from tasiap.authorize_onu import format_onu_type, get_last_authorized_number, get_first_missing_number_precedent, \
-  get_discovery_list, get_authorization_list, Board, Pon, AuthOnuDevice, find_onu_in_list
+  get_discovery_list, get_authorization_list, Board, Pon, AuthOnuDevice, find_onu_in_list, authorize_onu_effective
 from tests.data.authorize_onu_testing_data import authorization_list_tests
 from tests.data.telnet_testing_data import test_data
 from tests.telnet_testing_environment import TelnetTestingEnvironment
@@ -14,7 +14,7 @@ class MockBoard:
 
 class MockPon:
   pon_id = 5
-  last_authorized_number = 8
+  last_authorized_onu_number = 8
   board = MockBoard()
 
 
@@ -131,6 +131,30 @@ class TestFunctions(TestCase):
     self.assertFalse(expr=find_onu_in_list(onu_list=onu_list, auth_onu=-6))
     self.assertFalse(expr=find_onu_in_list(onu_list=onu_list, auth_onu='non existent'))
 
+  @patch(target='tasiap.authorize_onu.update_onu_info')
+  def test_authorize_onu_effective(self, mock_update_onu_info):
+
+    class MockOnu:
+      number = None
+      cvlan = None
+      pon = MockPon()
+      phy_id = 'ATOZ1a2b0c3f'
+      onu_type = 'onu_type1'
+
+      def set_cvlan(self, cvlan):
+        self.cvlan = cvlan
+
+    onu_a = MockOnu()
+    cvlan_a = 2600
+    self.assertEqual(first=onu_a, second=authorize_onu_effective(onu=onu_a, cvlan=cvlan_a))
+    self.assertEqual(first=MockOnu.pon.last_authorized_onu_number+1, second=onu_a.number)
+    self.assertEqual(first=cvlan_a, second=onu_a.cvlan)
+    mock_update_onu_info.assert_called_with(auth_onu_device=onu_a)
+
+    onu_b = MockOnu()
+    authorize_onu_effective(onu=onu_b, cvlan=None)
+    self.assertFalse(expr=onu_b.cvlan)
+
 
 class TestBoard(TestCase):
 
@@ -153,16 +177,18 @@ class TestPon(TestCase):
 
   @patch(target='tasiap.authorize_onu.get_authorization_list')
   @patch(target='tasiap.authorize_onu.get_last_authorized_number', new=lambda authorization_list: 8)
-  def setUp(self, mock_get_last_authorized_number):
+  def setUp(self, mock_get_authorization_list):
     self.last_authorized_number = 8
     self.board_a = MockBoard()
     self.pon_id_a = 6
+    tn = 'telnet connection'
 
     self.pon_a = Pon(
       board=self.board_a,
       pon_id=self.pon_id_a,
-      tn='telnet connection'
+      tn=tn
     )
+    mock_get_authorization_list.assert_called_once_with(self.pon_a, tn=tn)
 
   def test_init(self):
     self.assertEqual(first=self.board_a, second=self.pon_a.board)

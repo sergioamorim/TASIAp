@@ -1,6 +1,7 @@
 from functools import wraps
 from re import findall
 from socketserver import TCPServer
+from sys import stderr
 from threading import Thread
 
 from telnetsrv.threaded import TelnetHandler
@@ -56,12 +57,15 @@ class AN551606BMockHandler(TelnetHandler):
     True: {
       'root': ['cd', 'quit'],
       'service': ['cd', 'quit', 'terminal'],
-      'gpononu': ['cd', 'quit', 'show'],
+      'gpononu': ['cd', 'quit', 'show', 'set'],
     },
     False: {
       'root': ['cd', 'quit', 'enable']
     }
   }
+
+  link_address_pattern = 'slot (12|14) link ([1-8])'
+  onu_address_pattern = '{link_address_pattern} onu ([1-9][0-9]?)'.format(link_address_pattern=link_address_pattern)
 
   def ignore_command(self, params):
     pass
@@ -126,14 +130,12 @@ class AN551606BMockHandler(TelnetHandler):
 
   @command
   def show(self, params):
-    link_address_pattern = 'slot (12|14) link ([1-8])'
-
-    sub_command_onu_address_pattern = '(wifi_serv|optic_module) {link_address_pattern} onu ([1-9][0-9]?)'.format(
-      link_address_pattern=link_address_pattern
+    sub_command_onu_address_pattern = '(wifi_serv|optic_module) {onu_address_pattern}'.format(
+      onu_address_pattern=self.onu_address_pattern
     )
 
     sub_command_link_address_pattern = 'authorization {link_address_pattern}'.format(
-      link_address_pattern=link_address_pattern
+      link_address_pattern=self.link_address_pattern
     )
 
     if onu_params := findall(string=params, pattern=sub_command_onu_address_pattern):
@@ -155,6 +157,40 @@ class AN551606BMockHandler(TelnetHandler):
       self.writeresponse(test_data['default']['discovery'])
     else:
       self.writeerror(text='invalid_params\n')
+
+  @command
+  def set(self, params):
+    phy_address_pattern = '[A-Z0-9]{4}[a-f0-9]{8}'
+    whitelist_add_pattern = 'add {onu_address_pattern} type .*?'.format(
+      onu_address_pattern=self.onu_address_pattern
+    )
+    whitelist_pattern = str(
+      'whitelist '
+      'phy_addr address {phy_address_pattern} '
+      'password null '
+      'action ({whitelist_add_pattern}|delete)'.format(
+        phy_address_pattern=phy_address_pattern,
+        whitelist_add_pattern=whitelist_add_pattern
+      )
+    )
+
+    authorization_pattern = str(
+      'authorization '
+      '{link_address_pattern} '
+      'type .*? '
+      'onuid [1-9][0-9]? '
+      'phy_id {phy_address_pattern}'.format(
+        link_address_pattern=self.link_address_pattern,
+        phy_address_pattern=phy_address_pattern
+      )
+    )
+
+    valid_whitelist = findall(pattern=whitelist_pattern, string=params)
+    valid_authorization = findall(pattern=authorization_pattern, string=params)
+    if not valid_whitelist and not valid_authorization:
+      self.writeerror(text='invalid_params\n')
+      print('gpononu set invalid params: {params}'.format(params=params), file=stderr)
+      raise AssertionError('gpononu set invalid params')
 
   @command
   def quit(self, params):

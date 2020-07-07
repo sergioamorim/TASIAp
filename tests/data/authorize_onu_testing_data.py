@@ -165,3 +165,29 @@ authorization_list_tests = [
     'last_authorized_number': None,
   },
 ]
+
+discovery_list_tests = [
+  {
+    'discovery_list': str(
+      'show discovery slot all link all\r\n'
+      '-----  ONU Unauth Table ,SLOT=12 PON=1 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=2 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=3 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=4 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=5 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=6 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=7 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=8 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=1 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=2 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=3 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=4 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=5 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=6 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=7 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=8 ,ITEM=0-----\n\r'
+      'Admin\\gpononu# '
+    ),
+    'onu_list': []
+  }
+]

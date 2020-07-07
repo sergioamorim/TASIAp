@@ -2,8 +2,9 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from tasiap.authorize_onu import format_onu_type, get_last_authorized_number, get_first_missing_number_precedent, \
-  get_discovery_list, get_authorization_list, Board, Pon, AuthOnuDevice, find_onu_in_list, authorize_onu_effective
-from tests.data.authorize_onu_testing_data import authorization_list_tests
+  get_discovery_list, get_authorization_list, Board, Pon, AuthOnuDevice, find_onu_in_list, authorize_onu_effective, \
+  get_onu_list
+from tests.data.authorize_onu_testing_data import authorization_list_tests, discovery_list_tests
 from tests.data.telnet_testing_data import test_data
 from tests.telnet_testing_environment import TelnetTestingEnvironment
 
@@ -155,6 +156,14 @@ class TestFunctions(TestCase):
     authorize_onu_effective(onu=onu_b, cvlan=None)
     self.assertFalse(expr=onu_b.cvlan)
 
+  @patch(target='tasiap.authorize_onu.Pon')
+  @patch(target='tasiap.authorize_onu.AuthOnuDevice')
+  @patch(target='tasiap.authorize_onu.Board')
+  def test_get_onu_list(self, MockedBoard, MockedAuthOnuDevice, MockedPon):
+    tn = 'telnet_connection'
+    for test in discovery_list_tests:
+      self.assertEqual(first=test['onu_list'], second=get_onu_list(test['discovery_list'], tn=tn))
+
 
 class TestBoard(TestCase):
 
@@ -178,7 +187,7 @@ class TestPon(TestCase):
   @patch(target='tasiap.authorize_onu.get_authorization_list')
   @patch(target='tasiap.authorize_onu.get_last_authorized_number', new=lambda authorization_list: 8)
   def setUp(self, mock_get_authorization_list):
-    self.last_authorized_number = 8
+    self.last_authorized_onu_number = 8
     self.board_a = MockBoard()
     self.pon_id_a = 6
     tn = 'telnet connection'
@@ -192,6 +201,8 @@ class TestPon(TestCase):
 
   def test_init(self):
     self.assertEqual(first=self.board_a, second=self.pon_a.board)
+    self.assertEqual(first=self.last_authorized_onu_number, second=self.pon_a.last_authorized_onu_number)
+    self.assertEqual(first=self.pon_id_a, second=self.pon_a.pon_id)
 
   def test_repr(self):
     repr_format = '<Pon(pon_id={pon_id!r},board={board!r},last_authorized_onu_number={last_authorized_onu_number!r})>'
@@ -199,9 +210,26 @@ class TestPon(TestCase):
       first=repr_format.format(
         pon_id=self.pon_id_a,
         board=self.board_a,
-        last_authorized_onu_number=self.last_authorized_number
+        last_authorized_onu_number=self.last_authorized_onu_number
       ),
       second=repr(self.pon_a)
+    )
+
+  @patch(target='tasiap.authorize_onu.get_authorization_list', return_value='authorization list')
+  @patch(target='tasiap.authorize_onu.get_last_authorized_number', return_value=6)
+  def test_autoset_last_authorized_number(self, mock_get_last_authorized_number, mock_get_authorization_list):
+    tn = 'telnet_connection'
+
+    self.pon_a.autoset_last_authorized_number(tn=tn)
+    mock_get_authorization_list.assert_called_once_with(self.pon_a, tn=tn)
+
+    mock_get_last_authorized_number.assert_called_once_with(
+      authorization_list=mock_get_authorization_list.return_value
+    )
+
+    self.assertEqual(
+      first=mock_get_last_authorized_number.return_value,
+      second=self.pon_a.last_authorized_onu_number
     )
 
 

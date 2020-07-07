@@ -1,8 +1,7 @@
-from argparse import ArgumentParser
 from re import findall
 
 from tasiap.common.sqlite_common import update_onu_info
-from tasiap.common.string_common import is_int, is_vlan_id_valid
+from tasiap.common.string_common import is_int
 from tasiap.common.telnet_common import str_to_telnet, supply_telnet_connection
 from tasiap.logger import Log, get_logger
 from tasiap.snmp.onu_set_cvlan import set_cvlan
@@ -180,25 +179,3 @@ def authorize_onu(auth_onu=None, cvlan=None, tn=None):
   if onu := find_onu_in_list(onu_list, auth_onu):
     return authorize_onu_effective(onu, cvlan, tn=tn)
   return 'ERROR'
-
-
-def main():
-  parser = ArgumentParser()
-  parser.add_argument("-a", "--authorize-onu", dest="a",
-                      help="Numero da ONU que deve ser autorizada da lista de ONUs disponiveis para autorizacao",
-                      default=None)
-  parser.add_argument("-c", "--cvlan", dest="c", help="CVLAN para configurar a ONU", default=None)
-  args = parser.parse_args()
-
-  auth_onu = str(args.a).replace(' ', '') if args.a else None
-  cvlan = None
-  if args.c:
-    if is_vlan_id_valid(args.c) or args.c == 'cto':
-      cvlan = str(args.c)
-    else:
-      return 1
-  print(repr(authorize_onu(auth_onu, cvlan)))
-
-
-if __name__ == '__main__':
-  main()

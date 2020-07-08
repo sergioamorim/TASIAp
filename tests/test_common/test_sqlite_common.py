@@ -4,7 +4,7 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from config import bot_config
-from tasiap.authorize_onu import AuthOnuDevice, Pon, Board
+from tasiap.onu_authorization import AuthOnuDevice, Pon, Board
 from tasiap.common.sqlite_common import sqlite_session_factory, supply_sqlite_session, get_epoch_timestamp_now, \
   OnuDevice, UserLogin, UserLoginChangeAdvertiser, update_onu_info, find_onu_info
 from tasiap.common.string_common import get_auth_onu_device_id

@@ -2,7 +2,7 @@ from datetime import datetime
 from unittest import TestCase
 from unittest.mock import patch
 
-from tasiap.authorize_onu import AuthOnuDevice, Pon, Board
+from tasiap.onu_authorization import AuthOnuDevice, Pon, Board
 from tasiap.common.string_common import get_auth_onu_device_id, sanitize_cto_vlan_name, format_strhexoctet, \
   hexstr_to_hexoctetstr, int_to_hexoctetstr, assure_two_octet_hexstr, get_onu_number_from_id, get_pon_id, \
   str_char_to_hex_octect, string_to_hex_octects, generate_cvlan, get_board_id, is_onu_id_valid, is_vlan_id_valid, \
@@ -23,18 +23,18 @@ class TestStringFunctions(TestCase):
 
     with patch.object(Pon, '__init__', mock_init_pon):
       board_a = Board('14')
-      pon_a = Pon('1', board_a)
-      onu_a = AuthOnuDevice('1', 'AN5506-04-F1', 'FHTT1177bc38', pon_a)
+      pon_a = Pon(pon_id='1', board=board_a)
+      onu_a = AuthOnuDevice(authorization_id='1', onu_type='AN5506-04-F1', phy_id='FHTT1177bc38', pon=pon_a)
       onu_a.number = 4
 
       board_b = Board('12')
-      pon_b = Pon('1', board_b)
-      onu_b = AuthOnuDevice('1', 'AN5506-04-F1', 'FHTT1177bc38', pon_b)
+      pon_b = Pon(pon_id='1', board=board_b)
+      onu_b = AuthOnuDevice(authorization_id='1', onu_type='AN5506-04-F1', phy_id='FHTT1177bc38', pon=pon_b)
       onu_b.number = 1
 
       board_c = Board('14')
-      pon_c = Pon('8', board_c)
-      onu_c = AuthOnuDevice('1', 'AN5506-04-F1', 'FHTT1177bc38', pon_c)
+      pon_c = Pon(pon_id='8', board=board_c)
+      onu_c = AuthOnuDevice(authorization_id='1', onu_type='AN5506-04-F1', phy_id='FHTT1177bc38', pon=pon_c)
       onu_c.number = 99
       self.assertEqual(get_auth_onu_device_id(onu_a), '2104')
       self.assertEqual(get_auth_onu_device_id(onu_b), '1101')

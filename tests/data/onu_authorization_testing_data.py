@@ -1,15 +1,15 @@
+from tests.mock_classes import MockAuthOnuDevice, MockPon, MockBoard
+
 authorization_list_tests = [
   {
-    'authorization_list': ''
-      ''
+    'authorization_list': str(
       'show authorization slot 14 link 5\r\n'
       '-----  ONU Auth Table ,SLOT=14 PON=5 ,ITEM=0 -----\n\r'
       'Admin\\gpononu# '
-      '',
+    ),
     'last_authorized_number': 0,
   }, {
-    'authorization_list': ''
-      ''
+    'authorization_list': str(
       'show authorization slot 14 link 8\r\n'
       '-----  ONU Auth Table ,SLOT=14 PON=8 ,ITEM=5 -----\n\r'
       'SLOT PON ONU     TYPE       ST OST  PHY_ID       PWD       SN LOID, SN PWD\n\r'
@@ -22,11 +22,10 @@ authorization_list_tests = [
       '\n\r'
       'A: Authorized  P: Preauthorized  R: System Reserved\n\r'
       'Admin\\gpononu# '
-      '',
+    ),
     'last_authorized_number': 4,
   }, {
-    'authorization_list': ''
-      ''
+    'authorization_list': str(
       'show authorization slot 12 link 8\r\n'
       '-----  ONU Auth Table ,SLOT=12 PON=8 ,ITEM=6 -----\n\r'
       'SLOT PON ONU     TYPE       ST OST  PHY_ID       PWD       SN LOID, SN PWD\n\r'
@@ -40,11 +39,10 @@ authorization_list_tests = [
       '\n\r'
       'A: Authorized  P: Preauthorized  R: System Reserved\n\r'
       'Admin\\gpononu# '
-      '',
+    ),
     'last_authorized_number': 3,
   }, {
-    'authorization_list': ''
-      ''
+    'authorization_list': str(
       'show authorization slot 12 link 1\r\n'
       '-----  ONU Auth Table ,SLOT=12 PON=1 ,ITEM=54 -----\n\r'
       'SLOT PON ONU     TYPE       ST OST  PHY_ID       PWD       SN LOID, SN PWD\n\r'
@@ -106,11 +104,10 @@ authorization_list_tests = [
       '\n\r'
       'A: Authorized  P: Preauthorized  R: System Reserved\n\r'
       'Admin\\gpononu# '
-      '',
+    ),
     'last_authorized_number': 32,
   }, {
-    'authorization_list': ''
-      ''
+    'authorization_list': str(
       'show authorization slot 14 link 1\r\n'
       '-----  ONU Auth Table ,SLOT=14 PON=1 ,ITEM=23 -----\n\r'
       'SLOT PON ONU     TYPE       ST OST  PHY_ID       PWD       SN LOID, SN PWD\n\r'
@@ -141,11 +138,10 @@ authorization_list_tests = [
       '\n\r'
       'A: Authorized  P: Preauthorized  R: System Reserved\n\r'
       'Admin\\gpononu# '
-      '',
+    ),
     'last_authorized_number': 15,
   }, {
-    'authorization_list': ''
-      ''
+    'authorization_list': str(
       'show authorization slot 14 link 7\r\n-----  ONU Auth Table ,SLOT=14 PON=7 ,ITEM=3 -----\n\r'
       'SLOT PON ONU     TYPE       ST OST  PHY_ID       PWD       SN LOID, SN PWD\n\r'
       '---- --- --- -------------- -- --- ------------ ---------- --------------------\n\r'
@@ -155,7 +151,7 @@ authorization_list_tests = [
       '\n\r'
       'A: Authorized  P: Preauthorized  R: System Reserved\n\r'
       'Admin\\gpononu# '
-      '',
+    ),
     'last_authorized_number': 3,
   }, {
     'authorization_list': 'show authorization slot 14 link',
@@ -189,5 +185,45 @@ discovery_list_tests = [
       'Admin\\gpononu# '
     ),
     'onu_list': []
-  }
+  },
+  {
+    'discovery_list': str(
+      'show discovery slot all link all\r\n'
+      '-----  ONU Unauth Table ,SLOT=12 PON=1 ,ITEM=2-----\n\r'
+      'NO       TYPE           PHY_ID        PWD           SN LOID, SN PWD\n\r'
+      '--  --------------  ------------  ----------  --------------------------\n\r'
+      '01  HG260           ZNTS2c0104ed              , \n\r'
+      '02  AN5506-01-A1    DD16b3675b52              , \n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=2 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=3 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=4 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=5 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=6 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=7 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=8 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=1 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=2 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=3 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=4 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=5 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=6 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=7 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=8 ,ITEM=0-----\n\r'
+      'Admin\\gpononu# '
+    ),
+    'onu_list': [
+      MockAuthOnuDevice(
+        authorization_id='1',
+        onu_type='hg260',
+        phy_id='ZNTS2c0104ed',
+        pon=MockPon(pon_id='1', board=MockBoard(board_id='12'))
+      ),
+      MockAuthOnuDevice(
+        authorization_id='2',
+        onu_type='5506-01-a1',
+        phy_id='DD16b3675b52',
+        pon=MockPon(pon_id='1', board=MockBoard(board_id='12'))
+      )
+    ]
+  },
 ]

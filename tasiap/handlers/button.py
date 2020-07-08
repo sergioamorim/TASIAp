@@ -2,7 +2,7 @@ from re import findall
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 
-from tasiap.authorize_onu import authorize_onu
+from tasiap.onu_authorization import authorize_onu
 from tasiap.common.bot_common import get_onu_info_string
 from tasiap.common.string_common import get_auth_onu_device_id
 from config import bot_config

@@ -162,7 +162,7 @@ authorization_list_tests = [
   },
 ]
 
-discovery_list_tests = [
+discovery_lists_tests = [
   {
     'discovery_list': str(
       'show discovery slot all link all\r\n'
@@ -184,16 +184,16 @@ discovery_list_tests = [
       '-----  ONU Unauth Table ,SLOT=14 PON=8 ,ITEM=0-----\n\r'
       'Admin\\gpononu# '
     ),
-    'onu_list': []
+    'onu_list': [],
+    'onu_tuples_tests': [],
   },
   {
     'discovery_list': str(
       'show discovery slot all link all\r\n'
-      '-----  ONU Unauth Table ,SLOT=12 PON=1 ,ITEM=2-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=1 ,ITEM=1-----\n\r'
       'NO       TYPE           PHY_ID        PWD           SN LOID, SN PWD\n\r'
       '--  --------------  ------------  ----------  --------------------------\n\r'
-      '01  HG260           ZNTS2c0104ed              , \n\r'
-      '02  AN5506-01-A1    DD16b3675b52              , \n\r'
+      '01  HG260           ZNTSa0b1c2d2              , \n\r'
       '-----  ONU Unauth Table ,SLOT=12 PON=2 ,ITEM=0-----\n\r'
       '-----  ONU Unauth Table ,SLOT=12 PON=3 ,ITEM=0-----\n\r'
       '-----  ONU Unauth Table ,SLOT=12 PON=4 ,ITEM=0-----\n\r'
@@ -215,15 +215,147 @@ discovery_list_tests = [
       MockAuthOnuDevice(
         authorization_id='1',
         onu_type='hg260',
-        phy_id='ZNTS2c0104ed',
+        phy_id='ZNTSa0b1c2d2',
+        pon=MockPon(pon_id='1', board=MockBoard(board_id='12'))
+      ),
+    ],
+    'onu_tuples_tests': [
+      {
+        'board_id': '12',
+        'item_quantity': 1,
+        'pon_id': '1',
+        'onu_tuples': [('01', 'HG260', 'ZNTSa0b1c2d2')],
+        'onus_list_textual': '01  HG260           ZNTSa0b1c2d2              , \n',
+        'onus_from_pon_textual_pattern': 'SLOT=12 PON=1 ,ITEM=1[-\nA-Z\\s_,]*([-\n\r\\s_,A-Za-z0-9]*)(-{5}|Admin)',
+      },
+    ],
+  },
+  {
+    'discovery_list': str(
+      'show discovery slot all link all\r\n'
+      '-----  ONU Unauth Table ,SLOT=12 PON=1 ,ITEM=2-----\n\r'
+      'NO       TYPE           PHY_ID        PWD           SN LOID, SN PWD\n\r'
+      '--  --------------  ------------  ----------  --------------------------\n\r'
+      '01  HG260           ZNTSa0b1c2d3              , \n\r'
+      '02  AN5506-01-A1    DD16a0b1c2d4              , \n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=2 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=3 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=4 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=5 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=6 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=7 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=8 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=1 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=2 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=3 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=4 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=5 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=6 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=7 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=8 ,ITEM=0-----\n\r'
+      'Admin\\gpononu# '
+    ),
+    'onu_list': [
+      MockAuthOnuDevice(
+        authorization_id='1',
+        onu_type='hg260',
+        phy_id='ZNTSa0b1c2d3',
         pon=MockPon(pon_id='1', board=MockBoard(board_id='12'))
       ),
       MockAuthOnuDevice(
         authorization_id='2',
         onu_type='5506-01-a1',
-        phy_id='DD16b3675b52',
+        phy_id='DD16a0b1c2d4',
         pon=MockPon(pon_id='1', board=MockBoard(board_id='12'))
-      )
+      ),
+    ],
+    'onu_tuples_tests': [
+      {
+        'board_id': '12',
+        'item_quantity': 2,
+        'pon_id': '1',
+        'onu_tuples': [('01', 'HG260', 'ZNTSa0b1c2d3'), ('02', 'AN5506-01-A1', 'DD16a0b1c2d4')],
+        'onus_list_textual': str(
+          '01  HG260           ZNTSa0b1c2d3              , \n'
+          '02  AN5506-01-A1    DD16a0b1c2d4              , \n'
+        ),
+        'onus_from_pon_textual_pattern': 'SLOT=12 PON=1 ,ITEM=2[-\nA-Z\\s_,]*([-\n\r\\s_,A-Za-z0-9]*)(-{5}|Admin)',
+      },
+    ],
+  },
+  {
+    'discovery_list': str(
+      'show discovery slot all link all\r\n'
+      '-----  ONU Unauth Table ,SLOT=12 PON=1 ,ITEM=1-----\n\r'
+      'NO       TYPE           PHY_ID        PWD           SN LOID, SN PWD\n\r'
+      '--  --------------  ------------  ----------  --------------------------\n\r'
+      '01  HG260           ZNTSa0b1c2d5              , \n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=2 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=3 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=4 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=5 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=6 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=7 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=12 PON=8 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=1 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=2 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=3 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=4 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=5 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=6 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=7 ,ITEM=0-----\n\r'
+      '-----  ONU Unauth Table ,SLOT=14 PON=8 ,ITEM=2-----\n\r'
+      'NO       TYPE           PHY_ID        PWD           SN LOID, SN PWD\n\r'
+      '--  --------------  ------------  ----------  --------------------------\n\r'
+      '01  AN5506-01-A1    DD16a0b1c2d6              , \n\r'
+      '02  AN5506-01-A1    DD16a0b1c2d7              , \n\r'
+      'Admin\\gpononu# '
+    ),
+    'onu_list': [
+      MockAuthOnuDevice(
+        authorization_id='1',
+        onu_type='hg260',
+        phy_id='ZNTSa0b1c2d5',
+        pon=MockPon(pon_id='1', board=MockBoard(board_id='12'))
+      ),
+      MockAuthOnuDevice(
+        authorization_id='1',
+        onu_type='5506-01-a1',
+        phy_id='DD16a0b1c2d6',
+        pon=MockPon(pon_id='8', board=MockBoard(board_id='14'))
+      ),
+      MockAuthOnuDevice(
+        authorization_id='2',
+        onu_type='5506-01-a1',
+        phy_id='DD16a0b1c2d7',
+        pon=MockPon(pon_id='8', board=MockBoard(board_id='14'))
+      ),
+    ],
+    'onu_tuples_tests': [
+      {
+        'board_id': '12',
+        'item_quantity': 1,
+        'pon_id': '1',
+        'onu_tuples': [
+          ('01', 'HG260', 'ZNTSa0b1c2d5'),
+        ],
+        'onus_list_textual': '01  HG260           ZNTSa0b1c2d5              , \n',
+        'onus_from_pon_textual_pattern': 'SLOT=12 PON=1 ,ITEM=1[-\nA-Z\\s_,]*([-\n\r\\s_,A-Za-z0-9]*)(-{5}|Admin)',
+      },
+      {
+        'board_id': '14',
+        'item_quantity': 2,
+        'pon_id': '8',
+        'onu_tuples': [
+          ('01', 'AN5506-01-A1', 'DD16a0b1c2d6'),
+          ('02', 'AN5506-01-A1', 'DD16a0b1c2d7'),
+        ],
+        'onus_list_textual': str(
+          '01  AN5506-01-A1    DD16a0b1c2d6              , \n'
+          '02  AN5506-01-A1    DD16a0b1c2d7              , \n'
+        ),
+        'onus_from_pon_textual_pattern': 'SLOT=14 PON=8 ,ITEM=2[-\nA-Z\\s_,]*([-\n\r\\s_,A-Za-z0-9]*)(-{5}|Admin)',
+      },
     ]
   },
 ]

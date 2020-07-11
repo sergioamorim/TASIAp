@@ -3,15 +3,15 @@ from unittest.mock import patch
 
 from tasiap.onu_authorization import format_onu_type, get_last_authorized_number, get_first_missing_number_precedent, \
   get_discovery_list, get_authorization_list, Board, Pon, AuthOnuDevice, find_onu_in_list, authorize_onu_effective, \
-  get_onu_list
-from tests.data.onu_authorization_testing_data import authorization_list_tests, discovery_list_tests
+  get_onu_list, onu_tuples, onu_tuples_found, onus_from_pon_textual, onus_from_pon_textual_found, \
+  onus_from_pon_textual_pattern, authorize_onu
+from tests.data.onu_authorization_testing_data import authorization_list_tests, discovery_lists_tests
 from tests.data.telnet_testing_data import test_data
 from tests.mock_classes import MockPon, MockAuthOnuDevice, MockBoard
 from tests.telnet_testing_environment import TelnetTestingEnvironment
 
 
 class TestFunctions(TestCase):
-
   telnet_testing_environment = None
 
   @classmethod
@@ -76,7 +76,6 @@ class TestFunctions(TestCase):
       )
 
   def test_get_discovery_list(self):
-
     expected_response = self.expected_generic_response_format.format(
       data=test_data['default']['discovery']
     )
@@ -84,7 +83,6 @@ class TestFunctions(TestCase):
     self.assertEqual(first=expected_response, second=get_discovery_list())
 
   def test_get_authorization_list(self):
-
     expected_response = self.expected_generic_response_format.format(
       data=test_data['default']['authorization']
     )
@@ -92,7 +90,6 @@ class TestFunctions(TestCase):
     self.assertEqual(first=expected_response, second=get_authorization_list(pon=MockPon()))
 
   def test_find_onu_in_list(self):
-
     onu_a = MockAuthOnuDevice(authorization_id=1, phy_id='a')
     onu_b = MockAuthOnuDevice(authorization_id=2, phy_id='b')
     onu_list = [onu_a, onu_b]
@@ -120,11 +117,10 @@ class TestFunctions(TestCase):
 
   @patch(target='tasiap.onu_authorization.update_onu_info')
   def test_authorize_onu_effective(self, mock_update_onu_info):
-
     onu_a = MockAuthOnuDevice()
     cvlan_a = 2600
     self.assertEqual(first=onu_a, second=authorize_onu_effective(onu=onu_a, cvlan=cvlan_a))
-    self.assertEqual(first=MockAuthOnuDevice.pon.last_authorized_onu_number+1, second=onu_a.number)
+    self.assertEqual(first=MockAuthOnuDevice.pon.last_authorized_onu_number + 1, second=onu_a.number)
     self.assertEqual(first=cvlan_a, second=onu_a.cvlan)
     mock_update_onu_info.assert_called_with(auth_onu_device=onu_a)
 
@@ -138,8 +134,90 @@ class TestFunctions(TestCase):
   def test_get_onu_list(self):
     tn = 'telnet_connection'
 
-    for test in discovery_list_tests:
-      self.assertEqual(first=test['onu_list'], second=get_onu_list(test['discovery_list'], tn=tn))
+    for test in discovery_lists_tests:
+      self.assertEqual(
+        first=test['onu_list'],
+        second=get_onu_list(discovery_list=test['discovery_list'], tn=tn)
+      )
+
+  def test_onu_tuples(self):
+    for test in discovery_lists_tests:
+      for tuples_test in test['onu_tuples_tests']:
+        self.assertEqual(
+          first=tuples_test['onu_tuples'],
+          second=onu_tuples(
+            board_id=tuples_test['board_id'],
+            discovery_list=test['discovery_list'],
+            item_quantity=tuples_test['item_quantity'],
+            pon_id=tuples_test['pon_id']
+          )
+        )
+
+  def test_onu_tuples_found(self):
+    for test in discovery_lists_tests:
+      for tuples_test in test['onu_tuples_tests']:
+        self.assertEqual(
+          first=tuples_test['onu_tuples'],
+          second=onu_tuples_found(onus_list_textual=tuples_test['onus_list_textual'])
+        )
+
+  def test_onus_from_pon_textual(self):
+    for test in discovery_lists_tests:
+      for tuples_test in test['onu_tuples_tests']:
+        self.assertEqual(
+          first=tuples_test['onus_list_textual'],
+          second=onus_from_pon_textual(
+            board_id=tuples_test['board_id'],
+            discovery_list=test['discovery_list'],
+            item_quantity=tuples_test['item_quantity'],
+            pon_id=tuples_test['pon_id']
+          )
+        )
+
+  def test_onus_from_pon_textual_found(self):
+    for test in discovery_lists_tests:
+      for tuples_test in test['onu_tuples_tests']:
+        self.assertEqual(
+          first=tuples_test['onus_list_textual'],
+          second=onus_from_pon_textual_found(
+            discovery_list=test['discovery_list'],
+            pon_discovery_textual_pattern=tuples_test['onus_from_pon_textual_pattern']
+          )
+        )
+
+  def test_onus_from_pon_textual_pattern(self):
+    for test in discovery_lists_tests:
+      for tuples_test in test['onu_tuples_tests']:
+        self.assertEqual(
+          first=tuples_test['onus_from_pon_textual_pattern'],
+          second=onus_from_pon_textual_pattern(
+            board_id=tuples_test['board_id'],
+            item_quantity=tuples_test['item_quantity'],
+            pon_id=tuples_test['pon_id']
+          )
+        )
+
+  @patch(target='tasiap.onu_authorization.get_discovery_list', new=lambda tn: None)
+  @patch(target='tasiap.onu_authorization.authorize_onu_effective', return_value='authorized onu')
+  @patch(target='tasiap.onu_authorization.get_onu_list', side_effect=[[], ['onu'], ['onu'], ['onu'], ['onu']])
+  @patch(target='tasiap.onu_authorization.find_onu_in_list', side_effect=[None, 'onu found', 'onu found'])
+  def test_authorize_onu(self, mock_find_onu_in_list, mock_get_onu_list, mock_authorize_onu_effective):
+    tn = 'telnet_connection'
+
+    self.assertEqual(first=None, second=authorize_onu(tn=tn))
+    self.assertEqual(first=['onu'], second=authorize_onu(tn=tn))
+
+    self.assertEqual(first='ERROR', second=authorize_onu(auth_onu='onu', tn=tn))  # first time to call find_onu_in_list
+    self.assertEqual(first=mock_authorize_onu_effective.return_value, second=authorize_onu(auth_onu='onu', tn=tn))
+    mock_authorize_onu_effective.assert_called_with(onu='onu found', cvlan=None, tn=tn)
+
+    self.assertEqual(
+      first=mock_authorize_onu_effective.return_value,
+      second=authorize_onu(auth_onu='onu', cvlan='cvlan', tn=tn)
+    )
+    mock_authorize_onu_effective.assert_called_with(onu='onu found', cvlan='cvlan', tn=tn)
+    mock_find_onu_in_list.assert_called()
+    mock_get_onu_list.assert_called()
 
 
 class TestBoard(TestCase):
@@ -214,7 +292,7 @@ class TestPon(TestCase):
   @patch(target='tasiap.onu_authorization.get_authorization_list')
   @patch(
     target='tasiap.onu_authorization.get_last_authorized_number',
-    side_effect=[laon := MockPon.last_authorized_onu_number, laon, laon, laon+1]
+    side_effect=[laon := MockPon.last_authorized_onu_number, laon, laon, laon + 1]
   )
   def test_eq(self, mock_get_last_authorized_number, mock_get_authorization_list):
     assert mock_get_last_authorized_number and mock_get_authorization_list
@@ -222,7 +300,7 @@ class TestPon(TestCase):
 
     not_equal_pons = [
       Pon(board=MockBoard(board_id=14), pon_id=self.pon_id_a, tn=self.tn),
-      Pon(board=self.board_a, pon_id=self.pon_id_a-1, tn=self.tn),
+      Pon(board=self.board_a, pon_id=self.pon_id_a - 1, tn=self.tn),
       Pon(board=self.board_a, pon_id=self.pon_id_a, tn=self.tn),
     ]
 

@@ -235,11 +235,11 @@ def onus_from_pon_textual_pattern(board_id, item_quantity, pon_id):
 @Log(logger)
 def authorize_onu(auth_onu=None, cvlan=None, tn=None):
   discovery_list = get_discovery_list(tn=tn)
-  onu_list = get_onu_list(discovery_list, tn=tn)
+  onu_list = get_onu_list(discovery_list=discovery_list, tn=tn)
   if not len(onu_list):
     return None
   if not auth_onu:
     return onu_list
-  if onu := find_onu_in_list(onu_list, auth_onu):
-    return authorize_onu_effective(onu, cvlan, tn=tn)
+  if onu := find_onu_in_list(onu_list=onu_list, auth_onu=auth_onu):
+    return authorize_onu_effective(onu=onu, cvlan=cvlan, tn=tn)
   return 'ERROR'

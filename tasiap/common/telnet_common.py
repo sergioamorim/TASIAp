@@ -26,8 +26,9 @@ def telnet_connection_factory():
   try:
     yield tn
   finally:
+    tn.write(b'cd ..\n')
     tn.write(b'quit\n')
-    tn.read_all()
+    tn.read_until(b'ye!\r\n', timeout=1)
     tn.close()
 
 

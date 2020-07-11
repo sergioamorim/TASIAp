@@ -43,13 +43,11 @@ class AN551606BMockHandler(TelnetHandler):
   current_directory = 'root'
   paths = {
     True: {
-      '': 'root',
       '..': 'root',
       'service': 'service',
       'gpononu': 'gpononu'
     },
     False: {
-      '': 'root',
       '..': 'root'
     }
   }

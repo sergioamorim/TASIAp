@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from config import telnet_config
 from tasiap.common.telnet_common import connect_su, str_to_telnet, supply_telnet_connection, get_wifi_data_effective, \
-  get_ssid, get_wifi_password
+  get_ssid, get_wifi_password, telnet_connection_factory
 from tests.data.telnet_testing_data import test_params, test_data
 from tests.telnet_testing_environment import TelnetTestingEnvironment
 
@@ -71,3 +71,15 @@ class TestTelnetFunctions(TestCase):
         onu_number=test_params[test]['onu_number']
       )
       self.assertEqual(first=test_params[test]['password'], second=wifi_password)
+
+  def test_telnet_connection_factory(self):
+    with telnet_connection_factory() as tn:
+      self.assertTrue(expr=tn)
+      self.assertEqual(first=Telnet, second=type(tn))
+      self.assertTrue(expr=tn.sock)
+      self.assertFalse(expr=tn.eof)
+      tn.write(b'cd ..\n')
+      self.assertEqual(first=b'\r\nAdmin# ', second=tn.read_until(b'Admin# ', timeout=1))
+
+    self.assertFalse(expr=tn.sock)
+    self.assertTrue(expr=tn.eof)

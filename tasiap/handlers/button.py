@@ -8,7 +8,7 @@ from tasiap.common.string_common import get_auth_onu_device_id
 from config import bot_config
 from tasiap.logger import log_update, get_logger
 from tasiap.onu_restart import restart_onu_by_id
-from tasiap.snmp.onu_set_cvlan import set_cvlan
+from tasiap.snmp.onu_vlan import set_cvlan
 
 logger = get_logger(__name__)
 

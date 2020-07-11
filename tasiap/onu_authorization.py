@@ -4,7 +4,7 @@ from tasiap.common.sqlite_common import update_onu_info
 from tasiap.common.string_common import is_int
 from tasiap.common.telnet_common import str_to_telnet, supply_telnet_connection
 from tasiap.logger import Log, get_logger
-from tasiap.snmp.onu_set_cvlan import set_cvlan
+from tasiap.snmp.onu_vlan import set_cvlan
 
 logger = get_logger(__name__)
 

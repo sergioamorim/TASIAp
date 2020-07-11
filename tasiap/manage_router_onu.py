@@ -3,9 +3,9 @@ from argparse import ArgumentParser
 from tasiap.common.string_common import is_onu_id_valid, get_board_id, get_pon_id, get_onu_number_from_id
 from tasiap.common.telnet_common import get_wifi_password, get_ssid, supply_telnet_connection
 from tasiap.logger import get_logger, Log
-from tasiap.snmp.onu_set_wan_service import set_wan_service
-from tasiap.snmp.onu_set_web_config import set_web_config
-from tasiap.snmp.onu_set_wifi import set_wifi
+from tasiap.snmp.onu_wan_service import set_wan_service
+from tasiap.snmp.onu_web_admin import set_web_config
+from tasiap.snmp.onu_wifi import set_wifi
 from tasiap.user_from_onu import find_user_by_onu
 
 logger = get_logger(__name__)

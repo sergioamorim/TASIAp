@@ -33,6 +33,7 @@ class AuthOnuDevice:
 
   def __eq__(self, other):
     return (
+      type(self) == type(other) and
       self.phy_id == other.phy_id and
       self.cvlan == other.cvlan and
       self.onu_type == other.onu_type and
@@ -82,6 +83,7 @@ class Pon:
 
   def __eq__(self, other):
     return (
+      type(self) == type(other) and
       self.pon_id == other.pon_id and
       self.last_authorized_onu_number == other.last_authorized_onu_number and
       self.board == other.board
@@ -98,7 +100,7 @@ class Board:
     return '<Board(board_id={0!r})>'.format(self.board_id)
 
   def __eq__(self, other):
-    return self.board_id == other.board_id
+    return type(self) == type(other) and self.board_id == other.board_id
 
 
 @supply_telnet_connection

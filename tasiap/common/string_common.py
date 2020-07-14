@@ -47,13 +47,13 @@ def get_pon_id(onu_id=None, pon_name=None):
   return None
 
 
-def str_char_to_hex_octect(str_char):
+def str_char_to_hex_octet(str_char):
   return hex(ord(str_char))[2:].upper()
 
 
-def string_to_hex_octects(string, length):
+def string_to_hex_octets(string, length):
   string_list = list(string)
-  hex_list = list(map(str_char_to_hex_octect, string_list))
+  hex_list = list(map(str_char_to_hex_octet, string_list))
   hex_list.extend(['00']*(length-len(string_list)))
   return ' '.join(hex_list)
 

@@ -1,4 +1,4 @@
-from tests.mock_classes import MockAuthOnuDevice, MockPon, MockBoard
+from tests.mock_classes import MockAuthOnuDevice, MockPon
 
 authorization_list_tests = [
   {
@@ -216,7 +216,7 @@ discovery_lists_tests = [
         authorization_id='1',
         onu_type='hg260',
         phy_id='ZNTSa0b1c2d2',
-        pon=MockPon(pon_id='1', board=MockBoard(board_id='12'))
+        pon=MockPon(pon_id='1', board_id='12')
       ),
     ],
     'onu_tuples_tests': [
@@ -260,13 +260,13 @@ discovery_lists_tests = [
         authorization_id='1',
         onu_type='hg260',
         phy_id='ZNTSa0b1c2d3',
-        pon=MockPon(pon_id='1', board=MockBoard(board_id='12'))
+        pon=MockPon(pon_id='1', board_id='12')
       ),
       MockAuthOnuDevice(
         authorization_id='2',
         onu_type='5506-01-a1',
         phy_id='DD16a0b1c2d4',
-        pon=MockPon(pon_id='1', board=MockBoard(board_id='12'))
+        pon=MockPon(pon_id='1', board_id='12')
       ),
     ],
     'onu_tuples_tests': [
@@ -316,19 +316,19 @@ discovery_lists_tests = [
         authorization_id='1',
         onu_type='hg260',
         phy_id='ZNTSa0b1c2d5',
-        pon=MockPon(pon_id='1', board=MockBoard(board_id='12'))
+        pon=MockPon(pon_id='1', board_id='12')
       ),
       MockAuthOnuDevice(
         authorization_id='1',
         onu_type='5506-01-a1',
         phy_id='DD16a0b1c2d6',
-        pon=MockPon(pon_id='8', board=MockBoard(board_id='14'))
+        pon=MockPon(pon_id='8', board_id='14')
       ),
       MockAuthOnuDevice(
         authorization_id='2',
         onu_type='5506-01-a1',
         phy_id='DD16a0b1c2d7',
-        pon=MockPon(pon_id='8', board=MockBoard(board_id='14'))
+        pon=MockPon(pon_id='8', board_id='14')
       ),
     ],
     'onu_tuples_tests': [

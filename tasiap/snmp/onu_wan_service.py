@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 
 from tasiap.common.mysql_common import get_login_password
 from tasiap.common.string_common import is_onu_id_valid, get_board_id, get_pon_id, get_onu_number_from_id, \
-  int_to_hexoctetstr, string_to_hex_octects, assure_two_octet_hexstr, generate_cvlan
+  int_to_hexoctetstr, string_to_hex_octets, assure_two_octet_hexstr, generate_cvlan
 from tasiap.logger import Log, get_logger
 from tasiap.snmp.common import snmpset_hex
 
@@ -25,10 +25,10 @@ def set_wan_service_effective(board_id, pon_id, onu_number, cvlan, username, log
                 board_hex_id=int_to_hexoctetstr(board_id),
                 pon_hex_id=int_to_hexoctetstr(pon_id),
                 onu_hex_number=int_to_hexoctetstr(onu_number),
-                cvlan_string_hex=string_to_hex_octects(cvlan, 4),
+                cvlan_string_hex=string_to_hex_octets(cvlan, 4),
                 cvlan_hex=assure_two_octet_hexstr(int_to_hexoctetstr(int(cvlan))),
-                username_hex=string_to_hex_octects(username, 32),
-                login_password_hex=string_to_hex_octects(login_password, 32))
+                username_hex=string_to_hex_octets(username, 32),
+                login_password_hex=string_to_hex_octets(login_password, 32))
   if snmpset_hex(snmp_oid='1.3.6.1.4.1.5875.91.1.8.1.1.1.13.1', hex_string=hex_string):
     return {'cvlan': cvlan, 'username': username, 'password': login_password}
   return None

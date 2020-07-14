@@ -5,7 +5,7 @@ from unittest.mock import patch
 from tasiap.onu_authorization import AuthOnuDevice, Pon, Board
 from tasiap.common.string_common import get_auth_onu_device_id, sanitize_cto_vlan_name, format_strhexoctet, \
   hexstr_to_hexoctetstr, int_to_hexoctetstr, assure_two_octet_hexstr, get_onu_number_from_id, get_pon_id, \
-  str_char_to_hex_octect, string_to_hex_octects, generate_cvlan, get_board_id, is_onu_id_valid, is_vlan_id_valid, \
+  str_char_to_hex_octet, string_to_hex_octets, generate_cvlan, get_board_id, is_onu_id_valid, is_vlan_id_valid, \
   is_serial_valid, remove_accents, sanitize_dumb, is_int, get_caller_name, get_onu_id_from_cto_vlan_name, \
   get_cto_name_from_cto_vlan_name, get_vlan_id_from_cto_vlan_name, get_vlan_type, format_datetime, format_onu_state, \
   get_enable_emoji, get_status_emoji, sanitize_name, is_query_update, format_clients_message, \
@@ -123,19 +123,19 @@ class TestStringFunctions(TestCase):
     self.assertEqual(first=get_pon_id(pon_name='slot 12 link 8'), second='8')
 
   def test_str_char_to_hex_octect(self):
-    self.assertEqual(first=str_char_to_hex_octect(str_char='a'), second='61')
-    self.assertEqual(first=str_char_to_hex_octect(str_char='\\'), second='5C')
-    self.assertEqual(first=str_char_to_hex_octect(str_char='6'), second='36')
+    self.assertEqual(first=str_char_to_hex_octet(str_char='a'), second='61')
+    self.assertEqual(first=str_char_to_hex_octet(str_char='\\'), second='5C')
+    self.assertEqual(first=str_char_to_hex_octet(str_char='6'), second='36')
 
   def test_string_to_hex_octects(self):
-    self.assertEqual(first=string_to_hex_octects(string='', length=0), second='')
-    self.assertEqual(first=string_to_hex_octects(string='', length=1), second='00')
-    self.assertEqual(first=string_to_hex_octects(string='', length=13), second='00 00 00 00 00 00 00 00 00 00 00 00 00')
-    self.assertEqual(first=string_to_hex_octects(string='a', length=12), second='61 00 00 00 00 00 00 00 00 00 00 00')
-    self.assertEqual(first=string_to_hex_octects(string='abcdef', length=11), second='61 62 63 64 65 66 00 00 00 00 00')
-    self.assertEqual(first=string_to_hex_octects(string='0abcdef', length=10), second='30 61 62 63 64 65 66 00 00 00')
-    self.assertEqual(first=string_to_hex_octects(string='0abcdef', length=10), second='30 61 62 63 64 65 66 00 00 00')
-    self.assertEqual(first=string_to_hex_octects(string='"0abcd\'f\\', length=9), second='22 30 61 62 63 64 27 66 5C')
+    self.assertEqual(first=string_to_hex_octets(string='', length=0), second='')
+    self.assertEqual(first=string_to_hex_octets(string='', length=1), second='00')
+    self.assertEqual(first=string_to_hex_octets(string='', length=13), second='00 00 00 00 00 00 00 00 00 00 00 00 00')
+    self.assertEqual(first=string_to_hex_octets(string='a', length=12), second='61 00 00 00 00 00 00 00 00 00 00 00')
+    self.assertEqual(first=string_to_hex_octets(string='abcdef', length=11), second='61 62 63 64 65 66 00 00 00 00 00')
+    self.assertEqual(first=string_to_hex_octets(string='0abcdef', length=10), second='30 61 62 63 64 65 66 00 00 00')
+    self.assertEqual(first=string_to_hex_octets(string='0abcdef', length=10), second='30 61 62 63 64 65 66 00 00 00')
+    self.assertEqual(first=string_to_hex_octets(string='"0abcd\'f\\', length=9), second='22 30 61 62 63 64 27 66 5C')
 
   def test_generate_cvlan(self):
     self.assertEqual(first=generate_cvlan(board_id='12', pon_id='1'), second='1100')

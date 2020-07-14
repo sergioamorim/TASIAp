@@ -241,6 +241,8 @@ class TestBoard(TestCase):
     not_equal_board = Board(board_id=14)
     self.assertEqual(first=equal_board, second=self.board_a)
     self.assertNotEqual(first=not_equal_board, second=self.board_a)
+    self.assertNotEqual(first=None, second=self.board_a)
+    self.assertNotEqual(first='string', second=self.board_a)
 
 
 class TestPon(TestCase):
@@ -299,6 +301,8 @@ class TestPon(TestCase):
     equal_pon = Pon(board=self.board_a, pon_id=self.pon_id_a, tn=self.tn)
 
     not_equal_pons = [
+      None,
+      'some string',
       Pon(board=MockBoard(board_id=14), pon_id=self.pon_id_a, tn=self.tn),
       Pon(board=self.board_a, pon_id=self.pon_id_a - 1, tn=self.tn),
       Pon(board=self.board_a, pon_id=self.pon_id_a, tn=self.tn),
@@ -384,6 +388,8 @@ class TestAuthOnuDevice(TestCase):
     )
 
     not_equal_onu_devices = [
+      None,
+      'string',
       AuthOnuDevice(
         authorization_id=97,
         onu_type=self.onu_type,

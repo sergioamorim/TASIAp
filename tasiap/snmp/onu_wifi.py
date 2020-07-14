@@ -1,7 +1,7 @@
 from argparse import ArgumentParser
 
 from tasiap.common.string_common import is_onu_id_valid, get_board_id, get_pon_id, get_onu_number_from_id, \
-  int_to_hexoctetstr, string_to_hex_octects
+  int_to_hexoctetstr, string_to_hex_octets
 from tasiap.common.telnet_common import get_ssid, get_wifi_password
 from tasiap.logger import Log, get_logger
 from tasiap.snmp.common import snmpset_hex
@@ -29,8 +29,8 @@ def set_wifi_effective(board_id, pon_id, onu_number, ssid, wifi_password):
                '00 00 00 00 00 00'.format(board_hex_id=int_to_hexoctetstr(board_id),
                                           pon_hex_id=int_to_hexoctetstr(pon_id),
                                           onu_hex_number=int_to_hexoctetstr(onu_number),
-                                          ssid_hex=string_to_hex_octects(ssid, 32),
-                                          wifi_password_hex=string_to_hex_octects(wifi_password, 64))
+                                          ssid_hex=string_to_hex_octets(ssid, 32),
+                                          wifi_password_hex=string_to_hex_octets(wifi_password, 64))
   if snmpset_hex(snmp_oid='1.3.6.1.4.1.5875.91.1.23.1.1.1.8.1', hex_string=hex_string):
     return {'ssid': ssid, 'wifi_password': wifi_password}
   return None

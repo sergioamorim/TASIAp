@@ -1,7 +1,5 @@
-from argparse import ArgumentParser
 from re import findall
 
-from tasiap.common.string_common import is_serial_valid
 from tasiap.common.telnet_common import str_to_telnet, supply_telnet_connection
 from tasiap.logger import Log, get_logger
 
@@ -23,23 +21,3 @@ def find_onu_by_serial(serial, tn=None):
                 'state': '{0}'.format(serial_row[0][3])}
     return onu_info
   return None
-
-
-def main():
-  parser = ArgumentParser()
-  parser.add_argument('-s', '--serial', dest='s', help='Serial da ONU a ser consultada.', default=None)
-  args = parser.parse_args()
-
-  if serial := args.s:
-    if is_serial_valid(serial):
-      print(find_onu_by_serial(serial))
-      return 0
-    print('Serial inválido.')
-    return 1
-
-  print('Informe o serial da ONU.')
-  return 1
-
-
-if __name__ == '__main__':
-  main()

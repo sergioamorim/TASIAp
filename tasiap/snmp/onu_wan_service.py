@@ -1,5 +1,3 @@
-from argparse import ArgumentParser
-
 from tasiap.common.mysql_common import get_login_password
 from tasiap.common.string_common import is_onu_id_valid, get_board_id, get_pon_id, get_onu_number_from_id, \
   int_to_hexoctetstr, string_to_hex_octets, assure_two_octet_hexstr, generate_cvlan
@@ -45,21 +43,3 @@ def set_wan_service(onu_id, username):
     return set_wan_service_effective(board_id, pon_id, onu_number, cvlan, username, login_password)
   logger.error('set_wan_service: invalid onu id')
   return None
-
-
-def main():
-  parser = ArgumentParser()
-  parser.add_argument('-i', '--id', dest='i', help='ID da ONU')
-  parser.add_argument('-u', '--username', dest='u', help='Usuário')
-  args = parser.parse_args()
-
-  if args.i and args.u:
-    print(set_wan_service(args.i, args.u))
-    return 0
-
-  print('Informe o ID da ONU e o usuário.')
-  return 1
-
-
-if __name__ == '__main__':
-  main()

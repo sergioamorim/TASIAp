@@ -1,7 +1,8 @@
 from unittest import TestCase
+from unittest.mock import patch
 
 from config import bot_config
-from tasiap.common.bot_common import is_user_authorized, get_message_from_update
+from tasiap.common.bot_common import is_user_authorized, get_message_from_update, get_signal
 from tests.mock_classes import QueryUpdate, MessageUpdate, Message
 
 
@@ -52,3 +53,20 @@ class TestBotCommonFunctions(TestCase):
       first=get_message_from_update(update=MessageUpdate(message=message_from_message_update_a)),
       second=message_from_message_update_a
     )
+
+  @patch('tasiap.common.bot_common.get_onu_power_signal_by_id')
+  def test_get_signal(self, mock_get_onu_power_signal_by_id):
+    onu_id = '1234'
+
+    mock_get_onu_power_signal_by_id.return_value = 'not found'
+    self.assertEqual(first='não existe ONU autorizada com esse ID.', second=get_signal(onu_id=onu_id))
+    mock_get_onu_power_signal_by_id.assert_called_with(onu_id)
+
+    mock_get_onu_power_signal_by_id.return_value = 'off'
+    self.assertEqual(first='sem sinal.', second=get_signal(onu_id=onu_id))
+
+    mock_get_onu_power_signal_by_id.return_value = 'error'
+    self.assertEqual(first='erro não especificado.', second=get_signal(onu_id=onu_id))
+
+    mock_get_onu_power_signal_by_id.return_value = '-20.00'
+    self.assertEqual(first=mock_get_onu_power_signal_by_id.return_value, second=get_signal(onu_id=onu_id))

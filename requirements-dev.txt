@@ -1,2 +1,2 @@
-coverage==5.1
+coverage==5.2
 telnetsrv==0.4.1

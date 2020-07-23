@@ -1,5 +1,3 @@
-from argparse import ArgumentParser
-
 from tasiap.common.string_common import is_onu_id_valid, get_board_id, get_pon_id, get_onu_number_from_id
 from tasiap.common.telnet_common import get_wifi_password, get_ssid, supply_telnet_connection
 from tasiap.logger import get_logger, Log
@@ -38,23 +36,3 @@ def update_router_onu_config(onu_id, ssid=None, wifi_password=None, username=Non
       return set_wifi(onu_id, wifi_password=wifi_password)
   logger.error('update_router_onu_config: onu id is invalid')
   return None
-
-
-def main():
-
-  parser = ArgumentParser()
-  parser.add_argument('-i', '--id', dest='i', help='ID da ONU a ser configurada')
-  parser.add_argument('-s', '--ssid', dest='s', help='SSID a ser configurado', default=None)
-  parser.add_argument('-p', '--password', dest='p', help='Senha do Wi-Fi a ser configurada', default=None)
-  parser.add_argument('-u', '--username', dest='u', help='Usuário a ser configurado', default=None)
-  args = parser.parse_args()
-
-  if manage_result := update_router_onu_config(args.i, ssid=args.s, password=args.p, username=args.u):
-    print(repr(manage_result))
-    return 0
-
-  return 1
-
-
-if __name__ == '__main__':
-  main()

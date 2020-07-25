@@ -82,7 +82,7 @@ class TestBotCommonFunctions(TestCase):
     mock_get_auth_onu_device_id,
     mock_signal_job_caller,
     mock_get_signal,
-    MockThread,
+    mock_thread_class,
     mock_find_onu_connection_trigger
   ):
 
@@ -105,7 +105,7 @@ class TestBotCommonFunctions(TestCase):
       first=expected_output,
       second=get_onu_info_string(context=context, update=update, authorized_onu=authorized_onu)
     )
-    MockThread.assert_not_called()
+    mock_thread_class.assert_not_called()
 
     # test 1: passing authorized_onu with cvlan not ending in 00
     authorized_onu.cvlan = '1234'
@@ -120,7 +120,7 @@ class TestBotCommonFunctions(TestCase):
       first=expected_output,
       second=get_onu_info_string(context=context, update=update, authorized_onu=authorized_onu)
     )
-    MockThread.assert_not_called()
+    mock_thread_class.assert_not_called()
 
     # test 2: passing authorized_onu with cvlan 4000
     authorized_onu.cvlan = '4000'
@@ -135,7 +135,7 @@ class TestBotCommonFunctions(TestCase):
       first=expected_output,
       second=get_onu_info_string(context=context, update=update, authorized_onu=authorized_onu)
     )
-    MockThread.assert_not_called()
+    mock_thread_class.assert_not_called()
 
     # test 3: passing onu_id without cvlan
     onu_id = 'onu id'
@@ -150,7 +150,7 @@ class TestBotCommonFunctions(TestCase):
       first=expected_output,
       second=get_onu_info_string(context=context, update=update, onu_id=onu_id, serial=serial)
     )
-    MockThread.assert_not_called()
+    mock_thread_class.assert_not_called()
 
     # test 4: passing onu_id with cvlan not ending in 00
     onu_id = 'onu id'
@@ -167,7 +167,7 @@ class TestBotCommonFunctions(TestCase):
       first=expected_output,
       second=get_onu_info_string(context=context, update=update, onu_id=onu_id, cvlan=cvlan, serial=serial)
     )
-    MockThread.assert_not_called()
+    mock_thread_class.assert_not_called()
 
     # test 5: passing onu_id with cvlan 4000
     onu_id = 'onu id'
@@ -184,7 +184,7 @@ class TestBotCommonFunctions(TestCase):
       first=expected_output,
       second=get_onu_info_string(context=context, update=update, onu_id=onu_id, cvlan=cvlan, serial=serial)
     )
-    MockThread.assert_not_called()
+    mock_thread_class.assert_not_called()
 
     # test 6: passing authorized onu with cvlan ending in 00 and it is not 4000
     authorized_onu.cvlan = '1100'
@@ -199,7 +199,7 @@ class TestBotCommonFunctions(TestCase):
       first=expected_output,
       second=get_onu_info_string(context=context, update=update, authorized_onu=authorized_onu)
     )
-    MockThread.assert_called_once_with(  # must be the first time with a cvlan and it is not equal to 4000
+    mock_thread_class.assert_called_once_with(  # must be the first time with a cvlan and it is not equal to 4000
       target=mock_find_onu_connection_trigger,
       args=(context.bot, update, mock_get_auth_onu_device_id.return_value)
     )
@@ -219,7 +219,7 @@ class TestBotCommonFunctions(TestCase):
       first=expected_output,
       second=get_onu_info_string(context=context, update=update, onu_id=onu_id, cvlan=cvlan, serial=serial)
     )
-    MockThread.assert_called_with(
+    mock_thread_class.assert_called_with(
       target=mock_find_onu_connection_trigger,
       args=(context.bot, update, onu_id)
     )

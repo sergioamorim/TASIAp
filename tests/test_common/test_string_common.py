@@ -2,7 +2,6 @@ from datetime import datetime
 from unittest import TestCase
 from unittest.mock import patch
 
-from tasiap.onu_authorization import AuthOnuDevice, Pon, Board
 from tasiap.common.string_common import get_auth_onu_device_id, sanitize_cto_vlan_name, format_strhexoctet, \
   hexstr_to_hexoctetstr, int_to_hexoctetstr, assure_two_octet_hexstr, get_onu_number_from_id, get_pon_id, \
   str_char_to_hex_octet, string_to_hex_octets, generate_cvlan, get_board_id, is_onu_id_valid, is_vlan_id_valid, \
@@ -10,6 +9,7 @@ from tasiap.common.string_common import get_auth_onu_device_id, sanitize_cto_vla
   get_cto_name_from_cto_vlan_name, get_vlan_id_from_cto_vlan_name, get_vlan_type, format_datetime, format_onu_state, \
   get_enable_emoji, get_status_emoji, sanitize_name, is_query_update, format_clients_message, \
   is_string_addition_too_big, get_client_info_message_block
+from tasiap.onu_authorization import AuthOnuDevice, Pon, Board
 from tests.mock_classes import MessageUpdate, QueryUpdate
 
 

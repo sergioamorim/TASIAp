@@ -1,4 +1,4 @@
-from unittest import TestCase, main
+from unittest import TestCase
 
 from tasiap.handlers.wifi import get_ssid_from_args, get_wifi_password_from_args
 

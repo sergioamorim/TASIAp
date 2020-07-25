@@ -11,6 +11,7 @@ class TestSetCvlanEffective(TestCase):
   @patch(target='tasiap.snmp.onu_vlan.snmpset_hex', new=lambda snmp_oid, hex_string: False)
   def test_none_is_returned_if_snmpset_hex_doesnt_return_positively(self):
     self.assertIsNone(obj=set_cvlan_effective(board_id='12', pon_id='1', onu_number='1', cvlan='1100'))
+    self.assertIsNone(obj=set_cvlan_effective(board_id='12', pon_id='1', onu_number='1', cvlan='1100', veip=True))
 
   @patch(target='tasiap.snmp.onu_vlan.int_to_hexoctetstr')
   @patch(target='tasiap.snmp.onu_vlan.assure_two_octet_hexstr')

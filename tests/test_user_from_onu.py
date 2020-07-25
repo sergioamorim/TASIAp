@@ -1,4 +1,4 @@
-from unittest import TestCase, main
+from unittest import TestCase
 
 from tasiap.user_from_onu import get_mac_list
 

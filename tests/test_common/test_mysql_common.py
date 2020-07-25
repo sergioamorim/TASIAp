@@ -1,8 +1,8 @@
 from unittest import TestCase
 
+from config import bot_config
 from tasiap.common.mysql_common import mysql_session_factory, supply_mysql_session, user_exists, \
   insert_into_radius_login, reauthorize_user, generate_pppoe_login_password, get_login_password
-from config import bot_config
 from tests.mysql_testing_environment import setup_mysql_testing_environment, shutdown_mysql_testing_environment
 
 

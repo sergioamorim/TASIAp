@@ -43,7 +43,7 @@ test_params = {  # this needs to be defined before wifi_data because that can be
 
 test_data = {
   'test_a': {
-    'wifi_serv': ''
+    'wifi_serv': str(
       '\r\n----- WIFI SERVICE CONFIG INFO-----\r\n'
       'WIFI :enable\r\n'
       'District:brazil\r\n'
@@ -72,11 +72,11 @@ test_data = {
       '**WAPI Server Port:0\r\n'
       '**wifi_connect_num :0\r\n'
       '\r\nAdmin\\gpononu# '
-      ''.format(
+    ).format(
         ssid=test_params['test_a']['ssid'],
         password=test_params['test_a']['password'],
       ),
-    'optic_module': ""
+    'optic_module': str(
       "\r\n-----  ONU OPTIC MODULE PAR INFO 10.1.1-----\r\n"
       "NAME          VALUE\tUNIT\r\n"
       "---------------------------------------\r\n"
@@ -88,10 +88,10 @@ test_data = {
       "RECV POWER   : -25.08\t(Dbm)\r\n"
       "OLT RECV POWER :  0.00\t(Dbm)\r\n"
       "\n\rAdmin\\gpononu# "
-      "",
+    ),
   },
   'test_b': {
-    'wifi_serv': ''
+    'wifi_serv': str(
       '\r\n----- WIFI SERVICE CONFIG INFO-----\r\n'
       'WIFI :disable\r\n'
       'District:etsi\r\n'
@@ -123,14 +123,14 @@ test_data = {
       '**SSID:\r\n'
       'repeat\r\n'
       '\r\nAdmin\\gpononu# '
-      '',
-    'optic_module': ''
+    ),
+    'optic_module': str(
       '\r\n[ ERR -553 ] onu is in unactive!\n\r'
       '\n\rAdmin\\gpononu# '
-      '',
+    ),
   },
   'test_c': {
-    'wifi_serv': ''
+    'wifi_serv': str(
       '\r\n----- WIFI SERVICE CONFIG INFO-----\r\n'
       'WIFI :disable\r\n'
       'District:etsi\r\n'
@@ -140,14 +140,14 @@ test_data = {
       'Working frequency:2.4ghz\r\n'
       'Frequency BW:20mhz/40mhz\r\n'
       '\r\nAdmin\\gpononu# '
-      '',
-    'optic_module': ''
+    ),
+    'optic_module': str(
       '\r\n[ ERR -506 ] the onu is not authorized!\n\r'
       '\n\rAdmin\\gpononu# '
-      '',
+    ),
   },
   'test_d': {
-    'wifi_serv': ''
+    'wifi_serv': str(
       '\r\n----- WIFI SERVICE CONFIG INFO-----\r\n'
       'WIFI :disable\r\n'
       'District:etsi\r\n'
@@ -157,14 +157,14 @@ test_data = {
       'Working frequency:2.4ghz\r\n'
       'Frequency BW:20mhz/40mhz\r\n'
       '\r\nAdmin\\gpononu# '
-      '',
-    'optic_module': ''
+    ),
+    'optic_module': str(
       '\r\n[ ERR 85 ] simulated error \r\n'
       '\n\rAdmin\\gpononu# '
-      '',
+    ),
   },
   'test_e': {
-    'wifi_serv': ''
+    'wifi_serv': str(
       '\r\n----- WIFI SERVICE CONFIG INFO-----\r\n'
       'WIFI :disable\r\n'
       'District:etsi\r\n'
@@ -174,11 +174,11 @@ test_data = {
       'Working frequency:2.4ghz\r\n'
       'Frequency BW:20mhz/40mhz\r\n'
       '\r\nAdmin\\gpononu# '
-      '',
-    'optic_module': ''
+    ),
+    'optic_module': str(
       '\r\nsimulated unknown output\n\r'
       '\n\rAdmin\\gpononu# '
-      '',
+    ),
   },
   'default': {
     'wifi_serv': 'default wifi_data response',

@@ -1,4 +1,3 @@
-from argparse import ArgumentParser
 from re import findall
 
 from tasiap.common.telnet_common import str_to_telnet, supply_telnet_connection

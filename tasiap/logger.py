@@ -1,9 +1,9 @@
 from functools import wraps
-from logging import getLogger, DEBUG, Formatter, FileHandler, StreamHandler
+from logging import getLogger, Formatter, FileHandler, StreamHandler
 from pathlib import Path
 
-from tasiap.common.string_common import get_caller_name, is_query_update
 from config import bot_config
+from tasiap.common.string_common import get_caller_name, is_query_update
 
 
 def get_logger(name):

@@ -9,16 +9,13 @@ class TestManageRouterOnuFunctions(TestCase):
   @patch(target='tasiap.manage_router_onu.find_user_by_onu')
   @patch(target='tasiap.manage_router_onu.get_wifi_password')
   @patch(target='tasiap.manage_router_onu.get_ssid')
-  @patch(target='tasiap.manage_router_onu.get_onu_number_from_id')
-  @patch(target='tasiap.manage_router_onu.get_pon_id')
-  @patch(target='tasiap.manage_router_onu.get_board_id')
+  @patch(target='tasiap.manage_router_onu.get_onu_number_from_id', new=lambda onu_id: 'not relevant')
+  @patch(target='tasiap.manage_router_onu.get_pon_id', new=lambda onu_id: 'not relevant')
+  @patch(target='tasiap.manage_router_onu.get_board_id', new=lambda onu_id: 'not relevant')
   @patch(target='tasiap.manage_router_onu.is_onu_id_valid')
   def test_get_router_onu_info(
       self,
       mock_is_onu_id_valid,
-      mock_get_board_id,
-      mock_get_pon_id,
-      mock_get_onu_number_from_id,
       mock_get_ssid,
       mock_get_wifi_password,
       mock_find_user_by_onu

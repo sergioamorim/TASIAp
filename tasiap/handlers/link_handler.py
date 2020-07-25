@@ -1,7 +1,7 @@
 from subprocess import run
 
-from tasiap.common.bot_common import is_user_authorized
 from config import bot_config
+from tasiap.common.bot_common import is_user_authorized
 from tasiap.logger import log_update, get_logger
 
 logger = get_logger(__name__)

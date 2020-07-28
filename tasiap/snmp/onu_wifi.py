@@ -1,5 +1,3 @@
-from argparse import ArgumentParser
-
 from tasiap.common.string_common import is_onu_id_valid, get_board_id, get_pon_id, get_onu_number_from_id, \
   int_to_hexoctetstr, string_to_hex_octets
 from tasiap.common.telnet_common import get_ssid, get_wifi_password
@@ -49,28 +47,3 @@ def set_wifi(onu_id, ssid=None, wifi_password=None):
     return set_wifi_effective(board_id, pon_id, onu_number, ssid, wifi_password)
   logger.error('set_wan_service: invalid onu id or no setting parsed')
   return None
-
-
-def main():
-  parser = ArgumentParser()
-  parser.add_argument('-i', '--id', dest='i', help='ID da ONU')
-  parser.add_argument('-s', '--ssid', dest='s', help='Nome da rede Wi-Fi', default=None)
-  parser.add_argument('-p', '--password', dest='p', help='Senha da rede Wi-Fi', default=None)
-  args = parser.parse_args()
-
-  if args.i and args.s and args.p:
-    print(set_wifi(args.i, ssid=args.s, wifi_password=args.p))
-    return 0
-  if args.i and args.s:
-    print(set_wifi(args.i, ssid=args.s))
-    return 0
-  if args.i and args.p:
-    print(set_wifi(args.i, wifi_password=args.p))
-    return 0
-
-  print('Informe o ID da ONU e a configuração Wi-Fi que deseja alterar.')
-  return 1
-
-
-if __name__ == '__main__':
-  main()

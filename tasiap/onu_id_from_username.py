@@ -45,7 +45,7 @@ def get_onu_id_by_mac(mac, pon, tn=None):
   for pon in pon_list:
     if onu_id := get_onu_id_by_mac_and_pon(mac, pon, tn=tn):
       return onu_id
-  return ''
+  return None
 
 
 @supply_telnet_connection
@@ -55,8 +55,7 @@ def get_pon_list(tn=None):
   tn.write(str_to_telnet('show pon_auth all'))
   show_pon_auth_all = tn.read_until(b'Admin\\gponline# ', timeout=1).decode('ascii')
   pon_pattern = '(slot [0-9]* link [0-9]*) *,auth mode is physical id.'
-  pon_list = findall(pon_pattern, show_pon_auth_all)
-  return pon_list
+  return findall(pon_pattern, show_pon_auth_all)
 
 
 def format_pon_name(vlan_name=None, onu_id=None):

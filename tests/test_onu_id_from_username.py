@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock, call
 
-from tasiap.onu_id_from_username import get_onu_number, get_onu_id_by_mac_and_pon
+from tasiap.onu_id_from_username import get_onu_number, get_onu_id_by_mac_and_pon, get_onu_id_by_mac, get_pon_list
 
 
 class TestOutputMethods(unittest.TestCase):
@@ -92,4 +92,105 @@ class TestOutputMethods(unittest.TestCase):
       member=[call(pon_name=pon)],
       container=mock_get_pon_id.mock_calls,
       msg='Gather the pon id utilising the pon address passed'
+    )
+
+  @patch(
+    target='tasiap.onu_id_from_username.get_pon_list',
+    return_value=['slot 12 link 1', 'slot 12 link 2', 'slot 14 link 8']
+  )
+  @patch(target='tasiap.onu_id_from_username.get_onu_id_by_mac_and_pon')
+  def test_get_onu_id_by_mac(self, mock_get_onu_id_by_mac_and_pon, mock_get_pon_list):
+    pon_addresses = []
+    pon_addresses.extend(mock_get_pon_list.return_value)
+
+    def put_onu_id_in_the_last_pon_available(onu_id):
+      mock_get_onu_id_by_mac_and_pon.reset_mock()
+      side_effect_of_get_onu_id_by_mac_and_pon = [onu_id]
+      side_effect_of_get_onu_id_by_mac_and_pon.extend([None for _ in range(0, len(pon_addresses) - 1)])
+      side_effect_of_get_onu_id_by_mac_and_pon.reverse()
+      mock_get_onu_id_by_mac_and_pon.side_effect = side_effect_of_get_onu_id_by_mac_and_pon
+
+    telnet = 'telnet connection'
+    mac = 'E4:BE:76:54:32:10'
+
+    mock_get_onu_id_by_mac_and_pon.return_value = None
+    self.assertIsNone(
+      obj=get_onu_id_by_mac(mac=mac, pon=None, tn=telnet),
+      msg='Returns None when the onu_id can not be determined'
+    )
+    self.assertEqual(
+      first=[call(mac, pon_address, tn=telnet) for pon_address in pon_addresses],
+      second=mock_get_onu_id_by_mac_and_pon.mock_calls,
+      msg='Checks every pon address available in search for the onu id when no pon is passed'
+    )
+    self.assertEqual(
+      first=[call(tn=telnet)],
+      second=mock_get_pon_list.mock_calls,
+      msg='Calls get_pon_list once with the telnet connection passed'
+    )
+
+    current_onu_id = '1234'
+    put_onu_id_in_the_last_pon_available(onu_id=current_onu_id)
+    self.assertEqual(
+      first=current_onu_id,
+      second=get_onu_id_by_mac(mac=mac, pon=None, tn=telnet),
+      msg='Returns the onu id determined by get_onu_id_by_mac_and_pon when it is found'
+    )
+    self.assertEqual(
+      first=[call(mac, pon_address, tn=telnet) for pon_address in pon_addresses],
+      second=mock_get_onu_id_by_mac_and_pon.mock_calls,
+      msg='Checks every pon address available in search for the onu id when no pon is passed'
+    )
+
+    put_onu_id_in_the_last_pon_available(onu_id=current_onu_id)
+    get_onu_id_by_mac(mac=mac, pon=pon_addresses[0], tn=telnet)
+    self.assertEqual(
+      first=[call(mac, pon_address, tn=telnet) for pon_address in pon_addresses],
+      second=mock_get_onu_id_by_mac_and_pon.mock_calls,
+      msg=str(
+        'Checks every other pon address available in search for the onu id when it can not be found on the pon passed;'
+        'Do not check the same pon twice.'
+      )
+    )
+
+    mock_get_onu_id_by_mac_and_pon.side_effect = None
+    mock_get_onu_id_by_mac_and_pon.return_value = current_onu_id
+    mock_get_onu_id_by_mac_and_pon.reset_mock()
+    get_onu_id_by_mac(mac=mac, pon=pon_addresses[0], tn=telnet)
+    self.assertEqual(
+      first=[call(mac, pon_addresses[0], tn=telnet)],
+      second=mock_get_onu_id_by_mac_and_pon.mock_calls,
+      msg=str(
+        'Calls get_onu_id_by_mac_and_pon only once when the onu id is returned from the pon passed right away'
+      )
+    )
+
+  @patch(target='tasiap.onu_id_from_username.findall')
+  def test_get_pon_list(self, mock_findall):
+    telnet = MagicMock()
+    pon_pattern = '(slot [0-9]* link [0-9]*) *,auth mode is physical id.'
+
+    self.assertEqual(
+      first=mock_findall.return_value,
+      second=get_pon_list(tn=telnet),
+      msg='Returns the pon list found with findall'
+    )
+    self.assertEqual(
+      first=[
+        call.write(b'cd gponline\n'),
+        call.read_until(b'gponline# ', timeout=1),
+        call.write(b'show pon_auth all\n'),
+        call.read_until(b'Admin\\gponline# ', timeout=1),
+        call.read_until().decode('ascii')
+      ],
+      second=telnet.mock_calls,
+      msg=str(
+        'Uses the telnet session to enter the directory gponline and uses the command show pon_auth all; reads the '
+        'outputs and decodes the last output to ascii.'
+      )
+    )
+    self.assertIn(
+      member=[call(pon_pattern, telnet.read_until.return_value.decode.return_value)],
+      container=mock_findall.mock_calls,
+      msg='Calls findall with the pon address pattern and the decoded output gathered from the telnet session.'
     )

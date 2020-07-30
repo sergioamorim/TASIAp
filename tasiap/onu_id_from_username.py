@@ -58,13 +58,33 @@ def get_pon_list(tn=None):
   return findall(pon_pattern, show_pon_auth_all)
 
 
+def pon_address_from_onu_id(onu_id):
+  return 'slot {board_id} link {pon_id}'.format(
+    board_id=get_board_id(onu_id=onu_id),
+    pon_id=get_pon_id(onu_id=onu_id)
+  )
+
+
+def board_id_and_pon_id_from_vlan_name(vlan_name):
+  if board_id_and_pon_id_found := findall(pattern='.*-P([0-9]*)-PON([0-9]*)', string=vlan_name):
+    return {'board_id': board_id_and_pon_id_found[0][0], 'pon_id': board_id_and_pon_id_found[0][1]}
+  return None
+
+
+def pon_address_from_vlan_name(vlan_name):
+  if board_id_and_pon_id := board_id_and_pon_id_from_vlan_name(vlan_name=vlan_name):
+    return 'slot {board_id} link {pon_id}'.format(
+      board_id=board_id_and_pon_id['board_id'],
+      pon_id=board_id_and_pon_id['pon_id']
+    )
+  return None
+
+
 def format_pon_name(vlan_name=None, onu_id=None):
   if onu_id:
-    return 'slot {board_id} link {pon_id}'.format(board_id=get_board_id(onu_id=onu_id),
-                                                  pon_id=get_pon_id(onu_id=onu_id))
+    return pon_address_from_onu_id(onu_id=onu_id)
   if vlan_name:
-    if len(vlan_name) > 13 and vlan_name[5:7] == '-P' and vlan_name[9:13] == '-PON':
-      return 'slot {0} link {1}'.format(vlan_name[7:9], vlan_name[13:14])
+    return pon_address_from_vlan_name(vlan_name=vlan_name)
   return None
 
 

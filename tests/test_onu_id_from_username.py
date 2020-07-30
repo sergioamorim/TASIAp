@@ -1,7 +1,8 @@
 import unittest
 from unittest.mock import patch, MagicMock, call
 
-from tasiap.onu_id_from_username import get_onu_number, get_onu_id_by_mac_and_pon, get_onu_id_by_mac, get_pon_list
+from tasiap.onu_id_from_username import get_onu_number, get_onu_id_by_mac_and_pon, get_onu_id_by_mac, get_pon_list, \
+  format_pon_name, pon_address_from_onu_id, pon_address_from_vlan_name, board_id_and_pon_id_from_vlan_name
 
 
 class TestOutputMethods(unittest.TestCase):
@@ -193,4 +194,163 @@ class TestOutputMethods(unittest.TestCase):
       member=[call(pon_pattern, telnet.read_until.return_value.decode.return_value)],
       container=mock_findall.mock_calls,
       msg='Calls findall with the pon address pattern and the decoded output gathered from the telnet session.'
+    )
+
+  @patch(target='tasiap.onu_id_from_username.get_pon_id')
+  @patch(target='tasiap.onu_id_from_username.get_board_id')
+  def test_format_pon_name(self, mock_get_board_id, mock_get_pon_id):
+    self.assertIsNone(
+      obj=format_pon_name(),
+      msg='Returns None when neither vlan_name nor onu_id are passed'
+    )
+    self.assertIsNone(
+      obj=format_pon_name(vlan_name='v1200 without explicit board_id or pon_id'),
+      msg='Returns None when neither vlan_name nor onu_id are passed'
+    )
+
+    onu_id = '1101'
+    expected_result = 'slot {board_id} link {pon_id}'.format(
+      board_id=mock_get_board_id.return_value,
+      pon_id=mock_get_pon_id.return_value
+    )
+    self.assertEqual(
+      first=expected_result,
+      second=format_pon_name(onu_id=onu_id),
+      msg=str(
+        'Returns "slot <board_id> link <pon_id>" from the onu id passed. When the first digit of the onu id passed is '
+        '1, the board id is 12. The pon id is the second digit of the onu id passed.'
+      )
+    )
+    self.assertIn(
+      member=[call(onu_id=onu_id)],
+      container=mock_get_board_id.mock_calls,
+      msg='Calls get_board_id with the onu_id passed'
+    )
+    self.assertIn(
+      member=[call(onu_id=onu_id)],
+      container=mock_get_pon_id.mock_calls,
+      msg='Calls get_pon_id with the onu_id passed'
+    )
+    self.assertEqual(
+      first=expected_result,
+      second=format_pon_name(onu_id='2811'),
+      msg=str(
+        'Returns "slot <board_id> link <pon_id>" from the onu id passed. When the first digit of the onu id passed is '
+        '1, the board id is 14. The pon id is the second digit of the onu id passed.'
+      )
+    )
+    self.assertEqual(
+      first='slot 12 link 2',
+      second=format_pon_name(vlan_name='v4001-P12-PON2'),
+      msg=str(
+        'Returns "slot <board_id> link <pon_id>" from the vlan name passed when the vlan name format follows the '
+        'pattern "<5 characters>-P<board_id>-PON<pon_id>"'
+      )
+    )
+    self.assertEqual(
+      first='slot 14 link 7',
+      second=format_pon_name(vlan_name='v4002-P14-PON7'),
+      msg=str(
+        'Returns "slot <board_id> link <pon_id>" from the vlan name passed when the vlan name format follows the '
+        'pattern "<5 characters>-P<board_id>-PON<pon_id>"'
+      )
+    )
+
+  @patch(target='tasiap.onu_id_from_username.get_pon_id')
+  @patch(target='tasiap.onu_id_from_username.get_board_id')
+  def test_pon_address_from_onu_id(self, mock_get_board_id, mock_get_pon_id):
+    onu_id = '1405'
+    expected_result = 'slot {board_id} link {pon_id}'.format(
+      board_id=mock_get_board_id.return_value,
+      pon_id=mock_get_pon_id.return_value
+    )
+    self.assertEqual(
+      first=expected_result,
+      second=pon_address_from_onu_id(onu_id=onu_id),
+      msg=str(
+        'Returns "slot <board_id> link <pon_id>" with board_id being gathered from get_board_id and pon_id from '
+        'get_pon_id'
+      )
+    )
+    self.assertIn(
+      member=[call(onu_id=onu_id)],
+      container=mock_get_board_id.mock_calls,
+      msg='Calls get_board_id with the onu_id passed'
+    )
+    self.assertIn(
+      member=[call(onu_id=onu_id)],
+      container=mock_get_pon_id.mock_calls,
+      msg='Calls get_pon_id with the onu_id passed'
+    )
+
+  @patch(target='tasiap.onu_id_from_username.findall')
+  def test_board_id_and_pon_id_from_vlan_name(self, mock_findall):
+    vlan_name = 'vlan name'
+    self.assertEqual(
+      first={'board_id': mock_findall.return_value[0][0], 'pon_id': mock_findall.return_value[0][1]},
+      second=board_id_and_pon_id_from_vlan_name(vlan_name=vlan_name),
+      msg='Returns a dict with the board id and pon id found by findall'
+    )
+    self.assertIn(
+      member=[call(pattern='.*-P([0-9]*)-PON([0-9]*)', string=vlan_name)],
+      container=mock_findall.mock_calls,
+      msg='Calls findall with the vlan name pattern and the vlan name passed'
+    )
+
+    mock_findall.return_value = None
+    self.assertIsNone(
+      obj=board_id_and_pon_id_from_vlan_name(vlan_name=vlan_name),
+      msg='Returns None when vlan name does not match the pattern in findall'
+    )
+
+  def test_board_id_and_pon_id_from_vlan_name_integrated_with_findall(self):
+    # the goal of this set of tests is to evaluate if the pattern used in findall to catch the board id and pon id is
+    # correct
+    self.assertEqual(
+      first={'board_id': '12', 'pon_id': '1'},
+      second=board_id_and_pon_id_from_vlan_name(vlan_name='v1200-P12-PON1-SOMETHING'),
+      msg=str(
+        'Returns a dict with the board id and pon id found on vlan name with the format '
+        '"<something>-P<board_id>-PON<pon_id>"'
+      )
+    )
+    self.assertEqual(
+      first={'board_id': '14', 'pon_id': '8'},
+      second=board_id_and_pon_id_from_vlan_name(vlan_name='v4025-P14-PON8-SOMETHING'),
+      msg=str(
+        'Returns a dict with the board id and pon id found on vlan name with the format '
+        '"<something>-P<board_id>-PON<pon_id>"'
+      )
+    )
+
+    self.assertIsNone(
+      obj=board_id_and_pon_id_from_vlan_name(vlan_name='v4005 vlan name without explicit board_id or pon_id'),
+      msg='Returns None when vlan name does not have explicit board id or pon id'
+    )
+
+  @patch(target='tasiap.onu_id_from_username.board_id_and_pon_id_from_vlan_name')
+  def test_pon_address_from_vlan_name(self, mock_board_id_and_pon_id_from_vlan_name):
+    vlan_name = 'vlan name'
+
+    self.assertEqual(
+      first='slot {board_id} link {pon_id}'.format(
+        board_id=mock_board_id_and_pon_id_from_vlan_name.return_value['board_id'],
+        pon_id=mock_board_id_and_pon_id_from_vlan_name.return_value['pon_id']
+      ),
+      second=pon_address_from_vlan_name(vlan_name=vlan_name),
+      msg=str(
+        'Returns "slot <board_id> link <pon_id>" where the board_id and pon_id are extracted from '
+        'board_id_and_pon_id_from_vlan_name'
+      )
+    )
+    self.assertIn(
+      member=[call(vlan_name=vlan_name)],
+      container=mock_board_id_and_pon_id_from_vlan_name.mock_calls,
+      msg='Calls board_id_and_pon_id_from_vlan_name with the vlan name passed'
+    )
+
+    mock_board_id_and_pon_id_from_vlan_name.return_value = None
+    self.assertIsNone(
+      obj=pon_address_from_vlan_name(vlan_name=vlan_name),
+      msg='Returns None when the board id or pon id can not be found by board_id_and_pon_id_from_vlan_name'
     )

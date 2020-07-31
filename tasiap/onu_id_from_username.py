@@ -15,22 +15,33 @@ logger = get_logger(__name__)
 
 @Log(logger)
 def get_onu_number(pon_mac_lookup):
-  onu_number_pattern = 'OnuId:([0-9]*)'
-  if onu_number := findall(onu_number_pattern, pon_mac_lookup):
+  if onu_number := findall(pattern='OnuId:([0-9]*)', string=pon_mac_lookup):
     return onu_number[0]
   return None
 
 
 @supply_telnet_connection
 def get_onu_id_by_mac_and_pon(mac, pon, tn=None):
-  tn.write(str_to_telnet('cd gponline'))
+  tn.write(b'cd gponline\n')
   tn.read_until(b'Admin\\gponline# ', timeout=1)
-  tn.write(str_to_telnet('show pon_mac {0} lookup {1}'.format(pon, mac.replace(':', ''))))
+
+  tn.write(
+    'show pon_mac {pon_address} lookup {mac}\n'.format(
+      pon_address=pon,
+      mac=mac.replace(':', '')
+    ).encode('ascii')
+  )
+
   pon_mac_lookup = tn.read_until(b'Admin\\gponline# ', timeout=1).decode('ascii')
   if onu_number := get_onu_number(pon_mac_lookup):
     board_id = get_board_id(pon_name=pon)
     pon_id = get_pon_id(pon_name=pon)
-    return '{0}{1}{2}{3}'.format(board_id, pon_id, '0' if int(onu_number) < 10 else '', onu_number)
+    return '{board_id}{pon_id}{onu_number_leading_zero}{onu_number}'.format(
+      board_id=board_id,
+      pon_id=pon_id,
+      onu_number_leading_zero='0' if int(onu_number) < 10 else '',
+      onu_number=onu_number
+    )
   return None
 
 

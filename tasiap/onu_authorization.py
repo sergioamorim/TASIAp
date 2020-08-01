@@ -106,18 +106,43 @@ class Board:
 @supply_telnet_connection
 def authorize_onu_effective(onu, cvlan, tn=None):
   onu.number = onu.pon.last_authorized_onu_number + 1
-  tn.write(str_to_telnet('cd gpononu'))
-  tn.read_until(b'Admin\\gpononu# ', timeout=10)
-  tn.write(str_to_telnet('set whitelist phy_addr address {0} password null action delete'.format(onu.phy_id)))
-  tn.read_until(b'Admin\\gpononu# ', timeout=10)
-  tn.write(str_to_telnet('set authorization slot {0} link {1} type {2} onuid {3} phy_id {4}'.format(
-    onu.pon.board.board_id, onu.pon.pon_id, onu.onu_type, onu.number, onu.phy_id)))
-  tn.read_until(b'Admin\\gpononu# ', timeout=10)
-  tn.write(str_to_telnet('set whitelist phy_addr address {0} password null action add slot {1} link {2} onu {3} '
-                         'type {4}'.format(onu.phy_id, onu.pon.board.board_id, onu.pon.pon_id, onu.number,
-                                           onu.onu_type)))
+
+  tn.write(b'cd gpononu\n')
+  tn.read_until(b'Admin\\gpononu# ')
+
+  tn.write(  # deletes any previous authorization for the onu
+    'set whitelist phy_addr address {phy_id} password null action delete\n'.format(phy_id=onu.phy_id).encode('ascii')
+  )
+  tn.read_until(b'Admin\\gpononu# ')
+
+  tn.write(  # adds the onu to the authorization list
+    'set authorization slot {board_id} link {pon_id} type {onu_type} onuid {onu_number} phy_id {phy_id}\n'.format(
+      board_id=onu.pon.board.board_id,
+      pon_id=onu.pon.pon_id,
+      onu_type=onu.onu_type,
+      onu_number=onu.number,
+      phy_id=onu.phy_id
+    ).encode('ascii')
+  )
+  tn.read_until(b'Admin\\gpononu# ')
+
+  tn.write(  # whitelists the onu
+    str(
+      'set whitelist phy_addr address {phy_id} password null action add slot {board_id} link {pon_id} onu {onu_number} '
+      'type {onu_type}\n'
+    ).format(
+      phy_id=onu.phy_id,
+      board_id=onu.pon.board.board_id,
+      pon_id=onu.pon.pon_id,
+      onu_number=onu.number,
+      onu_type=onu.onu_type
+    ).encode('ascii')
+  )
+  tn.read_until(b'Admin\\gpononu# ')
+
   if cvlan:
-    onu.set_cvlan(cvlan)
+    onu.set_cvlan(cvlan=cvlan)
+
   update_onu_info(auth_onu_device=onu)
   return onu
 

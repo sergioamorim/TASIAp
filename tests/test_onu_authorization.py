@@ -1,5 +1,5 @@
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock, call
 
 from tasiap.onu_authorization import format_onu_type, get_last_authorized_number, get_first_missing_number_precedent, \
   get_discovery_list, get_authorization_list, Board, Pon, AuthOnuDevice, find_onu_in_list, authorize_onu_effective, \
@@ -119,14 +119,72 @@ class TestFunctions(TestCase):
   def test_authorize_onu_effective(self, mock_update_onu_info):
     onu_a = MockAuthOnuDevice()
     cvlan_a = 2600
-    self.assertEqual(first=onu_a, second=authorize_onu_effective(onu=onu_a, cvlan=cvlan_a))
-    self.assertEqual(first=MockAuthOnuDevice.pon.last_authorized_onu_number + 1, second=onu_a.number)
-    self.assertEqual(first=cvlan_a, second=onu_a.cvlan)
-    mock_update_onu_info.assert_called_with(auth_onu_device=onu_a)
+    telnet = MagicMock()
+    self.assertEqual(
+      first=onu_a,
+      second=authorize_onu_effective(onu=onu_a, cvlan=cvlan_a, tn=telnet),
+      msg='Returns the onu passed'
+    )
+    self.assertEqual(
+      first=MockAuthOnuDevice.pon.last_authorized_onu_number + 1,
+      second=onu_a.number,
+      msg="Sets the onu number to one more than it's pon last authorized onu number"
+    )
+    self.assertEqual(
+      first=cvlan_a,
+      second=onu_a.cvlan,
+      msg='Sets the vlan of the onu to if a non-empty cvlan is passed'
+    )
+    self.assertEqual(
+      first=[call(auth_onu_device=onu_a)],
+      second=mock_update_onu_info.mock_calls,
+      msg='Pushes the onu into the database'
+    )
+    self.assertEqual(
+      first=[
+        call.write(b'cd gpononu\n'),
+        call.read_until(b'Admin\\gpononu# '),
+        call.write(
+          'set whitelist phy_addr address {phy_id} password null action delete\n'.format(
+            phy_id=onu_a.phy_id
+          ).encode('ascii')
+        ),
+        call.read_until(b'Admin\\gpononu# '),
+        call.write(
+          'set authorization slot {board_id} link {pon_id} type {onu_type} onuid {onu_number} phy_id {phy_id}\n'.format(
+            board_id=onu_a.pon.board.board_id,
+            pon_id=onu_a.pon.pon_id,
+            onu_type=onu_a.onu_type,
+            onu_number=onu_a.number,
+            phy_id=onu_a.phy_id
+          ).encode('ascii')
+        ),
+        call.read_until(b'Admin\\gpononu# '),
+        call.write(
+          str(
+            'set whitelist phy_addr address {phy_id} password null action add slot {board_id} link {pon_id} onu '
+            '{onu_number} type {onu_type}\n'
+          ).format(
+            phy_id=onu_a.phy_id,
+            board_id=onu_a.pon.board.board_id,
+            pon_id=onu_a.pon.pon_id,
+            onu_number=onu_a.number,
+            onu_type=onu_a.onu_type
+          ).encode('ascii')
+        ),
+        call.read_until(b'Admin\\gpononu# '),
+      ],
+      second=telnet.mock_calls,
+      msg=str(
+        'Uses the telnet session passed to enter the gpononu directory, delete any authorization for the phy_id of the '
+        'onu passed that could already exist, authorize the onu passed and then whitelist that same onu. Reads the '
+        'output after each command written.'
+      )
+    )
 
     onu_b = MockAuthOnuDevice()
-    authorize_onu_effective(onu=onu_b, cvlan=None)
-    self.assertFalse(expr=onu_b.cvlan)
+    authorize_onu_effective(onu=onu_b, cvlan=None, tn=telnet)
+    self.assertIsNone(obj=onu_b.cvlan, msg='Does not set the onu vlan when no cvlan is passed')
 
   @patch(target='tasiap.onu_authorization.Pon', new=MockPon)
   @patch(target='tasiap.onu_authorization.AuthOnuDevice', new=MockAuthOnuDevice)

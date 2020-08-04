@@ -2,7 +2,7 @@ from re import findall
 
 from tasiap.common.sqlite_common import update_onu_info
 from tasiap.common.string_common import is_int
-from tasiap.common.telnet_common import str_to_telnet, supply_telnet_connection
+from tasiap.common.telnet_common import supply_telnet_connection
 from tasiap.logger import Log, get_logger
 from tasiap.snmp.onu_vlan import set_cvlan
 
@@ -170,20 +170,23 @@ def find_onu_in_list(onu_list, auth_onu):
 
 @supply_telnet_connection
 def get_discovery_list(tn=None):
-  tn.write(str_to_telnet('cd gpononu'))
-  tn.read_until(b'Admin\\gpononu# ', timeout=10)
-  tn.write(str_to_telnet('show discovery slot all link all'))
-  discovery_list = tn.read_until(b'Admin\\gpononu# ', timeout=10)
-  return discovery_list.decode('ascii')
+  tn.write(b'cd gpononu\n')
+  tn.read_until(b'Admin\\gpononu# ')
+  tn.write(b'show discovery slot all link all\n')
+  return tn.read_until(b'Admin\\gpononu# ').decode('ascii')
 
 
 @supply_telnet_connection
 def get_authorization_list(pon, tn=None):
-  tn.write(str_to_telnet('cd gpononu'))
-  tn.read_until(b'Admin\\gpononu# ', timeout=10)
-  tn.write(str_to_telnet('show authorization slot {0} link {1}'.format(pon.board.board_id, pon.pon_id)))
-  authorization_list = tn.read_until(b'Admin\\gpononu# ', timeout=10)
-  return authorization_list.decode('ascii')
+  tn.write(b'cd gpononu\n')
+  tn.read_until(b'Admin\\gpononu# ')
+  tn.write(
+    'show authorization slot {board_id} link {pon_id}\n'.format(
+      board_id=pon.board.board_id,
+      pon_id=pon.pon_id
+    ).encode('ascii')
+  )
+  return tn.read_until(b'Admin\\gpononu# ').decode('ascii')
 
 
 def format_onu_type(onu_type):

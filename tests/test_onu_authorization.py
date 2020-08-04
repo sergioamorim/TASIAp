@@ -6,24 +6,10 @@ from tasiap.onu_authorization import format_onu_type, get_last_authorized_number
   get_onu_list, onu_tuples, onu_tuples_found, onus_from_pon_textual, onus_from_pon_textual_found, \
   onus_from_pon_textual_pattern, authorize_onu
 from tests.data.onu_authorization_testing_data import authorization_list_tests, discovery_lists_tests
-from tests.data.telnet_testing_data import test_data
 from tests.mock_classes import MockPon, MockAuthOnuDevice, MockBoard
-from tests.telnet_testing_environment import TelnetTestingEnvironment
 
 
 class TestFunctions(TestCase):
-  telnet_testing_environment = None
-
-  @classmethod
-  def setUpClass(cls):
-    cls.telnet_testing_environment = TelnetTestingEnvironment(port=26326)
-    cls.telnet_testing_environment.setup()
-
-    cls.expected_generic_response_format = '\r\n{data}\r\nAdmin\\gpononu# '
-
-  @classmethod
-  def tearDownClass(cls):
-    cls.telnet_testing_environment.tear_down()
 
   def test_format_onu_type(self):
     onu_type_a = 'AN5506-01-A1'
@@ -76,18 +62,55 @@ class TestFunctions(TestCase):
       )
 
   def test_get_discovery_list(self):
-    expected_response = self.expected_generic_response_format.format(
-      data=test_data['default']['discovery']
+    telnet = MagicMock()
+    self.assertEqual(
+      first=telnet.read_until.return_value.decode.return_value,
+      second=get_discovery_list(tn=telnet),
+      msg='Returns the decoded discovery list got with the telnet session passed'
     )
-
-    self.assertEqual(first=expected_response, second=get_discovery_list())
+    self.assertIn(
+      member=[
+        call.write(b'cd gpononu\n'),
+        call.read_until(b'Admin\\gpononu# '),
+        call.write(b'show discovery slot all link all\n'),
+        call.read_until(b'Admin\\gpononu# '),
+        call.read_until().decode('ascii')
+      ],
+      container=telnet.mock_calls,
+      msg=str(
+        'Uses the telnet session passed to enter the gpononu directory and use the show discovery command on all slots '
+        'and pons. Reads the output of each command after sending them. Decodes the output of the show discovery '
+        'command from ascii after reading it.'
+      )
+    )
 
   def test_get_authorization_list(self):
-    expected_response = self.expected_generic_response_format.format(
-      data=test_data['default']['authorization']
+    telnet = MagicMock()
+    pon = MockPon()
+    self.assertEqual(
+      first=telnet.read_until.return_value.decode.return_value,
+      second=get_authorization_list(pon=pon, tn=telnet),
+      msg='Returns the decoded authorization list gathered by the telnet session passed.'
     )
-
-    self.assertEqual(first=expected_response, second=get_authorization_list(pon=MockPon()))
+    self.assertIn(
+      member=[
+        call.write(b'cd gpononu\n'),
+        call.read_until(b'Admin\\gpononu# '),
+        call.write(
+          'show authorization slot {board_id} link {pon_id}\n'.format(
+            board_id=pon.board.board_id, pon_id=pon.pon_id
+          ).encode('ascii')
+        ),
+        call.read_until(b'Admin\\gpononu# '),
+        call.read_until().decode('ascii')
+      ],
+      container=telnet.mock_calls,
+      msg=str(
+        'Uses the telnet session passed to enter the gpononu directory, use the show authorization command with the '
+        'address of the pon passed and read the output of the commands sent right after sending them. Decodes the '
+        'output of the show authorization command from ascii after reading it.'
+      )
+    )
 
   def test_find_onu_in_list(self):
     onu_a = MockAuthOnuDevice(authorization_id=1, phy_id='a')

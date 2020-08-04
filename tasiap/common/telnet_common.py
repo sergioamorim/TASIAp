@@ -12,46 +12,63 @@ logger = get_logger(__name__)
 def supply_telnet_connection(function):
   @wraps(function)
   def telnet_connection_wrapper(*args, **kwargs):
-    if 'tn' not in kwargs:
+    if 'telnet' not in kwargs and 'tn' not in kwargs:
       with telnet_connection_factory() as tn:
         return function(*args, **kwargs, tn=tn)
     return function(*args, **kwargs)
+
   return telnet_connection_wrapper
 
 
 @contextmanager
 def telnet_connection_factory():
-  tn = Telnet(telnet_config.ip, telnet_config.port)
-  connect_su(tn)
+  telnet = Telnet(host=telnet_config.ip, port=telnet_config.port)
   try:
-    yield tn
+    yield sudo_authenticated(telnet=telnet)
   finally:
-    tn.write(b'cd ..\n')
-    tn.write(b'quit\n')
-    tn.read_until(b'ye!\r\n', timeout=1)
-    tn.close()
+    close_session(telnet=telnet)
+
+
+def close_session(telnet):
+  telnet.write(b'cd ..\n')
+  telnet.write(b'quit\n')
+  telnet.read_until(b'ye!\r\n', timeout=1)
+  telnet.close()
 
 
 def str_to_telnet(string):
   return string.encode('ascii') + b'\n'
 
 
-def connect_su(tn):
-  tn.read_until(b'Login: ', timeout=1)
-  tn.write(str_to_telnet(telnet_config.username))
-  tn.read_until(b'Password: ', timeout=1)
-  tn.write(str_to_telnet(telnet_config.password))
-  tn.read_until(b'User> ', timeout=1)
-  tn.write(str_to_telnet('enable'))
-  tn.read_until(b'Password: ', timeout=1)
-  tn.write(str_to_telnet(telnet_config.password_sudo))
-  tn.read_until(b'Admin# ', timeout=1)
-  tn.write(str_to_telnet('cd service'))
-  tn.read_until(b'service# ', timeout=1)
-  tn.write(str_to_telnet('terminal length 512'))
-  tn.read_until(b'service# ', timeout=1)
-  tn.write(str_to_telnet('cd ..'))
-  tn.read_until(b'Admin# ', timeout=1)
+def sudo_authenticated(telnet):
+  telnet.read_until(b'Login: ')
+  telnet.write('{username}\n'.format(
+    username=telnet_config.username
+  ).encode('ascii'))
+
+  telnet.read_until(b'Password: ')
+  telnet.write('{password}\n'.format(
+    password=telnet_config.password
+  ).encode('ascii'))
+
+  telnet.read_until(b'User> ')
+  telnet.write(b'enable\n')
+  telnet.read_until(b'Password: ')
+  telnet.write('{enable_password}\n'.format(
+    enable_password=telnet_config.password_sudo
+  ).encode('ascii'))
+
+  telnet.read_until(b'Admin# ')
+  telnet.write(b'cd service\n')
+
+  telnet.read_until(b'service# ')
+  telnet.write(b'terminal length 512\n')
+
+  telnet.read_until(b'service# ')
+  telnet.write(b'cd ..\n')
+
+  telnet.read_until(b'Admin# ')
+  return telnet
 
 
 @supply_telnet_connection

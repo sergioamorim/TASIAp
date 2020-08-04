@@ -1,11 +1,10 @@
-from telnetlib import Telnet
 from unittest import TestCase
 from unittest.mock import call, MagicMock, patch
 
 from config import telnet_config
-from tasiap.common.telnet_common import connect_su, str_to_telnet, supply_telnet_connection, get_wifi_data_effective, \
-  get_ssid, get_wifi_password, telnet_connection_factory
-from tests.telnet_testing_environment import TelnetTestingEnvironment
+from tasiap.common.telnet_common import sudo_authenticated, str_to_telnet, supply_telnet_connection, \
+  get_wifi_data_effective, \
+  get_ssid, get_wifi_password, telnet_connection_factory, close_session
 
 
 class TestTelnetFunctions(TestCase):
@@ -22,31 +21,31 @@ class TestTelnetFunctions(TestCase):
 
     expected_calls = {
       'login': [
-        call.read_until(b'Login: ', timeout=1),
+        call.read_until(b'Login: '),
         call.write('{username}\n'.format(username=telnet_config.username).encode('ascii')),
-        call.read_until(b'Password: ', timeout=1),
+        call.read_until(b'Password: '),
         call.write('{password}\n'.format(password=telnet_config.password).encode('ascii')),
       ],
       'enable_sudo': [
-        call.read_until(b'User> ', timeout=1),
+        call.read_until(b'User> '),
         call.write(b'enable\n'),
-        call.read_until(b'Password: ', timeout=1),
+        call.read_until(b'Password: '),
         call.write('{enable_password}\n'.format(enable_password=telnet_config.password_sudo).encode('ascii')),
-        call.read_until(b'Admin# ', timeout=1),
+        call.read_until(b'Admin# '),
       ],
       'terminal_length': [
         call.write(b'cd service\n'),
-        call.read_until(b'service# ', timeout=1),
+        call.read_until(b'service# '),
         call.write(b'terminal length 512\n'),
-        call.read_until(b'service# ', timeout=1),
+        call.read_until(b'service# '),
       ],
       'rest_in_root': [
         call.write(str_to_telnet('cd ..')),
-        call.read_until(b'Admin# ', timeout=1),
+        call.read_until(b'Admin# '),
       ],
     }
 
-    connect_su(tn=telnet)
+    sudo_authenticated(telnet=telnet)
 
     self.assertEqual(
       first=expected_calls['login'],
@@ -213,19 +212,53 @@ class TestTelnetFunctions(TestCase):
       msg='wifi password is returned when found in data from get_wifi_data_effective'
     )
 
-  def test_telnet_connection_factory(self):
-    telnet_testing_environment = TelnetTestingEnvironment(port=23623)
-    telnet_testing_environment.setup()
+  @patch(target='tasiap.common.telnet_common.close_session')
+  @patch(target='tasiap.common.telnet_common.sudo_authenticated')
+  @patch(target='tasiap.common.telnet_common.Telnet')
+  def test_telnet_connection_factory(self, MockTelnet, mock_sudo_authenticated, mock_close_session):
+    telnet_config.ip = 'ip'
+    telnet_config.port = 'port'
+    with telnet_connection_factory() as telnet:
+      self.assertEqual(
+        first=[call(host=telnet_config.ip, port=telnet_config.port)],
+        second=MockTelnet.mock_calls,
+        msg='Creates the connection using the ip and port from telnet_config'
+      )
+      self.assertEqual(
+        first=[call(telnet=MockTelnet.return_value)],
+        second=mock_sudo_authenticated.mock_calls,
+        msg='Authenticates and enables sudo on the session created from the Telnet class'
+      )
+      self.assertEqual(
+        first=mock_sudo_authenticated.return_value,
+        second=telnet,
+        msg='Returns the telnet session already authenticated and with sudo enabled'
+      )
+      self.assertEqual(
+        first=[],
+        second=mock_close_session.mock_calls,
+        msg='Does not close the session while the context is open'
+      )
+    self.assertEqual(
+      first=[call(telnet=MockTelnet.return_value)],
+      second=mock_close_session.mock_calls,
+      msg='Closes the session after the context is closed'
+    )
 
-    with telnet_connection_factory() as tn:
-      self.assertTrue(expr=tn)
-      self.assertEqual(first=Telnet, second=type(tn))
-      self.assertTrue(expr=tn.sock)
-      self.assertFalse(expr=tn.eof)
-      tn.write(b'cd ..\n')
-      self.assertEqual(first=b'\r\nAdmin# ', second=tn.read_until(b'Admin# ', timeout=1))
-
-    self.assertFalse(expr=tn.sock)
-    self.assertTrue(expr=tn.eof)
-
-    telnet_testing_environment.tear_down()
+  def test_close_session(self):
+    telnet = MagicMock()
+    close_session(telnet=telnet)
+    self.assertEqual(
+      first=[
+        call.write(b'cd ..\n'),
+        call.write(b'quit\n'),
+        call.read_until(b'ye!\r\n', timeout=1),
+        call.close()
+      ],
+      second=telnet.mock_calls,
+      msg=str(
+        r'Uses the telnet session passed to return to the root directory, use the quit command and read all the output '
+        r'available after the quit command (expecting for the last characters to be "ye!\r\n") and then effectively '
+        r'closes the session.'
+      )
+    )

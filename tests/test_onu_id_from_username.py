@@ -40,7 +40,7 @@ class TestOutputMethods(unittest.TestCase):
 
     mock_get_onu_number.return_value = False
     self.assertIsNone(
-      obj=get_onu_id_by_mac_and_pon(mac=mac, pon=pon, tn=telnet),
+      obj=get_onu_id_by_mac_and_pon(mac=mac, pon=pon, telnet=telnet),
       msg='Returns None when the onu number can not be determined'
     )
     self.assertEqual(
@@ -77,7 +77,7 @@ class TestOutputMethods(unittest.TestCase):
         leading_zero_of_onu_number='0' if int(mock_get_onu_number.return_value) < 10 else '',
         onu_number=mock_get_onu_number.return_value
       ),
-      second=get_onu_id_by_mac_and_pon(mac=mac, pon=pon, tn=telnet),
+      second=get_onu_id_by_mac_and_pon(mac=mac, pon=pon, telnet=telnet),
       msg=str(
         'Returns the ONU ID is in its compact format when the onu number is found. The single digit board id is '
         'determined by get_board_id and the pon id is determined by get_pon_id. The onu number is the response from '
@@ -116,16 +116,16 @@ class TestOutputMethods(unittest.TestCase):
 
     mock_get_onu_id_by_mac_and_pon.return_value = None
     self.assertIsNone(
-      obj=get_onu_id_by_mac(mac=mac, pon=None, tn=telnet),
+      obj=get_onu_id_by_mac(mac=mac, pon=None, telnet=telnet),
       msg='Returns None when the onu_id can not be determined'
     )
     self.assertEqual(
-      first=[call(mac, pon_address, tn=telnet) for pon_address in pon_addresses],
+      first=[call(mac, pon_address, telnet=telnet) for pon_address in pon_addresses],
       second=mock_get_onu_id_by_mac_and_pon.mock_calls,
       msg='Checks every pon address available in search for the onu id when no pon is passed'
     )
     self.assertEqual(
-      first=[call(tn=telnet)],
+      first=[call(telnet=telnet)],
       second=mock_get_pon_list.mock_calls,
       msg='Calls get_pon_list once with the telnet connection passed'
     )
@@ -134,19 +134,19 @@ class TestOutputMethods(unittest.TestCase):
     put_onu_id_in_the_last_pon_available(onu_id=current_onu_id)
     self.assertEqual(
       first=current_onu_id,
-      second=get_onu_id_by_mac(mac=mac, pon=None, tn=telnet),
+      second=get_onu_id_by_mac(mac=mac, pon=None, telnet=telnet),
       msg='Returns the onu id determined by get_onu_id_by_mac_and_pon when it is found'
     )
     self.assertEqual(
-      first=[call(mac, pon_address, tn=telnet) for pon_address in pon_addresses],
+      first=[call(mac, pon_address, telnet=telnet) for pon_address in pon_addresses],
       second=mock_get_onu_id_by_mac_and_pon.mock_calls,
       msg='Checks every pon address available in search for the onu id when no pon is passed'
     )
 
     put_onu_id_in_the_last_pon_available(onu_id=current_onu_id)
-    get_onu_id_by_mac(mac=mac, pon=pon_addresses[0], tn=telnet)
+    get_onu_id_by_mac(mac=mac, pon=pon_addresses[0], telnet=telnet)
     self.assertEqual(
-      first=[call(mac, pon_address, tn=telnet) for pon_address in pon_addresses],
+      first=[call(mac, pon_address, telnet=telnet) for pon_address in pon_addresses],
       second=mock_get_onu_id_by_mac_and_pon.mock_calls,
       msg=str(
         'Checks every other pon address available in search for the onu id when it can not be found on the pon passed;'
@@ -157,9 +157,9 @@ class TestOutputMethods(unittest.TestCase):
     mock_get_onu_id_by_mac_and_pon.side_effect = None
     mock_get_onu_id_by_mac_and_pon.return_value = current_onu_id
     mock_get_onu_id_by_mac_and_pon.reset_mock()
-    get_onu_id_by_mac(mac=mac, pon=pon_addresses[0], tn=telnet)
+    get_onu_id_by_mac(mac=mac, pon=pon_addresses[0], telnet=telnet)
     self.assertEqual(
-      first=[call(mac, pon_addresses[0], tn=telnet)],
+      first=[call(mac, pon_addresses[0], telnet=telnet)],
       second=mock_get_onu_id_by_mac_and_pon.mock_calls,
       msg=str(
         'Calls get_onu_id_by_mac_and_pon only once when the onu id is returned from the pon passed right away'
@@ -173,7 +173,7 @@ class TestOutputMethods(unittest.TestCase):
 
     self.assertEqual(
       first=mock_findall.return_value,
-      second=get_pon_list(tn=telnet),
+      second=get_pon_list(telnet=telnet),
       msg='Returns the pon list found with findall'
     )
     self.assertEqual(

@@ -9,19 +9,19 @@ from tasiap.logger import get_logger
 logger = get_logger(__name__)
 
 
-def supply_telnet_connection(function):
+def supply_telnet_session(function):
   @wraps(function)
   def telnet_connection_wrapper(*args, **kwargs):
-    if 'telnet' not in kwargs and 'tn' not in kwargs:
-      with telnet_connection_factory() as tn:
-        return function(*args, **kwargs, tn=tn)
+    if 'telnet' not in kwargs:
+      with open_telnet_session() as telnet:
+        return function(*args, **kwargs, telnet=telnet)
     return function(*args, **kwargs)
 
   return telnet_connection_wrapper
 
 
 @contextmanager
-def telnet_connection_factory():
+def open_telnet_session():
   telnet = Telnet(host=telnet_config.ip, port=telnet_config.port)
   try:
     yield sudo_authenticated(telnet=telnet)
@@ -71,28 +71,28 @@ def sudo_authenticated(telnet):
   return telnet
 
 
-@supply_telnet_connection
-def get_wifi_data_effective(board_id, pon_id, onu_number, tn=None):
-  tn.write(str_to_telnet('cd gpononu'))
-  tn.read_until(b'Admin\\gpononu# ')
-  tn.write(str_to_telnet('show wifi_serv slot {0} link {1} onu {2}'.format(board_id, pon_id, onu_number)))
-  return tn.read_until(b'Admin\\gpononu# ').decode('ascii')
+@supply_telnet_session
+def get_wifi_data_effective(board_id, pon_id, onu_number, telnet=None):
+  telnet.write(str_to_telnet('cd gpononu'))
+  telnet.read_until(b'Admin\\gpononu# ')
+  telnet.write(str_to_telnet('show wifi_serv slot {0} link {1} onu {2}'.format(board_id, pon_id, onu_number)))
+  return telnet.read_until(b'Admin\\gpononu# ').decode('ascii')
 
 
-@supply_telnet_connection
-def get_ssid(board_id, pon_id, onu_number, tn=None):
+@supply_telnet_session
+def get_ssid(board_id, pon_id, onu_number, telnet=None):
   ssid_pattern = '\\*\\*SSID:(.*?)\\n'
-  wifi_data = get_wifi_data_effective(board_id, pon_id, onu_number, tn=tn)
+  wifi_data = get_wifi_data_effective(board_id, pon_id, onu_number, telnet=telnet)
   if ssid := findall(ssid_pattern, wifi_data):
     return ssid[0].replace('\r', '')
   logger.error('get_ssid: ssid not found')
   return None
 
 
-@supply_telnet_connection
-def get_wifi_password(board_id, pon_id, onu_number, tn=None):
+@supply_telnet_session
+def get_wifi_password(board_id, pon_id, onu_number, telnet=None):
   wifi_password_pattern = '\\*\\*WPA Share Key:(.*?)\\n'
-  wifi_data = get_wifi_data_effective(board_id, pon_id, onu_number, tn=tn)
+  wifi_data = get_wifi_data_effective(board_id, pon_id, onu_number, telnet=telnet)
   if wifi_password := findall(wifi_password_pattern, wifi_data):
     return wifi_password[0].replace('\r', '')
   logger.error('get_wifi_password: password not found')

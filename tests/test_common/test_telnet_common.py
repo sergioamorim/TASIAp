@@ -2,9 +2,9 @@ from unittest import TestCase
 from unittest.mock import call, MagicMock, patch
 
 from config import telnet_config
-from tasiap.common.telnet_common import sudo_authenticated, str_to_telnet, supply_telnet_connection, \
+from tasiap.common.telnet_common import sudo_authenticated, str_to_telnet, supply_telnet_session, \
   get_wifi_data_effective, \
-  get_ssid, get_wifi_password, telnet_connection_factory, close_session
+  get_ssid, get_wifi_password, open_telnet_session, close_session
 
 
 class TestTelnetFunctions(TestCase):
@@ -71,23 +71,22 @@ class TestTelnetFunctions(TestCase):
       msg='The last two telnet calls are putting the session to rest in the root of sudo (Admin#)'
     )
 
-  @patch(target='tasiap.common.telnet_common.telnet_connection_factory')
+  @patch(target='tasiap.common.telnet_common.open_telnet_session')
   def test_supply_telnet_connection(self, mock_telnet_connection_factory):
+    @supply_telnet_session
+    def generic_function(telnet=None):
+      return telnet
 
-    @supply_telnet_connection
-    def generic_function(tn=None):
-      return tn
-
-    telnet = 'telnet connection'
+    telnet_session = 'telnet session'
     self.assertEqual(
-      first=generic_function(tn=telnet),
-      second=telnet,
+      first=generic_function(telnet=telnet_session),
+      second=telnet_session,
       msg='When a telnet connection is passed to a function it is not overwritten'
     )
     self.assertEqual(
       first=mock_telnet_connection_factory().__enter__.return_value,
       second=generic_function(),
-      msg='When no telnet connection is passed one is created from telnet_connection_factory and included in the call'
+      msg='When no telnet connection is passed one is created from open_telnet_session and included in the call'
     )
 
   def test_get_wifi_data_effective(self):
@@ -111,7 +110,7 @@ class TestTelnetFunctions(TestCase):
         board_id=board_id,
         pon_id=pon_id,
         onu_number=onu_number,
-        tn=telnet
+        telnet=telnet
       ),
       msg='The data captured with read_until is decoded from ascii and returned'
     )
@@ -136,12 +135,12 @@ class TestTelnetFunctions(TestCase):
         board_id=board_id,
         pon_id=pon_id,
         onu_number=onu_number,
-        tn=telnet
+        telnet=telnet
       ),
       msg='None is returned when no SSID is found in data from get_wifi_data_effective'
     )
     self.assertEqual(
-      first=[call(board_id, pon_id, onu_number, tn=telnet)],
+      first=[call(board_id, pon_id, onu_number, telnet=telnet)],
       second=mock_get_wifi_data_effective.mock_calls,
       msg=str(
         'get_wifi_data_effective is called with the parameters passed to identify the onu and the already open telnet '
@@ -162,7 +161,7 @@ class TestTelnetFunctions(TestCase):
         board_id=board_id,
         pon_id=pon_id,
         onu_number=onu_number,
-        tn=telnet
+        telnet=telnet
       ),
       msg='SSID is returned when found in data from get_wifi_data_effective'
     )
@@ -181,12 +180,12 @@ class TestTelnetFunctions(TestCase):
         board_id=board_id,
         pon_id=pon_id,
         onu_number=onu_number,
-        tn=telnet
+        telnet=telnet
       ),
       msg='None is returned when no wifi password is found in data from get_wifi_data_effective'
     )
     self.assertEqual(
-      first=[call(board_id, pon_id, onu_number, tn=telnet)],
+      first=[call(board_id, pon_id, onu_number, telnet=telnet)],
       second=mock_get_wifi_data_effective.mock_calls,
       msg=str(
         'get_wifi_data_effective is called with the parameters passed to identify the onu and the already open telnet '
@@ -207,7 +206,7 @@ class TestTelnetFunctions(TestCase):
         board_id=board_id,
         pon_id=pon_id,
         onu_number=onu_number,
-        tn=telnet
+        telnet=telnet
       ),
       msg='wifi password is returned when found in data from get_wifi_data_effective'
     )
@@ -215,17 +214,17 @@ class TestTelnetFunctions(TestCase):
   @patch(target='tasiap.common.telnet_common.close_session')
   @patch(target='tasiap.common.telnet_common.sudo_authenticated')
   @patch(target='tasiap.common.telnet_common.Telnet')
-  def test_telnet_connection_factory(self, MockTelnet, mock_sudo_authenticated, mock_close_session):
+  def test_telnet_connection_factory(self, mock_telnet_class, mock_sudo_authenticated, mock_close_session):
     telnet_config.ip = 'ip'
     telnet_config.port = 'port'
-    with telnet_connection_factory() as telnet:
+    with open_telnet_session() as telnet:
       self.assertEqual(
         first=[call(host=telnet_config.ip, port=telnet_config.port)],
-        second=MockTelnet.mock_calls,
+        second=mock_telnet_class.mock_calls,
         msg='Creates the connection using the ip and port from telnet_config'
       )
       self.assertEqual(
-        first=[call(telnet=MockTelnet.return_value)],
+        first=[call(telnet=mock_telnet_class.return_value)],
         second=mock_sudo_authenticated.mock_calls,
         msg='Authenticates and enables sudo on the session created from the Telnet class'
       )
@@ -240,7 +239,7 @@ class TestTelnetFunctions(TestCase):
         msg='Does not close the session while the context is open'
       )
     self.assertEqual(
-      first=[call(telnet=MockTelnet.return_value)],
+      first=[call(telnet=mock_telnet_class.return_value)],
       second=mock_close_session.mock_calls,
       msg='Closes the session after the context is closed'
     )

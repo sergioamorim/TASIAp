@@ -23,7 +23,7 @@ class TestManageRouterOnuFunctions(TestCase):
     telnet = 'telnet'
     onu_id = '1100'
     mock_is_onu_id_valid.return_value = False
-    self.assertIsNone(obj=get_router_onu_info(onu_id='110a', tn=telnet))
+    self.assertIsNone(obj=get_router_onu_info(onu_id='110a', telnet=telnet))
 
     mock_is_onu_id_valid.return_value = True
     expected = {
@@ -32,7 +32,7 @@ class TestManageRouterOnuFunctions(TestCase):
       'wifi_password': mock_get_wifi_password.return_value,
       'username': mock_find_user_by_onu.return_value
     }
-    self.assertEqual(first=expected, second=get_router_onu_info(onu_id=onu_id, tn=telnet))
+    self.assertEqual(first=expected, second=get_router_onu_info(onu_id=onu_id, telnet=telnet))
 
   @patch(target='tasiap.manage_router_onu.set_wifi')
   @patch(target='tasiap.manage_router_onu.set_wan_service')

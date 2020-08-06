@@ -5,7 +5,7 @@ from tasiap.common.mysql_common import supply_mysql_session, reauthorize_user
 from tasiap.common.sqlite_common import find_onu_info, update_onu_info
 from tasiap.common.string_common import sanitize_cto_vlan_name, format_datetime, format_onu_state, get_board_id, \
   get_pon_id
-from tasiap.common.telnet_common import str_to_telnet, supply_telnet_connection
+from tasiap.common.telnet_common import str_to_telnet, supply_telnet_session
 from tasiap.logger import Log, get_logger
 from tasiap.onu_id_from_serial import find_onu_by_serial
 from tasiap.user_from_onu import find_user_by_onu
@@ -20,19 +20,19 @@ def get_onu_number(pon_mac_lookup):
   return None
 
 
-@supply_telnet_connection
-def get_onu_id_by_mac_and_pon(mac, pon, tn=None):
-  tn.write(b'cd gponline\n')
-  tn.read_until(b'Admin\\gponline# ', timeout=1)
+@supply_telnet_session
+def get_onu_id_by_mac_and_pon(mac, pon, telnet=None):
+  telnet.write(b'cd gponline\n')
+  telnet.read_until(b'Admin\\gponline# ', timeout=1)
 
-  tn.write(
+  telnet.write(
     'show pon_mac {pon_address} lookup {mac}\n'.format(
       pon_address=pon,
       mac=mac.replace(':', '')
     ).encode('ascii')
   )
 
-  pon_mac_lookup = tn.read_until(b'Admin\\gponline# ', timeout=1).decode('ascii')
+  pon_mac_lookup = telnet.read_until(b'Admin\\gponline# ', timeout=1).decode('ascii')
   if onu_number := get_onu_number(pon_mac_lookup):
     board_id = get_board_id(pon_name=pon)
     pon_id = get_pon_id(pon_name=pon)
@@ -45,26 +45,26 @@ def get_onu_id_by_mac_and_pon(mac, pon, tn=None):
   return None
 
 
-@supply_telnet_connection
-def get_onu_id_by_mac(mac, pon, tn=None):
+@supply_telnet_session
+def get_onu_id_by_mac(mac, pon, telnet=None):
   if pon:
-    if onu_id := get_onu_id_by_mac_and_pon(mac, pon, tn=tn):
+    if onu_id := get_onu_id_by_mac_and_pon(mac, pon, telnet=telnet):
       return onu_id
-  pon_list = get_pon_list(tn=tn)
+  pon_list = get_pon_list(telnet=telnet)
   if pon:
     pon_list.remove(pon)
   for pon in pon_list:
-    if onu_id := get_onu_id_by_mac_and_pon(mac, pon, tn=tn):
+    if onu_id := get_onu_id_by_mac_and_pon(mac, pon, telnet=telnet):
       return onu_id
   return None
 
 
-@supply_telnet_connection
-def get_pon_list(tn=None):
-  tn.write(str_to_telnet('cd gponline'))
-  tn.read_until(b'gponline# ', timeout=1)
-  tn.write(str_to_telnet('show pon_auth all'))
-  show_pon_auth_all = tn.read_until(b'Admin\\gponline# ', timeout=1).decode('ascii')
+@supply_telnet_session
+def get_pon_list(telnet=None):
+  telnet.write(str_to_telnet('cd gponline'))
+  telnet.read_until(b'gponline# ', timeout=1)
+  telnet.write(str_to_telnet('show pon_auth all'))
+  show_pon_auth_all = telnet.read_until(b'Admin\\gponline# ', timeout=1).decode('ascii')
   pon_pattern = '(slot [0-9]* link [0-9]*) *,auth mode is physical id.'
   return findall(pon_pattern, show_pon_auth_all)
 

@@ -59,8 +59,10 @@ def string_to_hex_octets(string, length):
 
 
 def generate_cvlan(board_id, pon_id):
-  board_id_id = '1' if board_id == '12' else '2'
-  return '{0}{1}00'.format(board_id_id, pon_id)
+  return '{board_id}{pon_id}00'.format(
+    board_id='1' if board_id == '12' else '2',
+    pon_id=pon_id
+  )
 
 
 def get_board_id(onu_id=None, pon_name=None):

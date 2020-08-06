@@ -5,7 +5,7 @@ from tasiap.common.mysql_common import supply_mysql_session
 from tasiap.common.sqlite_common import update_onu_info
 from tasiap.common.string_common import sanitize_cto_vlan_name, is_onu_id_valid, get_board_id, get_pon_id, \
   get_onu_number_from_id
-from tasiap.common.telnet_common import str_to_telnet, supply_telnet_connection
+from tasiap.common.telnet_common import str_to_telnet, supply_telnet_session
 from tasiap.logger import Log, get_logger
 
 logger = get_logger(__name__)
@@ -61,15 +61,15 @@ def get_mac_list(show_pon_mac, onu_number):
   )
 
 
-@supply_telnet_connection
-def get_mac_list_from_onu_id(onu_id, tn=None):
+@supply_telnet_session
+def get_mac_list_from_onu_id(onu_id, telnet=None):
   board = '12' if onu_id[:1] == '1' else '14'
   pon = onu_id[1:2]
   onu_number = onu_id[2:] if int(onu_id[2:]) > 9 else onu_id[3:]
-  tn.write(str_to_telnet('cd gponline'))
-  tn.read_until(b'Admin\\gponline# ', timeout=1)
-  tn.write(str_to_telnet('show pon_mac slot {0} link {1}'.format(board, pon)))
-  show_pon_mac = tn.read_until(b'Admin\\gponline# ', timeout=1).decode('ascii')
+  telnet.write(str_to_telnet('cd gponline'))
+  telnet.read_until(b'Admin\\gponline# ', timeout=1)
+  telnet.write(str_to_telnet('show pon_mac slot {0} link {1}'.format(board, pon)))
+  show_pon_mac = telnet.read_until(b'Admin\\gponline# ', timeout=1).decode('ascii')
   return get_mac_list(show_pon_mac, onu_number)
 
 

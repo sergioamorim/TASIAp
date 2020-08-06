@@ -52,7 +52,7 @@ class TestOutputMethods(unittest.TestCase):
     onu_id = '1234'
     self.assertEqual(
       first=mock_get_signal_power.return_value,
-      second=get_onu_power_signal_by_id(onu_id='1234', tn=telnet),
+      second=get_onu_power_signal_by_id(onu_id='1234', telnet=telnet),
       msg='Returns the signal power from get_onu_power_signal_by_id'
     )
     self.assertIn(

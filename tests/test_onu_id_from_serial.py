@@ -13,4 +13,4 @@ class TestOnuIdFromSerialFunctions(TestCase):
     for test in test_cases:
       telnet.read_until.return_value = test['auth_table']
       for onu in test['onus']:
-        self.assertEqual(first=onu['onu_info'], second=find_onu_by_serial(serial=onu['serial'], tn=telnet))
+        self.assertEqual(first=onu['onu_info'], second=find_onu_by_serial(serial=onu['serial'], telnet=telnet))

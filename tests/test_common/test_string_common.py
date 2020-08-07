@@ -1,6 +1,6 @@
 from datetime import datetime
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import patch, call
 
 from tasiap.common.string_common import get_auth_onu_device_id, sanitize_cto_vlan_name, format_strhexoctet, \
   hexstr_to_hexoctetstr, int_to_hexoctetstr, assure_two_octet_hexstr, get_onu_number_from_id, get_pon_id, \
@@ -8,15 +8,44 @@ from tasiap.common.string_common import get_auth_onu_device_id, sanitize_cto_vla
   is_serial_valid, remove_accents, sanitize_dumb, is_int, get_caller_name, get_onu_id_from_cto_vlan_name, \
   get_cto_name_from_cto_vlan_name, get_vlan_id_from_cto_vlan_name, get_vlan_type, format_datetime, format_onu_state, \
   get_enable_emoji, get_status_emoji, sanitize_name, is_query_update, format_clients_message, \
-  is_string_addition_too_big, get_client_info_message_block
+  is_string_addition_too_big, get_client_info_message_block, onu_address
 from tasiap.onu_authorization import AuthOnuDevice, Pon, Board
 from tests.mock_classes import MessageUpdate, QueryUpdate
 
 
 class TestStringFunctions(TestCase):
 
-  def test_get_auth_onu_device_id(self):
+  @patch(target='tasiap.common.string_common.get_onu_number_from_id')
+  @patch(target='tasiap.common.string_common.get_pon_id')
+  @patch(target='tasiap.common.string_common.get_board_id')
+  def test_onu_address(self, mock_get_board_id, mock_get_pon_id, mock_get_onu_number_from_id):
+    onu_id = '1234'
+    self.assertEqual(
+      first={
+        'board_id': mock_get_board_id.return_value,
+        'pon_id': mock_get_pon_id.return_value,
+        'onu_number': mock_get_onu_number_from_id.return_value
+      },
+      second=onu_address(onu_id=onu_id),
+      msg='Returns a dict with board_id, pon_id and onu_number from the onu_id passed'
+    )
+    self.assertIn(
+      member=call(onu_id=onu_id),
+      container=mock_get_board_id.mock_calls,
+      msg='The board_id is gathered from the onu_id passed'
+    )
+    self.assertIn(
+      member=call(onu_id=onu_id),
+      container=mock_get_board_id.mock_calls,
+      msg='The pon_id is gathered from the onu_id passed'
+    )
+    self.assertIn(
+      member=call(onu_id=onu_id),
+      container=mock_get_board_id.mock_calls,
+      msg='The onu_number is gathered from the onu_id passed'
+    )
 
+  def test_get_auth_onu_device_id(self):
     def mock_init_pon(pon, pon_id, board):
       pon.pon_id = pon_id
       pon.board = board

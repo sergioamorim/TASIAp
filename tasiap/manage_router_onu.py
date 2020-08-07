@@ -1,4 +1,4 @@
-from tasiap.common.string_common import is_onu_id_valid, get_board_id, get_pon_id, get_onu_number_from_id
+from tasiap.common.string_common import is_onu_id_valid, onu_address
 from tasiap.common.telnet_common import get_wifi_password, get_ssid, supply_telnet_session
 from tasiap.logger import get_logger, Log
 from tasiap.snmp.onu_wan_service import set_wan_service
@@ -11,15 +11,25 @@ logger = get_logger(__name__)
 
 @supply_telnet_session
 def get_router_onu_info(onu_id, telnet=None):
-  if is_onu_id_valid(onu_id):
-    board_id = get_board_id(onu_id)
-    pon_id = get_pon_id(onu_id)
-    onu_number = get_onu_number_from_id(onu_id)
-    ssid = get_ssid(board_id, pon_id, onu_number, telnet=telnet)
-    wifi_password = get_wifi_password(board_id, pon_id, onu_number, telnet=telnet)
-    username = find_user_by_onu(onu_id)
-    return {'onu_id': onu_id, 'ssid': ssid, 'wifi_password': wifi_password, 'username': username}
-  logger.error('get_router_onu_info: onu id is invalid')
+  if is_onu_id_valid(onu_id=onu_id):
+    current_onu_address = onu_address(onu_id=onu_id)
+    return {
+      'onu_id': onu_id,
+      'ssid': get_ssid(
+        board_id=current_onu_address['board_id'],
+        pon_id=current_onu_address['pon_id'],
+        onu_number=current_onu_address['onu_number'],
+        telnet=telnet
+      ),
+      'wifi_password': get_wifi_password(
+        board_id=current_onu_address['board_id'],
+        pon_id=current_onu_address['pon_id'],
+        onu_number=current_onu_address['onu_number'],
+        telnet=telnet
+      ),
+      'username': find_user_by_onu(onu_id=onu_id)
+    }
+  logger.error(msg='get_router_onu_info: onu id is invalid')
   return None
 
 

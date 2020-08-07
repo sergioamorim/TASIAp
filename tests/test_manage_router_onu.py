@@ -1,5 +1,5 @@
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import patch, call
 
 from tasiap.manage_router_onu import get_router_onu_info, update_router_onu_config
 
@@ -9,30 +9,73 @@ class TestManageRouterOnuFunctions(TestCase):
   @patch(target='tasiap.manage_router_onu.find_user_by_onu')
   @patch(target='tasiap.manage_router_onu.get_wifi_password')
   @patch(target='tasiap.manage_router_onu.get_ssid')
-  @patch(target='tasiap.manage_router_onu.get_onu_number_from_id', new=lambda onu_id: 'not relevant')
-  @patch(target='tasiap.manage_router_onu.get_pon_id', new=lambda onu_id: 'not relevant')
-  @patch(target='tasiap.manage_router_onu.get_board_id', new=lambda onu_id: 'not relevant')
+  @patch(target='tasiap.manage_router_onu.onu_address')
   @patch(target='tasiap.manage_router_onu.is_onu_id_valid')
   def test_get_router_onu_info(
-      self,
-      mock_is_onu_id_valid,
-      mock_get_ssid,
-      mock_get_wifi_password,
-      mock_find_user_by_onu
+    self,
+    mock_is_onu_id_valid,
+    mock_onu_address,
+    mock_get_ssid,
+    mock_get_wifi_password,
+    mock_find_user_by_onu
   ):
     telnet = 'telnet'
     onu_id = '1100'
     mock_is_onu_id_valid.return_value = False
-    self.assertIsNone(obj=get_router_onu_info(onu_id='110a', telnet=telnet))
+    self.assertIsNone(
+      obj=get_router_onu_info(onu_id=onu_id, telnet=telnet),
+      msg='Returns None when the onu_id is invalid'
+    )
+    self.assertEqual(
+      first=[call(onu_id=onu_id)],
+      second=mock_is_onu_id_valid.mock_calls,
+      msg='Verifies if the onu_id passed is valid or not'
+    )
 
     mock_is_onu_id_valid.return_value = True
-    expected = {
-      'onu_id': onu_id,
-      'ssid': mock_get_ssid.return_value,
-      'wifi_password': mock_get_wifi_password.return_value,
-      'username': mock_find_user_by_onu.return_value
-    }
-    self.assertEqual(first=expected, second=get_router_onu_info(onu_id=onu_id, telnet=telnet))
+    self.assertEqual(
+      first={
+        'onu_id': onu_id,
+        'ssid': mock_get_ssid.return_value,
+        'wifi_password': mock_get_wifi_password.return_value,
+        'username': mock_find_user_by_onu.return_value
+      },
+      second=get_router_onu_info(onu_id=onu_id, telnet=telnet),
+      msg=str(
+        'Returns a dict with the onu_id passed and ssid, wifi_password and username gathered from get_ssid, '
+        'get_wifi_password and find_user_by_onu functions respectively '
+      )
+    )
+    self.assertIn(
+      member=call(onu_id=onu_id),
+      container=mock_onu_address.mock_calls,
+      msg='Gather the onu address from the onu_id passed'
+    )
+    self.assertIn(
+      member=call(
+        board_id=mock_onu_address.return_value[''],
+        pon_id=mock_onu_address.return_value[''],
+        onu_number=mock_onu_address.return_value[''],
+        telnet=telnet
+      ),
+      container=mock_get_ssid.mock_calls,
+      msg='Reads the ssid from the onu address gathered'
+    )
+    self.assertIn(
+      member=call(
+        board_id=mock_onu_address.return_value[''],
+        pon_id=mock_onu_address.return_value[''],
+        onu_number=mock_onu_address.return_value[''],
+        telnet=telnet
+      ),
+      container=mock_get_wifi_password.mock_calls,
+      msg='Reads the wifi password from the onu address gathered'
+    )
+    self.assertEqual(
+      first=[call(onu_id=onu_id)],
+      second=mock_find_user_by_onu.mock_calls,
+      msg='Gather the username from the onu_id passed'
+    )
 
   @patch(target='tasiap.manage_router_onu.set_wifi')
   @patch(target='tasiap.manage_router_onu.set_wan_service')

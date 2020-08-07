@@ -6,6 +6,14 @@ from unicodedata import normalize
 from telegram import MAX_MESSAGE_LENGTH
 
 
+def onu_address(onu_id):
+  return {
+    'board_id': get_board_id(onu_id=onu_id),
+    'pon_id': get_pon_id(onu_id=onu_id),
+    'onu_number': get_onu_number_from_id(onu_id=onu_id)
+  }
+
+
 def is_query_update(update):
   try:
     update.message.chat
@@ -74,8 +82,12 @@ def get_board_id(onu_id=None, pon_name=None):
 
 
 def is_onu_id_valid(onu_id):
-  return is_int(onu_id) and 1100 < int(onu_id) < 3900 and int(onu_id[2:]) > 0 and int(
-    onu_id[1:2]) > 0 and int(onu_id[1:2]) < 9
+  return (
+    is_int(onu_id) and
+    1100 < int(onu_id) < 3900 and
+    int(onu_id[2:]) > 0 and
+    0 < int(onu_id[1:2]) < 9
+  )
 
 
 def is_vlan_id_valid(vlan_id):

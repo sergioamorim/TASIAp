@@ -53,9 +53,7 @@ class TestManageRouterOnuFunctions(TestCase):
     )
     self.assertIn(
       member=call(
-        board_id=mock_onu_address.return_value[''],
-        pon_id=mock_onu_address.return_value[''],
-        onu_number=mock_onu_address.return_value[''],
+        onu_address=mock_onu_address.return_value,
         telnet=telnet
       ),
       container=mock_get_ssid.mock_calls,
@@ -63,9 +61,7 @@ class TestManageRouterOnuFunctions(TestCase):
     )
     self.assertIn(
       member=call(
-        board_id=mock_onu_address.return_value[''],
-        pon_id=mock_onu_address.return_value[''],
-        onu_number=mock_onu_address.return_value[''],
+        onu_address=mock_onu_address.return_value,
         telnet=telnet
       ),
       container=mock_get_wifi_password.mock_calls,

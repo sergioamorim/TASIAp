@@ -1,5 +1,4 @@
-from tasiap.common.string_common import is_onu_id_valid, get_board_id, get_pon_id, get_onu_number_from_id, \
-  int_to_hexoctetstr, string_to_hex_octets
+from tasiap.common.string_common import is_onu_id_valid, int_to_hexoctetstr, string_to_hex_octets, onu_address
 from tasiap.common.telnet_common import get_ssid, get_wifi_password
 from tasiap.logger import Log, get_logger
 from tasiap.snmp.common import snmpset_hex
@@ -37,13 +36,17 @@ def set_wifi_effective(board_id, pon_id, onu_number, ssid, wifi_password):
 @Log(logger)
 def set_wifi(onu_id, ssid=None, wifi_password=None):
   if is_onu_id_valid(onu_id) and (ssid or wifi_password):
-    board_id = get_board_id(onu_id)
-    pon_id = get_pon_id(onu_id)
-    onu_number = get_onu_number_from_id(onu_id)
+    current_onu_address = onu_address(onu_id=onu_id)
     if not ssid:
-      ssid = get_ssid(board_id, pon_id, onu_number)
+      ssid = get_ssid(onu_address=current_onu_address)
     if not wifi_password:
-      wifi_password = get_wifi_password(board_id, pon_id, onu_number)
-    return set_wifi_effective(board_id, pon_id, onu_number, ssid, wifi_password)
+      wifi_password = get_wifi_password(onu_address=current_onu_address)
+    return set_wifi_effective(
+      board_id=current_onu_address['board_id'],
+      pon_id=current_onu_address['pon_id'],
+      onu_number=current_onu_address['onu_number'],
+      ssid=ssid,
+      wifi_password=wifi_password
+    )
   logger.error('set_wan_service: invalid onu id or no setting parsed')
   return None

@@ -80,9 +80,14 @@ def get_wifi_data_effective(board_id, pon_id, onu_number, telnet=None):
 
 
 @supply_telnet_session
-def get_ssid(board_id, pon_id, onu_number, telnet=None):
+def get_ssid(onu_address, telnet=None):
   ssid_pattern = '\\*\\*SSID:(.*?)\\n'
-  wifi_data = get_wifi_data_effective(board_id, pon_id, onu_number, telnet=telnet)
+  wifi_data = get_wifi_data_effective(
+    board_id=onu_address['board_id'],
+    pon_id=onu_address['pon_id'],
+    onu_number=onu_address['onu_number'],
+    telnet=telnet
+  )
   if ssid := findall(ssid_pattern, wifi_data):
     return ssid[0].replace('\r', '')
   logger.error('get_ssid: ssid not found')
@@ -90,9 +95,14 @@ def get_ssid(board_id, pon_id, onu_number, telnet=None):
 
 
 @supply_telnet_session
-def get_wifi_password(board_id, pon_id, onu_number, telnet=None):
+def get_wifi_password(onu_address, telnet=None):
   wifi_password_pattern = '\\*\\*WPA Share Key:(.*?)\\n'
-  wifi_data = get_wifi_data_effective(board_id, pon_id, onu_number, telnet=telnet)
+  wifi_data = get_wifi_data_effective(
+    board_id=onu_address['board_id'],
+    pon_id=onu_address['pon_id'],
+    onu_number=onu_address['onu_number'],
+    telnet=telnet
+  )
   if wifi_password := findall(wifi_password_pattern, wifi_data):
     return wifi_password[0].replace('\r', '')
   logger.error('get_wifi_password: password not found')

@@ -88,16 +88,12 @@ class TestOnuWifiFunctions(TestCase):
   @patch(target='tasiap.snmp.onu_wifi.set_wifi_effective')
   @patch(target='tasiap.snmp.onu_wifi.get_wifi_password')
   @patch(target='tasiap.snmp.onu_wifi.get_ssid')
-  @patch(target='tasiap.snmp.onu_wifi.get_onu_number_from_id')
-  @patch(target='tasiap.snmp.onu_wifi.get_pon_id')
-  @patch(target='tasiap.snmp.onu_wifi.get_board_id')
+  @patch(target='tasiap.snmp.onu_wifi.onu_address')
   @patch(target='tasiap.snmp.onu_wifi.is_onu_id_valid')
   def test_set_wifi(
     self,
     mock_is_onu_id_valid,
-    mock_get_board_id,
-    mock_get_pon_id,
-    mock_get_onu_number_from_id,
+    mock_onu_address,
     mock_get_ssid,
     mock_get_wifi_password,
     mock_set_wifi_effective
@@ -125,11 +121,11 @@ class TestOnuWifiFunctions(TestCase):
     self.assertIn(
       member=[
         call(
-          mock_get_board_id.return_value,
-          mock_get_pon_id.return_value,
-          mock_get_onu_number_from_id.return_value,
-          ssid,
-          wifi_password
+          board_id=mock_onu_address.return_value[''],
+          pon_id=mock_onu_address.return_value[''],
+          onu_number=mock_onu_address.return_value[''],
+          ssid=ssid,
+          wifi_password=wifi_password
         )
       ],
       container=mock_set_wifi_effective.mock_calls,
@@ -138,32 +134,23 @@ class TestOnuWifiFunctions(TestCase):
         'wifi password passed'
       )
     )
-    self.assertEqual(
-      first=[call(onu_id)],
-      second=mock_get_board_id.mock_calls,
-      msg='The single value for board_id is gathered from the onu_id passed'
-    )
-    self.assertEqual(
-      first=[call(onu_id)],
-      second=mock_get_pon_id.mock_calls,
-      msg='The single value for pon_id is gathered from the onu_id passed'
-    )
-    self.assertEqual(
-      first=[call(onu_id)],
-      second=mock_get_onu_number_from_id.mock_calls,
-      msg='The single value for onu_number is gathered from the onu_id passed'
+    self.assertIn(
+      member=call(onu_id=onu_id),
+      container=mock_onu_address.mock_calls,
+      msg='The onu_address is gathered from the onu_id passed'
     )
 
     set_wifi(onu_id=onu_id, ssid=ssid)
-    self.assertIn(member=[
-      call(
-        mock_get_board_id.return_value,
-        mock_get_pon_id.return_value,
-        mock_get_onu_number_from_id.return_value,
-        ssid,
-        mock_get_wifi_password.return_value
-      )
-    ],
+    self.assertIn(
+      member=[
+        call(
+          board_id=mock_onu_address.return_value[''],
+          pon_id=mock_onu_address.return_value[''],
+          onu_number=mock_onu_address.return_value[''],
+          ssid=ssid,
+          wifi_password=mock_get_wifi_password.return_value
+        )
+      ],
       container=mock_set_wifi_effective.mock_calls,
       msg=str(
         'When no wifi_password is passed, calls set_wifi_effective with the wifi password gathered from the '
@@ -171,38 +158,27 @@ class TestOnuWifiFunctions(TestCase):
       )
     )
     self.assertIn(
-      member=[
-        call(
-          mock_get_board_id.return_value,
-          mock_get_pon_id.return_value,
-          mock_get_onu_number_from_id.return_value
-        )
-      ],
+      member=[call(onu_address=mock_onu_address.return_value)],
       container=mock_get_wifi_password.mock_calls,
-      msg='Calls get_wifi_password with the single values for board_id, pon_id and onu_number'
+      msg='Calls get_wifi_password with the onu_address gathered from onu_address'
     )
 
     set_wifi(onu_id=onu_id, wifi_password=wifi_password)
-    self.assertIn(member=[
-      call(
-        mock_get_board_id.return_value,
-        mock_get_pon_id.return_value,
-        mock_get_onu_number_from_id.return_value,
-        mock_get_ssid.return_value,
-        wifi_password
-      )
-    ],
+    self.assertIn(
+      member=[
+        call(
+          board_id=mock_onu_address.return_value[''],
+          pon_id=mock_onu_address.return_value[''],
+          onu_number=mock_onu_address.return_value[''],
+          ssid=mock_get_ssid.return_value,
+          wifi_password=wifi_password
+        )
+      ],
       container=mock_set_wifi_effective.mock_calls,
       msg='When no ssid is passed, calls set_wifi_effective with the ssid gathered from the get_ssid function'
     )
     self.assertIn(
-      member=[
-        call(
-          mock_get_board_id.return_value,
-          mock_get_pon_id.return_value,
-          mock_get_onu_number_from_id.return_value
-        )
-      ],
+      member=call(onu_address=mock_onu_address.return_value),
       container=mock_get_ssid.mock_calls,
-      msg='Calls get_ssid with the single values for board_id, pon_id and onu_number'
+      msg='Calls get_ssid with the onu address gathered from onu_address'
     )

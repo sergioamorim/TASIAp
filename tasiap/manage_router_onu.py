@@ -16,15 +16,11 @@ def get_router_onu_info(onu_id, telnet=None):
     return {
       'onu_id': onu_id,
       'ssid': get_ssid(
-        board_id=current_onu_address['board_id'],
-        pon_id=current_onu_address['pon_id'],
-        onu_number=current_onu_address['onu_number'],
+        onu_address=current_onu_address,
         telnet=telnet
       ),
       'wifi_password': get_wifi_password(
-        board_id=current_onu_address['board_id'],
-        pon_id=current_onu_address['pon_id'],
-        onu_number=current_onu_address['onu_number'],
+        onu_address=current_onu_address,
         telnet=telnet
       ),
       'username': find_user_by_onu(onu_id=onu_id)

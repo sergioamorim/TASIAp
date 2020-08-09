@@ -1,18 +1,49 @@
 from unittest import TestCase
 from unittest.mock import patch, call
 
-from tasiap.snmp.onu_wifi import set_wifi_effective, set_wifi
+from tasiap.snmp.onu_wifi import set_wifi_effective, set_wifi, hex_onu_address
 
 
 class TestOnuWifiFunctions(TestCase):
+
+  @patch(target='tasiap.snmp.onu_wifi.int_to_hexoctetstr')
+  def test_hex_onu_address(self, mock_int_to_hexoctetstr):
+    onu_address = {
+      'board_id': '12',
+      'pon_id': '1',
+      'onu_number': '1'
+    }
+    self.assertEqual(
+      first='{hex_board_id} 00 {hex_pon_id} 00 {hex_onu_number}'.format(
+        hex_board_id=mock_int_to_hexoctetstr.return_value,
+        hex_pon_id=mock_int_to_hexoctetstr.return_value,
+        hex_onu_number=mock_int_to_hexoctetstr.return_value
+      ),
+      second=hex_onu_address(current_onu_address=onu_address),
+      msg=str(
+        'Returns a string with the onu address written in hexadecimal with zero octets between the board_id and the '
+        'pon_id and between the pon_id and the onu_number'
+      )
+    )
+    self.assertIn(
+      member=[
+        call(intvalue=onu_address['board_id']),
+        call(intvalue=onu_address['pon_id']),
+        call(intvalue=onu_address['onu_number'])
+      ],
+      container=mock_int_to_hexoctetstr.mock_calls,
+      msg='Gather the hex values for board_id, pon_id and onu_number from the int_to_hexoctetstr function'
+    )
 
   @patch(target='tasiap.snmp.onu_wifi.snmpset_hex')
   @patch(target='tasiap.snmp.onu_wifi.string_to_hex_octets')
   @patch(target='tasiap.snmp.onu_wifi.int_to_hexoctetstr')
   def test_set_wifi_effective(self, mock_int_to_hexoctetstr, mock_string_to_hex_octets, mock_snmpset_hex):
-    board_id = '12'
-    pon_id = '1'
-    onu_number = '1'
+    onu_address = {
+      'board_id': '12',
+      'pon_id': '1',
+      'onu_number': '1'
+    }
     ssid = 'network name'
     wifi_password = 'network password'
 
@@ -44,9 +75,7 @@ class TestOnuWifiFunctions(TestCase):
     mock_snmpset_hex.return_value = False
     self.assertIsNone(
       obj=set_wifi_effective(
-        board_id=board_id,
-        pon_id=pon_id,
-        onu_number=onu_number,
+        current_onu_address=onu_address,
         ssid=ssid,
         wifi_password=wifi_password
       ),
@@ -58,7 +87,11 @@ class TestOnuWifiFunctions(TestCase):
       msg='snmpset_hex is called with the wifi snmp oid and hex data format'
     )
     self.assertIn(
-      member=[call(board_id), call(pon_id), call(onu_number)],
+      member=[
+        call(intvalue=onu_address['board_id']),
+        call(intvalue=onu_address['pon_id']),
+        call(intvalue=onu_address['onu_number'])
+      ],
       container=mock_int_to_hexoctetstr.mock_calls,
       msg=str(
         'The board_id, pon_id and onu_number are transformed into hex octets when put into the hex data sent to '
@@ -66,7 +99,10 @@ class TestOnuWifiFunctions(TestCase):
       )
     )
     self.assertIn(
-      member=[call(ssid, 32), call(wifi_password, 64)],
+      member=[
+        call(string=ssid, length=32),
+        call(string=wifi_password, length=64)
+      ],
       container=mock_string_to_hex_octets.mock_calls,
       msg='The SSID and password are transformed into hex octets with 32 and 64 bytes (respectively) when put into the '
           'hex data sent to snmpset_hex'
@@ -76,9 +112,7 @@ class TestOnuWifiFunctions(TestCase):
     self.assertEqual(
       first={'ssid': ssid, 'wifi_password': wifi_password},
       second=set_wifi_effective(
-        board_id=board_id,
-        pon_id=pon_id,
-        onu_number=onu_number,
+        current_onu_address=onu_address,
         ssid=ssid,
         wifi_password=wifi_password
       ),
@@ -121,9 +155,7 @@ class TestOnuWifiFunctions(TestCase):
     self.assertIn(
       member=[
         call(
-          board_id=mock_onu_address.return_value[''],
-          pon_id=mock_onu_address.return_value[''],
-          onu_number=mock_onu_address.return_value[''],
+          current_onu_address=mock_onu_address.return_value,
           ssid=ssid,
           wifi_password=wifi_password
         )
@@ -144,9 +176,7 @@ class TestOnuWifiFunctions(TestCase):
     self.assertIn(
       member=[
         call(
-          board_id=mock_onu_address.return_value[''],
-          pon_id=mock_onu_address.return_value[''],
-          onu_number=mock_onu_address.return_value[''],
+          current_onu_address=mock_onu_address.return_value,
           ssid=ssid,
           wifi_password=mock_get_wifi_password.return_value
         )
@@ -167,9 +197,7 @@ class TestOnuWifiFunctions(TestCase):
     self.assertIn(
       member=[
         call(
-          board_id=mock_onu_address.return_value[''],
-          pon_id=mock_onu_address.return_value[''],
-          onu_number=mock_onu_address.return_value[''],
+          current_onu_address=mock_onu_address.return_value,
           ssid=mock_get_ssid.return_value,
           wifi_password=wifi_password
         )

@@ -4,7 +4,7 @@ from unittest.mock import call, MagicMock, patch
 from config import telnet_config
 from tasiap.common.telnet_common import sudo_authenticated, str_to_telnet, supply_telnet_session, \
   get_wifi_data_effective, \
-  get_ssid, get_wifi_password, open_telnet_session, close_session
+  get_ssid, get_wifi_password, open_telnet_session, close_session, ssid, wpa_key
 
 
 class TestTelnetFunctions(TestCase):
@@ -90,26 +90,30 @@ class TestTelnetFunctions(TestCase):
     )
 
   def test_get_wifi_data_effective(self):
-    board_id = '12'
-    pon_id = '1'
-    onu_number = '1'
+    onu_address = {
+      'board_id': '12',
+      'pon_id': '1',
+      'onu_number': '1'
+    }
 
     telnet = MagicMock()
     telnet.read_until.return_value = b'binary data'
     expected_calls = [
       call.write(b'cd gpononu\n'),
       call.read_until(b'Admin\\gpononu# '),
-      call.write('show wifi_serv slot {board_id} link {pon_id} onu {onu_number}\n'.format(
-        board_id=board_id, pon_id=pon_id, onu_number=onu_number
-      ).encode('ascii')),
+      call.write(
+        'show wifi_serv slot {board_id} link {pon_id} onu {onu_number}\n'.format(
+          board_id=onu_address['board_id'],
+          pon_id=onu_address['pon_id'],
+          onu_number=onu_address['onu_number']
+        ).encode('ascii')
+      ),
       call.read_until(b'Admin\\gpononu# '),
     ]
     self.assertEqual(
       first=telnet.read_until.return_value.decode('ascii'),
       second=get_wifi_data_effective(
-        board_id=board_id,
-        pon_id=pon_id,
-        onu_number=onu_number,
+        onu_address=onu_address,
         telnet=telnet
       ),
       msg='The data captured with read_until is decoded from ascii and returned'
@@ -121,6 +125,40 @@ class TestTelnetFunctions(TestCase):
       msg='Entered gpononu directory, called show wifi_serv with the parameters passed and read everything in between'
     )
 
+  def test_ssid(self):
+    current_ssid = 'network ssid'
+
+    wifi_serv = 'data without ssid'
+    self.assertIsNone(
+      obj=ssid(wifi_serv=wifi_serv),
+      msg='Returns None when the data string passed is not a wifi_serv formatted data string'
+    )
+
+    wifi_serv = str(
+      '...'
+      'SSID Index:1\r\n'
+      '**SSID:\r\n'
+      '**SSID Enable/Disable:enable\r\n'
+      '...'
+    )
+    self.assertIsNone(
+      obj=ssid(wifi_serv=wifi_serv),
+      msg='Returns None when no SSID is found on the wifi_serv formatted data string'
+    )
+
+    wifi_serv = str(
+      '...'
+      'SSID Index:1\r\n'
+      '**SSID:{ssid}\r\n'
+      '**SSID Enable/Disable:enable\r\n'
+      '...'
+    ).format(ssid=current_ssid)
+    self.assertEqual(
+      first=current_ssid,
+      second=ssid(wifi_serv=wifi_serv),
+      msg='Returns the SSID found on the wifi_serv formatted data string'
+    )
+
   @patch(target='tasiap.common.telnet_common.get_wifi_data_effective')
   def test_get_ssid(self, mock_get_wifi_data_effective):
     onu_address = {
@@ -128,31 +166,18 @@ class TestTelnetFunctions(TestCase):
       'pon_id': '1',
       'onu_number': '1'
     }
-    ssid = 'network ssid'
+    current_ssid = 'network ssid'
     telnet = 'telnet connection'
 
     mock_get_wifi_data_effective.return_value = 'data without ssid'
     self.assertIsNone(
-      obj=get_ssid(
-        onu_address=onu_address,
-        telnet=telnet
-      ),
+      obj=get_ssid(onu_address=onu_address, telnet=telnet),
       msg='None is returned when no SSID is found in data from get_wifi_data_effective'
     )
     self.assertEqual(
-      first=[
-        call(
-          board_id=onu_address['board_id'],
-          pon_id=onu_address['pon_id'],
-          onu_number=onu_address['onu_number'],
-          telnet=telnet
-        )
-      ],
+      first=[call(onu_address=onu_address, telnet=telnet)],
       second=mock_get_wifi_data_effective.mock_calls,
-      msg=str(
-        'get_wifi_data_effective is called with the parameters passed to identify the onu and the already open telnet '
-        'connection'
-      )
+      msg='get_wifi_data_effective is called with the onu_address passed and the already open telnet connection'
     )
 
     mock_get_wifi_data_effective.return_value = str(
@@ -161,14 +186,45 @@ class TestTelnetFunctions(TestCase):
       '**SSID:{ssid}\r\n'
       '**SSID Enable/Disable:enable\r\n'
       '...'
-    ).format(ssid=ssid)
+    ).format(ssid=current_ssid)
     self.assertEqual(
-      first=ssid,
-      second=get_ssid(
-        onu_address=onu_address,
-        telnet=telnet
-      ),
+      first=current_ssid,
+      second=get_ssid(onu_address=onu_address, telnet=telnet),
       msg='SSID is returned when found in data from get_wifi_data_effective'
+    )
+
+  def test_wpa_key(self):
+    current_wpa_key = 'super secret key'
+
+    wifi_serv = 'data without wpa key'
+    self.assertIsNone(
+      obj=wpa_key(wifi_serv),
+      msg='Returns None when the wifi_serv passed is not a wifi_serv formatted data string'
+    )
+
+    wifi_serv = str(
+      '...'
+      '**Wlan Encrypt Type:aes\r\n'
+      '**WPA Share Key:\r\n'
+      '**WPA Key Interval:0\r\n'
+      '...'
+    )
+    self.assertIsNone(
+      obj=wpa_key(wifi_serv),
+      msg='Returns None when the wifi_serv formatted data string has not a wpa key written in it'
+    )
+
+    wifi_serv = str(
+      '...'
+      '**Wlan Encrypt Type:aes\r\n'
+      '**WPA Share Key:{wpa_key}\r\n'
+      '**WPA Key Interval:0\r\n'
+      '...'
+    ).format(wpa_key=current_wpa_key)
+    self.assertEqual(
+      first=current_wpa_key,
+      second=wpa_key(wifi_serv),
+      msg='Returns the wpa key written in the wifi_serv formatted data string passed'
     )
 
   @patch(target='tasiap.common.telnet_common.get_wifi_data_effective')
@@ -178,31 +234,18 @@ class TestTelnetFunctions(TestCase):
       'pon_id': '1',
       'onu_number': '1'
     }
-    wifi_password = 'network ssid'
+    wifi_password = 'super secret key'
     telnet = 'telnet connection'
 
     mock_get_wifi_data_effective.return_value = 'data without wifi password'
     self.assertIsNone(
-      obj=get_wifi_password(
-        onu_address=onu_address,
-        telnet=telnet
-      ),
+      obj=get_wifi_password(onu_address=onu_address, telnet=telnet),
       msg='None is returned when no wifi password is found in data from get_wifi_data_effective'
     )
     self.assertEqual(
-      first=[
-        call(
-          board_id=onu_address['board_id'],
-          pon_id=onu_address['pon_id'],
-          onu_number=onu_address['onu_number'],
-          telnet=telnet
-        )
-      ],
+      first=[call(onu_address=onu_address, telnet=telnet)],
       second=mock_get_wifi_data_effective.mock_calls,
-      msg=str(
-        'get_wifi_data_effective is called with the parameters passed to identify the onu and the already open telnet '
-        'connection'
-      )
+      msg='get_wifi_data_effective is called with the onu_address passed and the already open telnet connection'
     )
 
     mock_get_wifi_data_effective.return_value = str(

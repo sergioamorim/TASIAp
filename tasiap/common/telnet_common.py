@@ -72,38 +72,52 @@ def sudo_authenticated(telnet):
 
 
 @supply_telnet_session
-def get_wifi_data_effective(board_id, pon_id, onu_number, telnet=None):
-  telnet.write(str_to_telnet('cd gpononu'))
+def get_wifi_data_effective(onu_address, telnet=None):
+  telnet.write(b'cd gpononu\n')
   telnet.read_until(b'Admin\\gpononu# ')
-  telnet.write(str_to_telnet('show wifi_serv slot {0} link {1} onu {2}'.format(board_id, pon_id, onu_number)))
+  telnet.write(
+    'show wifi_serv slot {board_id} link {pon_id} onu {onu_number}\n'.format(
+      board_id=onu_address['board_id'],
+      pon_id=onu_address['pon_id'],
+      onu_number=onu_address['onu_number']
+    ).encode('ascii')
+  )
   return telnet.read_until(b'Admin\\gpononu# ').decode('ascii')
+
+
+def ssid(wifi_serv):
+  if (current_ssid := findall(
+    pattern='\\*\\*SSID:(.*?)\\n',
+    string=wifi_serv
+  )) and current_ssid != ['\r']:
+    return current_ssid[0].replace('\r', '')
+
+  logger.error('ssid not found in {wifi_serv!r}'.format(wifi_serv=wifi_serv))
+  return None
 
 
 @supply_telnet_session
 def get_ssid(onu_address, telnet=None):
-  ssid_pattern = '\\*\\*SSID:(.*?)\\n'
-  wifi_data = get_wifi_data_effective(
-    board_id=onu_address['board_id'],
-    pon_id=onu_address['pon_id'],
-    onu_number=onu_address['onu_number'],
+  return ssid(wifi_serv=get_wifi_data_effective(
+    onu_address=onu_address,
     telnet=telnet
-  )
-  if ssid := findall(ssid_pattern, wifi_data):
-    return ssid[0].replace('\r', '')
-  logger.error('get_ssid: ssid not found')
+  ))
+
+
+def wpa_key(wifi_serv):
+  if (current_wpa_key := findall(
+    pattern='\\*\\*WPA Share Key:(.*?)\\n',
+    string=wifi_serv
+  )) and current_wpa_key != ['\r']:
+    return current_wpa_key[0].replace('\r', '')
+
+  logger.error('wpa_key not found in {wifi_serv!r}'.format(wifi_serv=wifi_serv))
   return None
 
 
 @supply_telnet_session
 def get_wifi_password(onu_address, telnet=None):
-  wifi_password_pattern = '\\*\\*WPA Share Key:(.*?)\\n'
-  wifi_data = get_wifi_data_effective(
-    board_id=onu_address['board_id'],
-    pon_id=onu_address['pon_id'],
-    onu_number=onu_address['onu_number'],
+  return wpa_key(wifi_serv=get_wifi_data_effective(
+    onu_address=onu_address,
     telnet=telnet
-  )
-  if wifi_password := findall(wifi_password_pattern, wifi_data):
-    return wifi_password[0].replace('\r', '')
-  logger.error('get_wifi_password: password not found')
-  return None
+  ))

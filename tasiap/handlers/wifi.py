@@ -1,8 +1,8 @@
 from re import findall
 
+from config import bot_config
 from tasiap.common.bot_common import is_user_authorized
 from tasiap.common.string_common import is_onu_id_valid
-from config import bot_config
 from tasiap.logger import get_logger, log_update
 from tasiap.manage_router_onu import get_router_onu_info, update_router_onu_config
 

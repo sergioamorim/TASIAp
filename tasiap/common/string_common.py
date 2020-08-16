@@ -6,6 +6,14 @@ from unicodedata import normalize
 from telegram import MAX_MESSAGE_LENGTH
 
 
+def onu_address(onu_id):
+  return {
+    'board_id': get_board_id(onu_id=onu_id),
+    'pon_id': get_pon_id(onu_id=onu_id),
+    'onu_number': get_onu_number_from_id(onu_id=onu_id)
+  }
+
+
 def is_query_update(update):
   try:
     update.message.chat
@@ -47,20 +55,22 @@ def get_pon_id(onu_id=None, pon_name=None):
   return None
 
 
-def str_char_to_hex_octect(str_char):
+def str_char_to_hex_octet(str_char):
   return hex(ord(str_char))[2:].upper()
 
 
-def string_to_hex_octects(string, length):
+def string_to_hex_octets(string, length):
   string_list = list(string)
-  hex_list = list(map(str_char_to_hex_octect, string_list))
+  hex_list = list(map(str_char_to_hex_octet, string_list))
   hex_list.extend(['00']*(length-len(string_list)))
   return ' '.join(hex_list)
 
 
 def generate_cvlan(board_id, pon_id):
-  board_id_id = '1' if board_id == '12' else '2'
-  return '{0}{1}00'.format(board_id_id, pon_id)
+  return '{board_id}{pon_id}00'.format(
+    board_id='1' if board_id == '12' else '2',
+    pon_id=pon_id
+  )
 
 
 def get_board_id(onu_id=None, pon_name=None):
@@ -72,8 +82,12 @@ def get_board_id(onu_id=None, pon_name=None):
 
 
 def is_onu_id_valid(onu_id):
-  return is_int(onu_id) and 1100 < int(onu_id) < 3900 and int(onu_id[2:]) > 0 and int(
-    onu_id[1:2]) > 0 and int(onu_id[1:2]) < 9
+  return (
+    is_int(onu_id) and
+    1100 < int(onu_id) < 3900 and
+    int(onu_id[2:]) > 0 and
+    0 < int(onu_id[1:2]) < 9
+  )
 
 
 def is_vlan_id_valid(vlan_id):

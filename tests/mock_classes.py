@@ -48,10 +48,10 @@ class MockPon:
   __eq__ = Pon.__eq__
   __repr__ = Pon.__repr__
 
-  def __init__(self, pon_id=5, board=MockBoard(), board_id=None, tn=None):
+  def __init__(self, pon_id=5, board=MockBoard(), board_id=None, telnet=None):
     self.pon_id = pon_id
     self.board = Board(board_id=board_id) if board_id else board
-    assert tn or not tn
+    assert telnet or not telnet
 
 
 class MockAuthOnuDevice:

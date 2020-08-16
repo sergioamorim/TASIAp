@@ -3,15 +3,16 @@ from time import sleep
 
 from tasiap.common.mysql_common import supply_mysql_session, reauthorize_user
 from tasiap.common.sqlite_common import update_onu_info
-from tasiap.common.telnet_common import supply_telnet_connection
+from tasiap.common.string_common import get_board_id, generate_cvlan, get_pon_id
+from tasiap.common.telnet_common import supply_telnet_session
 from tasiap.logger import get_logger
 from tasiap.onu_id_from_username import get_onu_id_by_mac_and_pon, format_pon_name
 
 logger = get_logger(__name__)
 
 
-def one_day_has_passed(start_time, actual_time):
-  return actual_time - start_time > timedelta(days=1)
+def one_day_has_passed(start_time, current_time):
+  return current_time - start_time > timedelta(days=1)
 
 
 def diagnose_fail(session, user):
@@ -62,12 +63,16 @@ def diagnose_connection(session, user):
   return None
 
 
-@supply_telnet_connection
+@supply_telnet_session
 @supply_mysql_session
-def find_user_data(onu_id, users, session=None, tn=None):
+def find_user_data(onu_id, users, session=None, telnet=None):
   tn_formated_pon_name = format_pon_name(onu_id=onu_id)
   for user in users:
-    if (onu_id_from_user := get_onu_id_by_mac_and_pon(user['CallingStationId'], tn_formated_pon_name, tn=tn)) == onu_id:
+    if (onu_id_from_user := get_onu_id_by_mac_and_pon(
+      mac=user['CallingStationId'],
+      pon=tn_formated_pon_name,
+      telnet=telnet
+    )) == onu_id:
       update_onu_info(onu_id=onu_id, username=user['user'])
       logger.debug('find_onu_connection: onu_id_from_user: {0}'.format(onu_id_from_user))
       diagnostic = diagnose_connection(session, user)
@@ -78,7 +83,7 @@ def find_user_data(onu_id, users, session=None, tn=None):
           sleep(30)
           diagnostic = diagnose_connection(session, user)
           logger.debug('find_onu_connection: diagnostic: {0}'.format(diagnostic))
-          times_tried = times_tried + 1
+          times_tried += 1
         if not diagnostic:
           user = session.execute(
             clause='SELECT user, pass, sucess, CallingStationId FROM radius_postauth WHERE user = :username ORDER BY'
@@ -97,23 +102,37 @@ def find_user_data(onu_id, users, session=None, tn=None):
 @supply_mysql_session
 def find_onu_connection(onu_id, session=None):
   start_time = update_time = session.execute('SELECT NOW();').scalar() - timedelta(minutes=1)
-  logger.debug('find_onu_connection: start_time: {0}'.format(start_time))
+  logger.debug('find_onu_connection: start_time: {start_time}'.format(start_time=start_time))
   checking_frequency = 4
-  board_number = '12' if onu_id[0] == '1' else '14'
-  vlan_name = 'v{0}00-P{1}-PON{2}-CLIENTES-FIBRA'.format(onu_id[0:2], board_number, onu_id[1])
-  while not one_day_has_passed(start_time, update_time):
+  vlan_name = str(
+    'v{vlan}-P{board_id}-PON{pon_id}-CLIENTES-FIBRA'
+  ).format(
+    vlan=generate_cvlan(
+      board_id=get_board_id(onu_id=onu_id),
+      pon_id=get_pon_id(onu_id=onu_id)
+    ),
+    board_id=get_board_id(onu_id=onu_id),
+    pon_id=get_pon_id(onu_id=onu_id)
+  )
+  while not one_day_has_passed(start_time=start_time, current_time=update_time):
     query_string = 'SELECT user, pass, sucess, CallingStationId FROM radius_postauth WHERE CalledStationId = ' \
                    ':vlanname AND date > :updatetime ORDER BY date DESC;'
     users = session.execute(query_string, {'vlanname': vlan_name, 'updatetime': update_time}).fetchall()
     logger.debug(
-      'find_onu_connection: query_string: {0} - vlanname: {1} - updatetime: {2}'.format(query_string, vlan_name,
-                                                                                        update_time))
+      str(
+        'find_onu_connection: query_string: {query_string} - vlanname: {vlan_name} - updatetime: {update_time}'
+      ).format(
+        query_string=query_string,
+        vlan_name=vlan_name,
+        update_time=update_time
+      )
+    )
     update_time = session.execute('SELECT NOW();').scalar() - timedelta(minutes=1)
-    logger.debug('find_onu_connection: users: {0}'.format(users))
+    logger.debug('find_onu_connection: users: {users}'.format(users=users))
     if len(users):
-      if user_data := find_user_data(onu_id, users, session=session):
+      if user_data := find_user_data(onu_id=onu_id, users=users, session=session):
         return user_data
-    logger.debug('find_onu_connection: sleep: {0}'.format(checking_frequency))
+    logger.debug('find_onu_connection: sleep: {checking_frequency}'.format(checking_frequency=checking_frequency))
     sleep(checking_frequency)
     if checking_frequency < 120:
       checking_frequency = checking_frequency + checking_frequency

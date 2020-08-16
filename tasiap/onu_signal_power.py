@@ -1,7 +1,7 @@
-from argparse import ArgumentParser
 from re import findall
 
-from tasiap.common.telnet_common import str_to_telnet, supply_telnet_connection
+from tasiap.common.string_common import get_pon_id, get_board_id, get_onu_number_from_id
+from tasiap.common.telnet_common import supply_telnet_session
 from tasiap.logger import Log, get_logger
 
 logger = get_logger(__name__)
@@ -24,15 +24,18 @@ def get_signal_power(show_optic_module):
   return 'error'
 
 
-@supply_telnet_connection
+@supply_telnet_session
 @Log(logger)
-def get_onu_power_signal_by_id(onu_id, tn=None):
-  board = '12' if onu_id[:1] == '1' else '14'
-  pon = onu_id[1:2]
-  onu_number = onu_id[2:] if int(onu_id[2:]) > 9 else onu_id[3:]
-  tn.write(str_to_telnet('cd gpononu'))
-  tn.read_until(b'Admin\\gpononu# ', timeout=1)
-  tn.write(str_to_telnet('show optic_module slot {0} link {1} onu {2}'.format(board, pon, onu_number)))
-  show_optic_module = tn.read_until(b'Admin\\gpononu# ', timeout=3).decode('ascii')
-  signal_power = get_signal_power(show_optic_module)
-  return signal_power
+def get_onu_power_signal_by_id(onu_id, telnet=None):
+  telnet.write(b'cd gpononu\n')
+  telnet.read_until(b'Admin\\gpononu# ')
+
+  telnet.write(
+    'show optic_module slot {board_id} link {pon_id} onu {onu_number}\n'.format(
+      board_id=get_board_id(onu_id=onu_id),
+      pon_id=get_pon_id(onu_id=onu_id),
+      onu_number=get_onu_number_from_id(onu_id=onu_id)
+    ).encode('ascii')
+  )
+
+  return get_signal_power(show_optic_module=telnet.read_until(b'Admin\\gpononu# ', timeout=4).decode('ascii'))

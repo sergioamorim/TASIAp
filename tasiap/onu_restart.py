@@ -1,18 +1,18 @@
 from argparse import ArgumentParser
 
 from tasiap.common.string_common import is_onu_id_valid
-from tasiap.common.telnet_common import str_to_telnet, supply_telnet_connection
+from tasiap.common.telnet_common import str_to_telnet, supply_telnet_session
 from tasiap.logger import Log, get_logger
 
 logger = get_logger(__name__)
 
 
-@supply_telnet_connection
-def restart_onu(board, pon, onu_number, tn=None):
-  tn.write(str_to_telnet('cd gpononu'))
-  tn.read_until(b'gpononu# ', timeout=1)
-  tn.write(str_to_telnet('reset slot {0} link {1} onulist {2}'.format(board, pon, onu_number)))
-  result = tn.read_until(b'gpononu# ', timeout=3).decode('ascii')
+@supply_telnet_session
+def restart_onu(board, pon, onu_number, telnet=None):
+  telnet.write(str_to_telnet('cd gpononu'))
+  telnet.read_until(b'gpononu# ', timeout=1)
+  telnet.write(str_to_telnet('reset slot {0} link {1} onulist {2}'.format(board, pon, onu_number)))
+  result = telnet.read_until(b'gpononu# ', timeout=3).decode('ascii')
   if 'no onu satisfy the list' in result:
     restart_result = 'not found'
   elif 'reset onu ok' in result:

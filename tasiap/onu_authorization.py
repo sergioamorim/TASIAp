@@ -2,7 +2,7 @@ from re import findall
 
 from tasiap.common.sqlite_common import update_onu_info
 from tasiap.common.string_common import is_int
-from tasiap.common.telnet_common import str_to_telnet, supply_telnet_connection
+from tasiap.common.telnet_common import supply_telnet_session
 from tasiap.logger import Log, get_logger
 from tasiap.snmp.onu_vlan import set_cvlan
 
@@ -66,16 +66,16 @@ class Pon:
   board = None
   last_authorized_onu_number = None
 
-  @supply_telnet_connection
-  def autoset_last_authorized_number(self, tn=None):
-    authorization_list = get_authorization_list(self, tn=tn)
+  @supply_telnet_session
+  def autoset_last_authorized_number(self, telnet=None):
+    authorization_list = get_authorization_list(self, telnet=telnet)
     self.last_authorized_onu_number = get_last_authorized_number(authorization_list=authorization_list)
 
-  @supply_telnet_connection
-  def __init__(self, pon_id, board=None, board_id=None, tn=None):
+  @supply_telnet_session
+  def __init__(self, pon_id, board=None, board_id=None, telnet=None):
     self.pon_id = pon_id
     self.board = board if board else Board(board_id=board_id)
-    self.autoset_last_authorized_number(tn=tn)
+    self.autoset_last_authorized_number(telnet=telnet)
 
   def __repr__(self):
     return '<Pon(pon_id={0!r},board={1!r},last_authorized_onu_number={2!r})>'.format(self.pon_id, self.board,
@@ -103,21 +103,46 @@ class Board:
     return type(self) == type(other) and self.board_id == other.board_id
 
 
-@supply_telnet_connection
-def authorize_onu_effective(onu, cvlan, tn=None):
+@supply_telnet_session
+def authorize_onu_effective(onu, cvlan, telnet=None):
   onu.number = onu.pon.last_authorized_onu_number + 1
-  tn.write(str_to_telnet('cd gpononu'))
-  tn.read_until(b'Admin\\gpononu# ', timeout=10)
-  tn.write(str_to_telnet('set whitelist phy_addr address {0} password null action delete'.format(onu.phy_id)))
-  tn.read_until(b'Admin\\gpononu# ', timeout=10)
-  tn.write(str_to_telnet('set authorization slot {0} link {1} type {2} onuid {3} phy_id {4}'.format(
-    onu.pon.board.board_id, onu.pon.pon_id, onu.onu_type, onu.number, onu.phy_id)))
-  tn.read_until(b'Admin\\gpononu# ', timeout=10)
-  tn.write(str_to_telnet('set whitelist phy_addr address {0} password null action add slot {1} link {2} onu {3} '
-                         'type {4}'.format(onu.phy_id, onu.pon.board.board_id, onu.pon.pon_id, onu.number,
-                                           onu.onu_type)))
+
+  telnet.write(b'cd gpononu\n')
+  telnet.read_until(b'Admin\\gpononu# ')
+
+  telnet.write(  # deletes any previous authorization for the onu
+    'set whitelist phy_addr address {phy_id} password null action delete\n'.format(phy_id=onu.phy_id).encode('ascii')
+  )
+  telnet.read_until(b'Admin\\gpononu# ')
+
+  telnet.write(  # adds the onu to the authorization list
+    'set authorization slot {board_id} link {pon_id} type {onu_type} onuid {onu_number} phy_id {phy_id}\n'.format(
+      board_id=onu.pon.board.board_id,
+      pon_id=onu.pon.pon_id,
+      onu_type=onu.onu_type,
+      onu_number=onu.number,
+      phy_id=onu.phy_id
+    ).encode('ascii')
+  )
+  telnet.read_until(b'Admin\\gpononu# ')
+
+  telnet.write(  # whitelists the onu
+    str(
+      'set whitelist phy_addr address {phy_id} password null action add slot {board_id} link {pon_id} onu {onu_number} '
+      'type {onu_type}\n'
+    ).format(
+      phy_id=onu.phy_id,
+      board_id=onu.pon.board.board_id,
+      pon_id=onu.pon.pon_id,
+      onu_number=onu.number,
+      onu_type=onu.onu_type
+    ).encode('ascii')
+  )
+  telnet.read_until(b'Admin\\gpononu# ')
+
   if cvlan:
-    onu.set_cvlan(cvlan)
+    onu.set_cvlan(cvlan=cvlan)
+
   update_onu_info(auth_onu_device=onu)
   return onu
 
@@ -143,22 +168,25 @@ def find_onu_in_list(onu_list, auth_onu):
   return None
 
 
-@supply_telnet_connection
-def get_discovery_list(tn=None):
-  tn.write(str_to_telnet('cd gpononu'))
-  tn.read_until(b'Admin\\gpononu# ', timeout=10)
-  tn.write(str_to_telnet('show discovery slot all link all'))
-  discovery_list = tn.read_until(b'Admin\\gpononu# ', timeout=10)
-  return discovery_list.decode('ascii')
+@supply_telnet_session
+def get_discovery_list(telnet=None):
+  telnet.write(b'cd gpononu\n')
+  telnet.read_until(b'Admin\\gpononu# ')
+  telnet.write(b'show discovery slot all link all\n')
+  return telnet.read_until(b'Admin\\gpononu# ').decode('ascii')
 
 
-@supply_telnet_connection
-def get_authorization_list(pon, tn=None):
-  tn.write(str_to_telnet('cd gpononu'))
-  tn.read_until(b'Admin\\gpononu# ', timeout=10)
-  tn.write(str_to_telnet('show authorization slot {0} link {1}'.format(pon.board.board_id, pon.pon_id)))
-  authorization_list = tn.read_until(b'Admin\\gpononu# ', timeout=10)
-  return authorization_list.decode('ascii')
+@supply_telnet_session
+def get_authorization_list(pon, telnet=None):
+  telnet.write(b'cd gpononu\n')
+  telnet.read_until(b'Admin\\gpononu# ')
+  telnet.write(
+    'show authorization slot {board_id} link {pon_id}\n'.format(
+      board_id=pon.board.board_id,
+      pon_id=pon.pon_id
+    ).encode('ascii')
+  )
+  return telnet.read_until(b'Admin\\gpononu# ').decode('ascii')
 
 
 def format_onu_type(onu_type):
@@ -167,8 +195,8 @@ def format_onu_type(onu_type):
   return onu_type.lower()
 
 
-@supply_telnet_connection
-def get_onu_list(discovery_list, tn=None):
+@supply_telnet_session
+def get_onu_list(discovery_list, telnet=None):
   onu_list = []
   discovery_pon_list = findall('SLOT=([0-9]*) PON=([0-9]*) ,ITEM=([0-9]*)', discovery_list)
   for discovery_pon in discovery_pon_list:
@@ -176,18 +204,17 @@ def get_onu_list(discovery_list, tn=None):
     if item_quantity:
       board_id = discovery_pon[0]
       pon_id = discovery_pon[1]
-      pon = Pon(pon_id=pon_id, board_id=board_id, tn=tn)
 
-      onu_tuples_list = onu_tuples(
+      for onu_tuple in onu_tuples(
         board_id=board_id,
         discovery_list=discovery_list,
         item_quantity=item_quantity,
         pon_id=pon_id
-      )
-
-      for onu_tuple in onu_tuples_list:
-        onu = AuthOnuDevice(onu_tuple=onu_tuple, pon=pon)
-        onu_list.append(onu)
+      ):
+        onu_list.append(AuthOnuDevice(
+          onu_tuple=onu_tuple,
+          pon=Pon(pon_id=pon_id, board_id=board_id, telnet=telnet)
+        ))
   return onu_list
 
 
@@ -233,15 +260,15 @@ def onus_from_pon_textual_pattern(board_id, item_quantity, pon_id):
   ).format(board_id=board_id, pon_id=pon_id, item_quantity=item_quantity)
 
 
-@supply_telnet_connection
+@supply_telnet_session
 @Log(logger)
-def authorize_onu(auth_onu=None, cvlan=None, tn=None):
-  discovery_list = get_discovery_list(tn=tn)
-  onu_list = get_onu_list(discovery_list=discovery_list, tn=tn)
+def authorize_onu(auth_onu=None, cvlan=None, telnet=None):
+  discovery_list = get_discovery_list(telnet=telnet)
+  onu_list = get_onu_list(discovery_list=discovery_list, telnet=telnet)
   if not len(onu_list):
     return None
   if not auth_onu:
     return onu_list
   if onu := find_onu_in_list(onu_list=onu_list, auth_onu=auth_onu):
-    return authorize_onu_effective(onu=onu, cvlan=cvlan, tn=tn)
+    return authorize_onu_effective(onu=onu, cvlan=cvlan, telnet=telnet)
   return 'ERROR'

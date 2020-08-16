@@ -1,8 +1,8 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-from tasiap.onu_authorization import authorize_onu
 from tasiap.common.bot_common import is_user_authorized
 from tasiap.logger import log_update, get_logger
+from tasiap.onu_authorization import authorize_onu
 
 logger = get_logger(__name__)
 

@@ -1,7 +1,7 @@
-from tasiap.onu_authorization import authorize_onu
 from tasiap.common.bot_common import is_user_authorized, get_onu_info_string
 from tasiap.common.string_common import is_int, is_vlan_id_valid
 from tasiap.logger import log_update, get_logger
+from tasiap.onu_authorization import authorize_onu
 
 logger = get_logger(__name__)
 

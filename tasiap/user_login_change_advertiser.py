@@ -3,10 +3,10 @@ from re import findall
 
 from requests import post
 
+from config import bot_config
 from tasiap.common.mysql_common import supply_mysql_session
 from tasiap.common.sqlite_common import supply_sqlite_session, UserLogin, UserLoginChangeAdvertiser
 from tasiap.common.string_common import sanitize_name
-from config import bot_config
 from tasiap.logger import get_logger, Log
 
 logger = get_logger('user_login_change_advertiser')

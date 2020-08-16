@@ -1,9 +1,7 @@
-from argparse import ArgumentParser
-
+from config import snmp_config
 from tasiap.common.sqlite_common import find_onu_info
 from tasiap.common.string_common import is_onu_id_valid, is_vlan_id_valid, get_auth_onu_device_id, int_to_hexoctetstr, \
   assure_two_octet_hexstr, get_board_id, get_pon_id, get_onu_number_from_id
-from config import snmp_config
 from tasiap.logger import Log, get_logger
 from tasiap.snmp.common import snmpset_hex
 
@@ -82,18 +80,3 @@ def set_cvlan(auth_onu_device=None, onu_id=None, cvlan=None, phy_id=None):
     else:
       return set_cvlan_effective(board_id=board_id, pon_id=pon_id, onu_number=onu_number, cvlan=cvlan)
   return None
-
-
-def main():
-  parser = ArgumentParser()
-  parser.add_argument('-i', '--id', dest='i', help='ID da ONU em que a VLAN vai ser configurada', default=None)
-  parser.add_argument('-c', '--cvlan', dest='c', help='CVLAN a ser configurada na ONU', default=None)
-  args = parser.parse_args()
-
-  print(set_cvlan(onu_id=args.i, cvlan=args.c))
-
-  return 0
-
-
-if __name__ == '__main__':
-  main()

@@ -1,29 +1,15 @@
 from unittest import TestCase
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock, call
 
 from tasiap.onu_authorization import format_onu_type, get_last_authorized_number, get_first_missing_number_precedent, \
   get_discovery_list, get_authorization_list, Board, Pon, AuthOnuDevice, find_onu_in_list, authorize_onu_effective, \
   get_onu_list, onu_tuples, onu_tuples_found, onus_from_pon_textual, onus_from_pon_textual_found, \
   onus_from_pon_textual_pattern, authorize_onu
 from tests.data.onu_authorization_testing_data import authorization_list_tests, discovery_lists_tests
-from tests.data.telnet_testing_data import test_data
 from tests.mock_classes import MockPon, MockAuthOnuDevice, MockBoard
-from tests.telnet_testing_environment import TelnetTestingEnvironment
 
 
 class TestFunctions(TestCase):
-  telnet_testing_environment = None
-
-  @classmethod
-  def setUpClass(cls):
-    cls.telnet_testing_environment = TelnetTestingEnvironment(port=26326)
-    cls.telnet_testing_environment.setup()
-
-    cls.expected_generic_response_format = '\r\n{data}\r\nAdmin\\gpononu# '
-
-  @classmethod
-  def tearDownClass(cls):
-    cls.telnet_testing_environment.tear_down()
 
   def test_format_onu_type(self):
     onu_type_a = 'AN5506-01-A1'
@@ -76,18 +62,55 @@ class TestFunctions(TestCase):
       )
 
   def test_get_discovery_list(self):
-    expected_response = self.expected_generic_response_format.format(
-      data=test_data['default']['discovery']
+    telnet = MagicMock()
+    self.assertEqual(
+      first=telnet.read_until.return_value.decode.return_value,
+      second=get_discovery_list(telnet=telnet),
+      msg='Returns the decoded discovery list got with the telnet session passed'
     )
-
-    self.assertEqual(first=expected_response, second=get_discovery_list())
+    self.assertIn(
+      member=[
+        call.write(b'cd gpononu\n'),
+        call.read_until(b'Admin\\gpononu# '),
+        call.write(b'show discovery slot all link all\n'),
+        call.read_until(b'Admin\\gpononu# '),
+        call.read_until().decode('ascii')
+      ],
+      container=telnet.mock_calls,
+      msg=str(
+        'Uses the telnet session passed to enter the gpononu directory and use the show discovery command on all slots '
+        'and pons. Reads the output of each command after sending them. Decodes the output of the show discovery '
+        'command from ascii after reading it.'
+      )
+    )
 
   def test_get_authorization_list(self):
-    expected_response = self.expected_generic_response_format.format(
-      data=test_data['default']['authorization']
+    telnet = MagicMock()
+    pon = MockPon()
+    self.assertEqual(
+      first=telnet.read_until.return_value.decode.return_value,
+      second=get_authorization_list(pon=pon, telnet=telnet),
+      msg='Returns the decoded authorization list gathered by the telnet session passed.'
     )
-
-    self.assertEqual(first=expected_response, second=get_authorization_list(pon=MockPon()))
+    self.assertIn(
+      member=[
+        call.write(b'cd gpononu\n'),
+        call.read_until(b'Admin\\gpononu# '),
+        call.write(
+          'show authorization slot {board_id} link {pon_id}\n'.format(
+            board_id=pon.board.board_id, pon_id=pon.pon_id
+          ).encode('ascii')
+        ),
+        call.read_until(b'Admin\\gpononu# '),
+        call.read_until().decode('ascii')
+      ],
+      container=telnet.mock_calls,
+      msg=str(
+        'Uses the telnet session passed to enter the gpononu directory, use the show authorization command with the '
+        'address of the pon passed and read the output of the commands sent right after sending them. Decodes the '
+        'output of the show authorization command from ascii after reading it.'
+      )
+    )
 
   def test_find_onu_in_list(self):
     onu_a = MockAuthOnuDevice(authorization_id=1, phy_id='a')
@@ -119,25 +142,83 @@ class TestFunctions(TestCase):
   def test_authorize_onu_effective(self, mock_update_onu_info):
     onu_a = MockAuthOnuDevice()
     cvlan_a = 2600
-    self.assertEqual(first=onu_a, second=authorize_onu_effective(onu=onu_a, cvlan=cvlan_a))
-    self.assertEqual(first=MockAuthOnuDevice.pon.last_authorized_onu_number + 1, second=onu_a.number)
-    self.assertEqual(first=cvlan_a, second=onu_a.cvlan)
-    mock_update_onu_info.assert_called_with(auth_onu_device=onu_a)
+    telnet = MagicMock()
+    self.assertEqual(
+      first=onu_a,
+      second=authorize_onu_effective(onu=onu_a, cvlan=cvlan_a, telnet=telnet),
+      msg='Returns the onu passed'
+    )
+    self.assertEqual(
+      first=MockAuthOnuDevice.pon.last_authorized_onu_number + 1,
+      second=onu_a.number,
+      msg="Sets the onu number to one more than it's pon last authorized onu number"
+    )
+    self.assertEqual(
+      first=cvlan_a,
+      second=onu_a.cvlan,
+      msg='Sets the vlan of the onu to if a non-empty cvlan is passed'
+    )
+    self.assertEqual(
+      first=[call(auth_onu_device=onu_a)],
+      second=mock_update_onu_info.mock_calls,
+      msg='Pushes the onu into the database'
+    )
+    self.assertEqual(
+      first=[
+        call.write(b'cd gpononu\n'),
+        call.read_until(b'Admin\\gpononu# '),
+        call.write(
+          'set whitelist phy_addr address {phy_id} password null action delete\n'.format(
+            phy_id=onu_a.phy_id
+          ).encode('ascii')
+        ),
+        call.read_until(b'Admin\\gpononu# '),
+        call.write(
+          'set authorization slot {board_id} link {pon_id} type {onu_type} onuid {onu_number} phy_id {phy_id}\n'.format(
+            board_id=onu_a.pon.board.board_id,
+            pon_id=onu_a.pon.pon_id,
+            onu_type=onu_a.onu_type,
+            onu_number=onu_a.number,
+            phy_id=onu_a.phy_id
+          ).encode('ascii')
+        ),
+        call.read_until(b'Admin\\gpononu# '),
+        call.write(
+          str(
+            'set whitelist phy_addr address {phy_id} password null action add slot {board_id} link {pon_id} onu '
+            '{onu_number} type {onu_type}\n'
+          ).format(
+            phy_id=onu_a.phy_id,
+            board_id=onu_a.pon.board.board_id,
+            pon_id=onu_a.pon.pon_id,
+            onu_number=onu_a.number,
+            onu_type=onu_a.onu_type
+          ).encode('ascii')
+        ),
+        call.read_until(b'Admin\\gpononu# '),
+      ],
+      second=telnet.mock_calls,
+      msg=str(
+        'Uses the telnet session passed to enter the gpononu directory, delete any authorization for the phy_id of the '
+        'onu passed that could already exist, authorize the onu passed and then whitelist that same onu. Reads the '
+        'output after each command written.'
+      )
+    )
 
     onu_b = MockAuthOnuDevice()
-    authorize_onu_effective(onu=onu_b, cvlan=None)
-    self.assertFalse(expr=onu_b.cvlan)
+    authorize_onu_effective(onu=onu_b, cvlan=None, telnet=telnet)
+    self.assertIsNone(obj=onu_b.cvlan, msg='Does not set the onu vlan when no cvlan is passed')
 
   @patch(target='tasiap.onu_authorization.Pon', new=MockPon)
   @patch(target='tasiap.onu_authorization.AuthOnuDevice', new=MockAuthOnuDevice)
   @patch(target='tasiap.onu_authorization.Board', new=MockBoard)
   def test_get_onu_list(self):
-    tn = 'telnet_connection'
+    telnet = 'telnet_connection'
 
     for test in discovery_lists_tests:
       self.assertEqual(
         first=test['onu_list'],
-        second=get_onu_list(discovery_list=test['discovery_list'], tn=tn)
+        second=get_onu_list(discovery_list=test['discovery_list'], telnet=telnet)
       )
 
   def test_onu_tuples(self):
@@ -197,25 +278,28 @@ class TestFunctions(TestCase):
           )
         )
 
-  @patch(target='tasiap.onu_authorization.get_discovery_list', new=lambda tn: None)
+  @patch(target='tasiap.onu_authorization.get_discovery_list', new=lambda telnet: None)
   @patch(target='tasiap.onu_authorization.authorize_onu_effective', return_value='authorized onu')
   @patch(target='tasiap.onu_authorization.get_onu_list', side_effect=[[], ['onu'], ['onu'], ['onu'], ['onu']])
   @patch(target='tasiap.onu_authorization.find_onu_in_list', side_effect=[None, 'onu found', 'onu found'])
   def test_authorize_onu(self, mock_find_onu_in_list, mock_get_onu_list, mock_authorize_onu_effective):
-    tn = 'telnet_connection'
+    telnet = 'telnet_connection'
 
-    self.assertEqual(first=None, second=authorize_onu(tn=tn))
-    self.assertEqual(first=['onu'], second=authorize_onu(tn=tn))
+    self.assertEqual(first=None, second=authorize_onu(telnet=telnet))
+    self.assertEqual(first=['onu'], second=authorize_onu(telnet=telnet))
 
-    self.assertEqual(first='ERROR', second=authorize_onu(auth_onu='onu', tn=tn))  # first time to call find_onu_in_list
-    self.assertEqual(first=mock_authorize_onu_effective.return_value, second=authorize_onu(auth_onu='onu', tn=tn))
-    mock_authorize_onu_effective.assert_called_with(onu='onu found', cvlan=None, tn=tn)
+    self.assertEqual(first='ERROR', second=authorize_onu(auth_onu='onu', telnet=telnet))  # 1st call to find_onu_in_list
+    self.assertEqual(
+      first=mock_authorize_onu_effective.return_value,
+      second=authorize_onu(auth_onu='onu', telnet=telnet)
+    )
+    mock_authorize_onu_effective.assert_called_with(onu='onu found', cvlan=None, telnet=telnet)
 
     self.assertEqual(
       first=mock_authorize_onu_effective.return_value,
-      second=authorize_onu(auth_onu='onu', cvlan='cvlan', tn=tn)
+      second=authorize_onu(auth_onu='onu', cvlan='cvlan', telnet=telnet)
     )
-    mock_authorize_onu_effective.assert_called_with(onu='onu found', cvlan='cvlan', tn=tn)
+    mock_authorize_onu_effective.assert_called_with(onu='onu found', cvlan='cvlan', telnet=telnet)
     mock_find_onu_in_list.assert_called()
     mock_get_onu_list.assert_called()
 
@@ -241,6 +325,8 @@ class TestBoard(TestCase):
     not_equal_board = Board(board_id=14)
     self.assertEqual(first=equal_board, second=self.board_a)
     self.assertNotEqual(first=not_equal_board, second=self.board_a)
+    self.assertNotEqual(first=None, second=self.board_a)
+    self.assertNotEqual(first='string', second=self.board_a)
 
 
 class TestPon(TestCase):
@@ -251,10 +337,10 @@ class TestPon(TestCase):
     self.last_authorized_onu_number = mock_get_last_authorized_number.return_value
     self.board_a = MockBoard()
     self.pon_id_a = 6
-    self.tn = 'telnet connection'
+    self.telnet = 'telnet connection'
 
-    self.pon_a = Pon(board=self.board_a, pon_id=self.pon_id_a, tn=self.tn)
-    mock_get_authorization_list.assert_called_once_with(self.pon_a, tn=self.tn)
+    self.pon_a = Pon(board=self.board_a, pon_id=self.pon_id_a, telnet=self.telnet)
+    mock_get_authorization_list.assert_called_once_with(self.pon_a, telnet=self.telnet)
 
   def test_init(self):
     self.assertEqual(first=self.board_a, second=self.pon_a.board)
@@ -275,10 +361,10 @@ class TestPon(TestCase):
   @patch(target='tasiap.onu_authorization.get_authorization_list', return_value='authorization list')
   @patch(target='tasiap.onu_authorization.get_last_authorized_number', return_value=6)
   def test_autoset_last_authorized_number(self, mock_get_last_authorized_number, mock_get_authorization_list):
-    tn = 'telnet_connection'
+    telnet = 'telnet_connection'
 
-    self.pon_a.autoset_last_authorized_number(tn=tn)
-    mock_get_authorization_list.assert_called_once_with(self.pon_a, tn=tn)
+    self.pon_a.autoset_last_authorized_number(telnet=telnet)
+    mock_get_authorization_list.assert_called_once_with(self.pon_a, telnet=telnet)
 
     mock_get_last_authorized_number.assert_called_once_with(
       authorization_list=mock_get_authorization_list.return_value
@@ -296,12 +382,14 @@ class TestPon(TestCase):
   )
   def test_eq(self, mock_get_last_authorized_number, mock_get_authorization_list):
     assert mock_get_last_authorized_number and mock_get_authorization_list
-    equal_pon = Pon(board=self.board_a, pon_id=self.pon_id_a, tn=self.tn)
+    equal_pon = Pon(board=self.board_a, pon_id=self.pon_id_a, telnet=self.telnet)
 
     not_equal_pons = [
-      Pon(board=MockBoard(board_id=14), pon_id=self.pon_id_a, tn=self.tn),
-      Pon(board=self.board_a, pon_id=self.pon_id_a - 1, tn=self.tn),
-      Pon(board=self.board_a, pon_id=self.pon_id_a, tn=self.tn),
+      None,
+      'some string',
+      Pon(board=MockBoard(board_id=14), pon_id=self.pon_id_a, telnet=self.telnet),
+      Pon(board=self.board_a, pon_id=self.pon_id_a - 1, telnet=self.telnet),
+      Pon(board=self.board_a, pon_id=self.pon_id_a, telnet=self.telnet),
     ]
 
     self.assertEqual(first=equal_pon, second=self.pon_a)
@@ -384,6 +472,8 @@ class TestAuthOnuDevice(TestCase):
     )
 
     not_equal_onu_devices = [
+      None,
+      'string',
       AuthOnuDevice(
         authorization_id=97,
         onu_type=self.onu_type,

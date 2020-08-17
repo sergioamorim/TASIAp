@@ -78,11 +78,11 @@ def wifi(update, context):
                 if not is_wifi_password_valid(wifi_password):
                   reply_character_limit(update, 8, 64)
                 else:
-                  result = update_router_onu_config(onu_id, ssid=ssid, wifi_password=wifi_password)
+                  result = update_router_onu_config(onu_id, new_ssid=ssid, wifi_password=wifi_password)
                   update.message.reply_text('Configurações enviadas.\nRede: {0}\nSenha: {1}'.format(result['ssid'],
                                             result['wifi_password']), quote=True)
               else:
-                result = update_router_onu_config(onu_id, ssid=ssid)
+                result = update_router_onu_config(onu_id, new_ssid=ssid)
                 update.message.reply_text('Configurações enviadas.\nRede: {0}\nSenha: {1}'.format(
                                            result['ssid'], result['wifi_password']), quote=True)
             else:

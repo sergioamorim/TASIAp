@@ -72,7 +72,7 @@ def sudo_authenticated(telnet):
 
 
 @supply_telnet_session
-def get_wifi_data_effective(onu_address, telnet=None):
+def wifi_serv(onu_address, telnet=None):
   telnet.write(b'cd gpononu\n')
   telnet.read_until(b'Admin\\gpononu# ')
   telnet.write(
@@ -85,39 +85,39 @@ def get_wifi_data_effective(onu_address, telnet=None):
   return telnet.read_until(b'Admin\\gpononu# ').decode('ascii')
 
 
-def ssid(wifi_serv):
+def ssid(current_wifi_serv):
   if (current_ssid := findall(
     pattern='\\*\\*SSID:(.*?)\\n',
-    string=wifi_serv
+    string=current_wifi_serv
   )) and current_ssid != ['\r']:
     return current_ssid[0].replace('\r', '')
 
-  logger.error('ssid not found in {wifi_serv!r}'.format(wifi_serv=wifi_serv))
+  logger.error('ssid not found in {wifi_serv!r}'.format(wifi_serv=current_wifi_serv))
   return None
 
 
 @supply_telnet_session
 def get_ssid(onu_address, telnet=None):
-  return ssid(wifi_serv=get_wifi_data_effective(
+  return ssid(current_wifi_serv=wifi_serv(
     onu_address=onu_address,
     telnet=telnet
   ))
 
 
-def wpa_key(wifi_serv):
+def wpa_key(current_wifi_serv):
   if (current_wpa_key := findall(
     pattern='\\*\\*WPA Share Key:(.*?)\\n',
-    string=wifi_serv
+    string=current_wifi_serv
   )) and current_wpa_key != ['\r']:
     return current_wpa_key[0].replace('\r', '')
 
-  logger.error('wpa_key not found in {wifi_serv!r}'.format(wifi_serv=wifi_serv))
+  logger.error('wpa_key not found in {current_wifi_serv!r}'.format(current_wifi_serv=current_wifi_serv))
   return None
 
 
 @supply_telnet_session
 def get_wifi_password(onu_address, telnet=None):
-  return wpa_key(wifi_serv=get_wifi_data_effective(
+  return wpa_key(current_wifi_serv=wifi_serv(
     onu_address=onu_address,
     telnet=telnet
   ))

@@ -1,7 +1,7 @@
 from unittest import TestCase
 from unittest.mock import patch, call
 
-from tasiap.snmp.onu_wifi import set_wifi_effective, set_wifi, hex_onu_address
+from tasiap.snmp.onu_wifi import set_wifi_effective, set_wifi, hex_onu_address, wifi_hex_string
 
 
 class TestOnuWifiFunctions(TestCase):
@@ -209,4 +209,55 @@ class TestOnuWifiFunctions(TestCase):
       member=call(onu_address=mock_onu_address.return_value),
       container=mock_get_ssid.mock_calls,
       msg='Calls get_ssid with the onu address gathered from onu_address'
+    )
+
+  @patch(target='tasiap.snmp.onu_wifi.string_to_hex_octets')
+  @patch(target='tasiap.snmp.onu_wifi.hex_onu_address')
+  def test_wifi_hex_string(self, mock_hex_onu_address, mock_string_to_hex_octets):
+    wpa_key = 'super secure'
+    ssid = 'my network'
+    current_onu_address = 'onu address dict'
+    self.assertEqual(
+      first=str(
+        '42 47 4D 50 01 00 00 00 00 00 00 AF B0 A7 0C AE 48 2B 00 00 00 00 00 00 00 00 CC CC CC CC 00 00 00 00 00 00 '
+        '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 01 00 00 00 01 00 00 01 E1 '
+        '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
+        '00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 E1 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
+        '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 {hex_onu_address} 00 00 00 00 00 00 00 00 00 00 00 00 00 '
+        '00 01 00 05 00 00 00 04 00 14 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 01 {ssid_hex} 01 00 00 '
+        '06 00 04 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 {wpa_key} 00 00 00 00 00 00 00 00 00 00 00 '
+        '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
+        '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
+        '01 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
+        '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
+        '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
+        '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
+        '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
+        '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00'
+      ).format(
+        hex_onu_address=mock_hex_onu_address.return_value,
+        ssid_hex=mock_string_to_hex_octets.return_value,
+        wpa_key=mock_string_to_hex_octets.return_value
+      ),
+      second=wifi_hex_string(
+        ssid=ssid,
+        wpa_key=wpa_key,
+        current_onu_address=current_onu_address
+      ),
+      msg='Returns a hex string for the configuration of ssid and wpa key of the onu address passed'
+    )
+    self.assertIn(
+      member=call(current_onu_address=current_onu_address),
+      container=mock_hex_onu_address.mock_calls,
+      msg='Gather the hex onu address with the onu address passed'
+    )
+    self.assertIn(
+      member=call(string=ssid, length=32),
+      container=mock_string_to_hex_octets.mock_calls,
+      msg='The ssid in hex has 32 bytes and is made out of the ssid passed'
+    )
+    self.assertIn(
+      member=call(string=wpa_key, length=64),
+      container=mock_string_to_hex_octets.mock_calls,
+      msg='The wpa key in hex has 64 bytes and is made out of the wpa key passed'
     )

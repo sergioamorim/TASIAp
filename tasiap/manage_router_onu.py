@@ -9,19 +9,26 @@ from tasiap.user_from_onu import find_user_by_onu
 logger = get_logger(__name__)
 
 
+def router_onu_config(onu_id, current_wifi_serv):
+  return {
+    'onu_id': onu_id,
+    'ssid': ssid(current_wifi_serv=current_wifi_serv),
+    'wifi_password': wpa_key(current_wifi_serv=current_wifi_serv),
+    'username': find_user_by_onu(onu_id=onu_id)
+  }
+
+
 @supply_telnet_session
 def get_router_onu_info(onu_id, telnet=None):
   if is_onu_id_valid(onu_id=onu_id):
-    current_wifi_serv = wifi_serv(
-      onu_address=onu_address(onu_id=onu_id),
-      telnet=telnet
+    return router_onu_config(
+      onu_id=onu_id,
+      current_wifi_serv=wifi_serv(
+        onu_address=onu_address(onu_id=onu_id),
+        telnet=telnet
+      )
     )
-    return {
-      'onu_id': onu_id,
-      'ssid': ssid(current_wifi_serv=current_wifi_serv),
-      'wifi_password': wpa_key(current_wifi_serv=current_wifi_serv),
-      'username': find_user_by_onu(onu_id=onu_id)
-    }
+
   logger.error(msg='get_router_onu_info: onu id is invalid')
   return None
 

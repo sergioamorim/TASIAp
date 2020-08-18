@@ -14,15 +14,15 @@ def hex_onu_address(current_onu_address):
   )
 
 
-def set_wifi_effective(current_onu_address, ssid, wifi_password):
-  hex_string = str(
+def wifi_hex_string(ssid, wpa_key, current_onu_address):
+  return str(
     '42 47 4D 50 01 00 00 00 00 00 00 AF B0 A7 0C AE 48 2B 00 00 00 00 00 00 00 00 CC CC CC CC 00 00 00 00 00 00 00 00 '
     '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 01 00 00 00 01 00 00 01 E1 00 00 00 00 '
     '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
     '00 00 00 00 00 00 00 00 01 E1 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
     '00 00 00 00 00 00 00 01 00 {hex_onu_address} 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 05 00 00 00 04 00 14 '
     '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 01 {ssid_hex} 01 00 00 06 00 04 00 00 00 00 00 00 00 00 '
-    '00 00 00 00 00 00 00 00 {wifi_password_hex} 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
+    '00 00 00 00 00 00 00 00 {wpa_key} 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
     '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
     '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 01 00 00 00 00 00 00 00 00 00 00 00 00 00 '
     '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
@@ -33,9 +33,19 @@ def set_wifi_effective(current_onu_address, ssid, wifi_password):
   ).format(
     hex_onu_address=hex_onu_address(current_onu_address=current_onu_address),
     ssid_hex=string_to_hex_octets(string=ssid, length=32),
-    wifi_password_hex=string_to_hex_octets(string=wifi_password, length=64)
+    wpa_key=string_to_hex_octets(string=wpa_key, length=64)
   )
-  if snmpset_hex(snmp_oid='1.3.6.1.4.1.5875.91.1.23.1.1.1.8.1', hex_string=hex_string):
+
+
+def set_wifi_effective(current_onu_address, ssid, wifi_password):
+  if snmpset_hex(
+    snmp_oid='1.3.6.1.4.1.5875.91.1.23.1.1.1.8.1',
+    hex_string=wifi_hex_string(
+      ssid=ssid,
+      wpa_key=wifi_password,
+      current_onu_address=current_onu_address
+    )
+  ):
     return {'ssid': ssid, 'wifi_password': wifi_password}
   return None
 

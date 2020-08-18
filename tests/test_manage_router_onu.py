@@ -1,7 +1,7 @@
 from unittest import TestCase
 from unittest.mock import patch, call
 
-from tasiap.manage_router_onu import get_router_onu_info, update_router_onu_config
+from tasiap.manage_router_onu import get_router_onu_info, update_router_onu_config, router_onu_config
 
 
 class TestManageRouterOnuFunctions(TestCase):
@@ -127,3 +127,35 @@ class TestManageRouterOnuFunctions(TestCase):
     )
     mock_set_web_config.assert_called_once_with(onu_id)
     mock_set_wan_service.assert_called_once_with(onu_id, username)
+
+  @patch(target='tasiap.manage_router_onu.find_user_by_onu')
+  @patch(target='tasiap.manage_router_onu.wpa_key')
+  @patch(target='tasiap.manage_router_onu.ssid')
+  def test_router_onu_config(self, mock_ssid, mock_wpa_key, mock_find_user_by_onu):
+    onu_id = '1234'
+    current_wifi_serv = 'wifi serv data string'
+    self.assertEqual(
+      first={
+        'onu_id': onu_id,
+        'ssid': mock_ssid.return_value,
+        'wifi_password': mock_wpa_key.return_value,
+        'username': mock_find_user_by_onu.return_value
+      },
+      second=router_onu_config(onu_id=onu_id, current_wifi_serv=current_wifi_serv),
+      msg='Returns a dict with the onu_id passed and the ssid, wifi_password and username related to that onu'
+    )
+    self.assertIn(
+      member=call(current_wifi_serv=current_wifi_serv),
+      container=mock_ssid.mock_calls,
+      msg='Gather the ssid from the wifi_serv passed'
+    )
+    self.assertIn(
+      member=call(current_wifi_serv=current_wifi_serv),
+      container=mock_wpa_key.mock_calls,
+      msg='Gather the wifi_password from the wifi_serv passed'
+    )
+    self.assertIn(
+      member=call(onu_id=onu_id),
+      container=mock_find_user_by_onu.mock_calls,
+      msg='Gather the username using the onu_id passed'
+    )

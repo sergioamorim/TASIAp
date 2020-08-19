@@ -1,17 +1,9 @@
-from tasiap.common.string_common import is_onu_id_valid, int_to_hexoctetstr, string_to_hex_octets, onu_address
+from tasiap.common.string_common import is_onu_id_valid, string_to_hex_octets, onu_address
 from tasiap.common.telnet_common import get_ssid, get_wifi_password
 from tasiap.logger import Log, get_logger
-from tasiap.snmp.common import snmpset_hex
+from tasiap.snmp.common import snmpset_hex, hex_onu_address
 
 logger = get_logger(__name__)
-
-
-def hex_onu_address(current_onu_address):
-  return '{hex_board_id} 00 {hex_pon_id} 00 {hex_onu_number}'.format(
-    hex_board_id=int_to_hexoctetstr(intvalue=current_onu_address['board_id']),
-    hex_pon_id=int_to_hexoctetstr(intvalue=current_onu_address['pon_id']),
-    hex_onu_number=int_to_hexoctetstr(intvalue=current_onu_address['onu_number'])
-  )
 
 
 def wifi_hex_string(ssid, wpa_key, current_onu_address):
@@ -31,7 +23,7 @@ def wifi_hex_string(ssid, wpa_key, current_onu_address):
     '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
     '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00'
   ).format(
-    hex_onu_address=hex_onu_address(current_onu_address=current_onu_address),
+    hex_onu_address=hex_onu_address(onu_address=current_onu_address),
     ssid_hex=string_to_hex_octets(string=ssid, length=32),
     wpa_key=string_to_hex_octets(string=wpa_key, length=64)
   )

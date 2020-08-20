@@ -46,14 +46,10 @@ def set_wifi_effective(current_onu_address, ssid, wifi_password):
 def set_wifi(onu_id, ssid=None, wifi_password=None):
   if is_onu_id_valid(onu_id) and (ssid or wifi_password):
     current_onu_address = onu_address(onu_id=onu_id)
-    if not ssid:
-      ssid = get_ssid(onu_address=current_onu_address)
-    if not wifi_password:
-      wifi_password = get_wifi_password(onu_address=current_onu_address)
     return set_wifi_effective(
       current_onu_address=current_onu_address,
-      ssid=ssid,
-      wifi_password=wifi_password
+      ssid=ssid or get_ssid(onu_address=current_onu_address),
+      wifi_password=wifi_password or get_wifi_password(onu_address=current_onu_address)
     )
   logger.error('set_wan_service: invalid onu id or no setting passed')
   return None

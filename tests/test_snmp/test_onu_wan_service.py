@@ -1,7 +1,8 @@
 from unittest import TestCase
 from unittest.mock import patch, call
 
-from tasiap.snmp.onu_wan_service import set_wan_service_effective, set_wan_service
+from tasiap.snmp.onu_wan_service import set_wan_service_effective, set_wan_service, wan_service_hex_string, \
+  hex_int_vlan_id
 
 
 class TestOnuWanServiceFunctions(TestCase):
@@ -150,4 +151,100 @@ class TestOnuWanServiceFunctions(TestCase):
       ),
       container=mock_generate_cvlan.mock_calls,
       msg='Generates the vlan_id from the onu address gathered'
+    )
+
+  @patch(target='tasiap.snmp.onu_wan_service.hex_onu_address')
+  @patch(target='tasiap.snmp.onu_wan_service.string_to_hex_octets')
+  @patch(target='tasiap.snmp.onu_wan_service.hex_int_vlan_id')
+  def test_wan_service_hex_string(self, mock_hex_int_vlan_id, mock_string_to_hex_octets, mock_hex_onu_address):
+    current_onu_address = {
+      'board_id': '12',
+      'pon_id': '1',
+      'onu_number': '1'
+    }
+    wan_settings = {
+      'vlan_id': '1100',
+      'username': 'user01',
+      'login_password': 'pass123'
+    }
+
+    self.assertEqual(
+      first=str(
+        '42 47 4D 50 01 00 00 00 00 00 00 8A B0 A7 0C AE 48 2B 00 00 00 00 00 00 00 00 CC CC CC CC 00 00 00 00 00 00 '
+        '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 01 00 00 00 01 00 00 01 1F '
+        '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
+        '00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 1F 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
+        '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 {hex_onu_address} 00 00 00 00 00 00 00 00 00 00 00 00 00 '
+        '00 00 01 00 01 49 4E 54 45 52 4E 45 54 5F 52 5F 56 49 44 5F {hex_string_vlan_id} 00 00 00 00 00 00 00 00 00 '
+        '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
+        '00 01 00 01 {hex_int_vlan_id} 00 00 01 00 02 64 47 7F CC 00 00 00 20 64 7F 00 01 2D A6 38 15 08 08 08 08 00 '
+        '{hex_username} {hex_login_password} 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
+        '00 00 00 00 00 00 00 00 00 00 00 0F 0F 01 00 FF FF FF FF 00 81 00 FF FF FF FF 00 00 00 00 00 00 00 00 00 00 '
+        '00 00 00 00 00 00 00'
+      ).format(
+        hex_onu_address=mock_hex_onu_address.return_value,
+        hex_string_vlan_id=mock_string_to_hex_octets.return_value,
+        hex_int_vlan_id=mock_hex_int_vlan_id.return_value,
+        hex_username=mock_string_to_hex_octets.return_value,
+        hex_login_password=mock_string_to_hex_octets.return_value
+      ),
+      second=wan_service_hex_string(current_onu_address, wan_settings),
+      msg='Returns a hex string to be used with snmpset_hex on wan_service setting'
+    )
+    self.assertIn(
+      member=call(onu_address=current_onu_address),
+      container=mock_hex_onu_address.mock_calls,
+      msg='Transforms the onu address passed into hex string to put it into the hex string returned'
+    )
+    self.assertIn(
+      member=call(string=wan_settings['vlan_id'], length=4),
+      container=mock_string_to_hex_octets.mock_calls,
+      msg=str(
+        'Transforms the vlan id as string on the wan settings into a hex string with at least 4 octets to be put into '
+        'the hex string returned'
+      )
+    )
+    self.assertIn(
+      member=call(vlan_id=wan_settings['vlan_id']),
+      container=mock_hex_int_vlan_id.mock_calls,
+      msg=str(
+        'Transforms the vlan id as int on the wan settings into a hex string with at least 4 octets to be put into the '
+        'hex string returned'
+      )
+    )
+    self.assertIn(
+      member=call(string=wan_settings['username'], length=32),
+      container=mock_string_to_hex_octets.mock_calls,
+      msg=str(
+        'Transforms the username on the wan settings into a hex string with at least 32 octets to be put into the hex '
+        'string returned'
+      )
+    )
+    self.assertIn(
+      member=call(string=wan_settings['login_password'], length=32),
+      container=mock_string_to_hex_octets.mock_calls,
+      msg=str(
+        'Transforms the login_password on the wan settings into a hex string with at least 32 octets to be put into '
+        'the hex string returned'
+      )
+    )
+
+  @patch(target='tasiap.snmp.onu_wan_service.assure_two_octet_hexstr')
+  @patch(target='tasiap.snmp.onu_wan_service.int_to_hexoctetstr')
+  def test_hex_int_vlan_id(self, mock_int_to_hexoctetstr, mock_assure_two_octet_hexstr):
+    vlan_id = '1200'
+    self.assertEqual(
+      first=mock_assure_two_octet_hexstr.return_value,
+      second=hex_int_vlan_id(vlan_id=vlan_id),
+      msg="Returns the vlan id passed as a two octet hex string from it's int value"
+    )
+    self.assertIn(
+      member=call(hexstr=mock_int_to_hexoctetstr.return_value),
+      container=mock_assure_two_octet_hexstr.mock_calls,
+      msg='Assures the converted version of the vlan id as int to hex octet string has exactly two octets'
+    )
+    self.assertIn(
+      member=call(intvalue=vlan_id),
+      container=mock_int_to_hexoctetstr.mock_calls,
+      msg='Converts the vlan id as int to hex octet string'
     )

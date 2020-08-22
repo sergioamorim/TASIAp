@@ -8,24 +8,17 @@ logger = get_logger(__name__)
 
 
 def set_wan_service_effective(current_onu_address, vlan_id, username, login_password):
-  hex_string = '42 47 4D 50 01 00 00 00 00 00 00 8A B0 A7 0C AE 48 2B 00 00 00 00 00 00 00 00 CC CC CC CC 00 00 00 ' \
-               '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 01 00 00 ' \
-               '00 01 00 00 01 1F 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ' \
-               '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 1F 00 00 00 00 00 00 00 00 ' \
-               '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 ' \
-               '{hex_onu_address} 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 ' \
-               '00 01 49 4E 54 45 52 4E 45 54 5F 52 5F 56 49 44 5F {cvlan_string_hex} 00 00 00 00 00 00 00 00 00 00 ' \
-               '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ' \
-               '00 00 00 01 00 01 {cvlan_hex} 00 00 01 00 02 64 47 7F CC 00 00 00 20 64 7F 00 01 2D A6 38 15 08 08 ' \
-               '08 08 00 {username_hex} {login_password_hex} 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ' \
-               '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 0F 0F 01 00 FF FF FF FF 00 81 00 FF FF FF FF 00 ' \
-               '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00'.format(
-    hex_onu_address=hex_onu_address(onu_address=current_onu_address),
-    cvlan_string_hex=string_to_hex_octets(vlan_id, 4),
-    cvlan_hex=assure_two_octet_hexstr(int_to_hexoctetstr(int(vlan_id))),
-    username_hex=string_to_hex_octets(username, 32),
-    login_password_hex=string_to_hex_octets(login_password, 32))
-  if snmpset_hex(snmp_oid='1.3.6.1.4.1.5875.91.1.8.1.1.1.13.1', hex_string=hex_string):
+  if snmpset_hex(
+    snmp_oid='1.3.6.1.4.1.5875.91.1.8.1.1.1.13.1',
+    hex_string=wan_service_hex_string(
+      current_onu_address=current_onu_address,
+      wan_settings={
+        'vlan_id': vlan_id,
+        'username': username,
+        'login_password': login_password
+      }
+    )
+  ):
     return {'cvlan': vlan_id, 'username': username, 'password': login_password}
   return None
 
@@ -45,3 +38,28 @@ def set_wan_service(onu_id, username):
     )
   logger.error('set_wan_service: invalid onu id')
   return None
+
+
+def wan_service_hex_string(current_onu_address, wan_settings):
+  return str(
+    '42 47 4D 50 01 00 00 00 00 00 00 8A B0 A7 0C AE 48 2B 00 00 00 00 00 00 00 00 CC CC CC CC 00 00 00 00 00 00 00 00 '
+    '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 01 00 00 00 01 00 00 01 1F 00 00 00 00 '
+    '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
+    '00 00 00 00 00 00 00 00 01 1F 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
+    '00 00 00 00 00 00 00 01 00 {hex_onu_address} 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 01 49 4E 54 45 52 '
+    '4E 45 54 5F 52 5F 56 49 44 5F {hex_string_vlan_id} 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 '
+    '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 01 {hex_int_vlan_id} 00 00 01 00 '
+    '02 64 47 7F CC 00 00 00 20 64 7F 00 01 2D A6 38 15 08 08 08 08 00 {hex_username} {hex_login_password} 00 00 00 00 '
+    '00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 0F 0F 01 00 FF FF FF '
+    'FF 00 81 00 FF FF FF FF 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00'
+  ).format(
+    hex_onu_address=hex_onu_address(onu_address=current_onu_address),
+    hex_string_vlan_id=string_to_hex_octets(string=wan_settings['vlan_id'], length=4),
+    hex_int_vlan_id=hex_int_vlan_id(vlan_id=wan_settings['vlan_id']),
+    hex_username=string_to_hex_octets(string=wan_settings['username'], length=32),
+    hex_login_password=string_to_hex_octets(string=wan_settings['login_password'], length=32)
+  )
+
+
+def hex_int_vlan_id(vlan_id):
+  return assure_two_octet_hexstr(hexstr=int_to_hexoctetstr(intvalue=vlan_id))

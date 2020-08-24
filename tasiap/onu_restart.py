@@ -1,36 +1,46 @@
 from argparse import ArgumentParser
 
-from tasiap.common.string_common import is_onu_id_valid
-from tasiap.common.telnet_common import str_to_telnet, supply_telnet_session
+from tasiap.common.string_common import is_onu_id_valid, onu_address
+from tasiap.common.telnet_common import supply_telnet_session
 from tasiap.logger import Log, get_logger
 
 logger = get_logger(__name__)
 
 
 @supply_telnet_session
-def restart_onu(board, pon, onu_number, telnet=None):
-  telnet.write(str_to_telnet('cd gpononu'))
-  telnet.read_until(b'gpononu# ', timeout=1)
-  telnet.write(str_to_telnet('reset slot {0} link {1} onulist {2}'.format(board, pon, onu_number)))
-  result = telnet.read_until(b'gpononu# ', timeout=3).decode('ascii')
-  if 'no onu satisfy the list' in result:
-    restart_result = 'not found'
-  elif 'reset onu ok' in result:
-    restart_result = 'done'
-  else:
-    restart_result = 'error'
-  return restart_result
+def restart_onu_effective(current_onu_address, telnet=None):
+  telnet.write(b'cd gpononu\n')
+  telnet.read_until(b'gpononu# ')
+  telnet.write(
+    'reset slot {board_id} link {pon_id} onulist {onu_number}\n'
+    ''.format(
+      board_id=current_onu_address['board_id'],
+      pon_id=current_onu_address['pon_id'],
+      onu_number=current_onu_address['onu_number']
+    ).encode('ascii')
+  )
+  if result := telnet.read_until(b'gpononu# '):
+    return result.decode('ascii')
+  return None
+
+
+@supply_telnet_session
+def restart_onu(current_onu_address, telnet=None):
+  if result := restart_onu_effective(current_onu_address, telnet=telnet):
+    if 'no onu satisfy the list' in result:
+      return 'not found'
+    elif 'reset onu ok' in result:
+      return 'done'
+    else:
+      return 'error'
+  return None
 
 
 @Log(logger)
 def restart_onu_by_id(onu_id):
-  if not onu_id or not is_onu_id_valid(onu_id):
-    return None
-  board = '12' if onu_id[:1] == '1' else '14'
-  pon = onu_id[1:2]
-  onu_number = onu_id[2:] if int(onu_id[2:]) > 9 else onu_id[3:]
-  result = restart_onu(board, pon, onu_number)
-  return result
+  if is_onu_id_valid(onu_id):
+    return restart_onu(current_onu_address=onu_address(onu_id=onu_id))
+  return None
 
 
 def main():

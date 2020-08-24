@@ -44,17 +44,17 @@ class TestOnuWanServiceFunctions(TestCase):
       hex_login_password=mock_string_to_hex_octets.return_value
     )
 
-    vlan_id = '2800'
-    username = 'some username'
-    login_password = 'some password'
+    wan_settings = {
+      'vlan_id': '2800',
+      'username': 'user34',
+      'login_password': 'pass@23'
+    }
 
     mock_snmpset_hex.return_value = None
     self.assertIsNone(
       obj=set_wan_service_effective(
         current_onu_address=current_onu_address,
-        vlan_id=vlan_id,
-        username=username,
-        login_password=login_password
+        wan_settings=wan_settings
       ),
       msg='Returns None when snmpset_hex does not have a positive result'
     )
@@ -69,16 +69,10 @@ class TestOnuWanServiceFunctions(TestCase):
 
     mock_snmpset_hex.return_value = 'something'
     self.assertEqual(
-      first={
-        'cvlan': vlan_id,
-        'username': username,
-        'password': login_password
-      },
+      first=wan_settings,
       second=set_wan_service_effective(
         current_onu_address=current_onu_address,
-        vlan_id=vlan_id,
-        username=username,
-        login_password=login_password
+        wan_settings=wan_settings
       ),
       msg='Returns a dict with the vlan, username and login password passed when snmpset_hex has a positive result'
     )
@@ -124,9 +118,11 @@ class TestOnuWanServiceFunctions(TestCase):
     self.assertIn(
       member=call(
         current_onu_address=mock_onu_address.return_value,
-        vlan_id=mock_generate_cvlan.return_value,
-        username=username,
-        login_password=mock_get_login_password.return_value
+        wan_settings={
+          'vlan_id': mock_generate_cvlan.return_value,
+          'username': username,
+          'login_password': mock_get_login_password.return_value
+        }
       ),
       container=mock_set_wan_service_effective.mock_calls,
       msg=str(

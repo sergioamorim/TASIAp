@@ -65,11 +65,16 @@ def wifi(update, context):
             else:
               result = update_router_onu_config(onu_id, username=username)
               web_config_password = get_web_config_description(result)
-              update.message.reply_text('Configurações enviadas.\nSenha web (user, useradmin, admin): {0}\nUsuário'
-                                        ' PPPoE: {1}\nSenha PPPoE: {2}'.format(web_config_password,
-                                                                               result['set_wan_service']['username'],
-                                                                               result['set_wan_service']['password']),
-                                        quote=True)
+              update.message.reply_text(
+                'Configurações enviadas.\nSenha web (user, useradmin, admin): {web_config_password}\nUsuário PPPoE: '
+                '{username}\nSenha PPPoE: {login_password}'
+                ''.format(
+                  web_config_password=web_config_password,
+                  username=result['set_wan_service']['username'],
+                  login_password=result['set_wan_service']['login_password']
+                ),
+                quote=True
+              )
           elif context.args[1] == 'rede':
             if ssid := get_ssid_from_args(context.args):
               if len(ssid) > 32:

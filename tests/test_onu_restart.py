@@ -1,7 +1,7 @@
 from unittest import TestCase
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock, call, patch
 
-from tasiap.onu_restart import restart_onu, restart_onu_effective
+from tasiap.onu_restart import restart_onu, restart_onu_effective, restart_onu_by_id
 
 
 class TestOnuRestartFunctions(TestCase):
@@ -100,4 +100,38 @@ class TestOnuRestartFunctions(TestCase):
       member=call.read_until().decode('ascii'),
       container=telnet.mock_calls,
       msg='Decodes the result of the restart from ascii command if any'
+    )
+
+  @patch(target='tasiap.onu_restart.onu_address')
+  @patch(target='tasiap.onu_restart.is_onu_id_valid')
+  @patch(target='tasiap.onu_restart.restart_onu')
+  def test_restart_onu_by_id(self, mock_restart_onu, mock_is_onu_id_valid, mock_onu_address):
+    onu_id = '1234'
+
+    mock_is_onu_id_valid.return_value = False
+    self.assertIsNone(
+      obj=restart_onu_by_id(onu_id=onu_id),
+      msg='Returns None when the onu id passed is invalid'
+    )
+    self.assertIn(
+      member=call(onu_id=onu_id),
+      container=mock_is_onu_id_valid.mock_calls,
+      msg='Checks if the onu id passed is valid'
+    )
+
+    mock_is_onu_id_valid.return_value = True
+    self.assertEqual(
+      first=mock_restart_onu.return_value,
+      second=restart_onu_by_id(onu_id=onu_id),
+      msg='Returns the result of the onu restart'
+    )
+    self.assertIn(
+      member=call(current_onu_address=mock_onu_address.return_value),
+      container=mock_restart_onu.mock_calls,
+      msg='Restarts the onu using the onu address'
+    )
+    self.assertIn(
+      member=call(onu_id=onu_id),
+      container=mock_onu_address.mock_calls,
+      msg='Uses the onu id to gather the onu address'
     )

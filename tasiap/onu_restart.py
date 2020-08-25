@@ -1,5 +1,3 @@
-from argparse import ArgumentParser
-
 from tasiap.common.string_common import is_onu_id_valid, onu_address
 from tasiap.common.telnet_common import supply_telnet_session
 from tasiap.logger import Log, get_logger
@@ -38,20 +36,8 @@ def restart_onu(current_onu_address, telnet=None):
 
 @Log(logger)
 def restart_onu_by_id(onu_id):
-  if is_onu_id_valid(onu_id):
+  if is_onu_id_valid(onu_id=onu_id):
     return restart_onu(current_onu_address=onu_address(onu_id=onu_id))
+
+  logger.error(msg='restart_onu_by_id: invalid onu id ({onu_id!r})'.format(onu_id=onu_id))
   return None
-
-
-def main():
-  parser = ArgumentParser()
-  parser.add_argument('-i', '--id', dest='i', help='ID da ONU a ser reiniciada', default=None)
-  args = parser.parse_args()
-
-  print(restart_onu_by_id(args.i))
-
-  return 0
-
-
-if __name__ == '__main__':
-  main()

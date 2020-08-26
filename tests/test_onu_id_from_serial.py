@@ -1,7 +1,7 @@
 from unittest import TestCase
 from unittest.mock import MagicMock, call
 
-from tasiap.onu_id_from_serial import find_onu_by_serial, authorization_table
+from tasiap.onu_id_from_serial import find_onu_by_serial, authorization_table, onu_status_from_phy_id
 from tests.data.onu_id_from_serial_testing_data import test_cases
 
 
@@ -46,4 +46,35 @@ class TestOnuIdFromSerialFunctions(TestCase):
     self.assertIsNone(
       obj=authorization_table(telnet=telnet),
       msg='Returns None when the authorization table can not be determined'
+    )
+
+  def test_onu_status_from_phy_id(self):
+    current_authorization_table = '-----  ONU Auth Table ,SLOT=12 PON=1 ,ITEM=0 -----\n\r'
+    phy_id = 'TPLG8edac7ed'
+    self.assertIsNone(
+      obj=onu_status_from_phy_id(
+        current_authorization_table=current_authorization_table,
+        phy_id=phy_id
+      ),
+      msg='Returns None when the authorization table passed has not the authorization tuple for the phy_id passed'
+    )
+
+    current_authorization_table = '  12   2   1 HG260           A up  TPLG8edac7ed            , \n\r'
+    self.assertEqual(
+      first={
+        'onu_address': {
+          'board_id': '12',
+          'pon_id': '2',
+          'onu_number': '1'
+        },
+        'state': 'up'
+      },
+      second=onu_status_from_phy_id(
+        phy_id=phy_id,
+        current_authorization_table=current_authorization_table
+      ),
+      msg=str(
+        'Returns the onu address and state of the onu when the authorization tuple for the phy_id passed is found on '
+        'the authorization table passed'
+      )
     )

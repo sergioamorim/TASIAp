@@ -14,14 +14,7 @@ def find_onu_by_serial(serial, telnet=None):
     current_authorization_table=authorization_table(telnet=telnet)
   ):
     return {
-      'onu_id': '{board_id}{pon_id}{onu_number}'.format(
-        board_id='1' if onu_state['onu_address']['board_id'] == '12' else '2',
-        pon_id=onu_state['onu_address']['pon_id'],
-        onu_number='{leading_zero}{onu_number}'.format(
-          leading_zero='0' if int(onu_state['onu_address']['onu_number']) < 10 else '',
-          onu_number=onu_state['onu_address']['onu_number']
-        )
-      ),
+      'onu_id': onu_id_from_address(onu_address=onu_state['onu_address']),
       'state': onu_state['state']
     }
   return None
@@ -51,3 +44,11 @@ def onu_status_from_phy_id(phy_id, current_authorization_table):
       'state': onu_state[0][3]
     }
   return None
+
+
+def onu_id_from_address(onu_address):
+  return '{board_id}{pon_id}{onu_number}'.format(
+    board_id='1' if onu_address['board_id'] == '12' else '2',
+    pon_id=onu_address['pon_id'],
+    onu_number=onu_address['onu_number'].zfill(2)
+  )

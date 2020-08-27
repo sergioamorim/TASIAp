@@ -1,7 +1,8 @@
 from unittest import TestCase
 from unittest.mock import MagicMock, call
 
-from tasiap.onu_id_from_serial import find_onu_by_serial, authorization_table, onu_status_from_phy_id
+from tasiap.onu_id_from_serial import find_onu_by_serial, authorization_table, onu_status_from_phy_id, \
+  onu_id_from_address
 from tests.data.onu_id_from_serial_testing_data import test_cases
 
 
@@ -77,4 +78,46 @@ class TestOnuIdFromSerialFunctions(TestCase):
         'Returns the onu address and state of the onu when the authorization tuple for the phy_id passed is found on '
         'the authorization table passed'
       )
+    )
+
+  def test_onu_id_from_address(self):
+    self.assertEqual(
+      first='1101',
+      second=onu_id_from_address(onu_address={
+        'board_id': '12',
+        'pon_id': '1',
+        'onu_number': '1'
+      })
+    )
+    self.assertEqual(
+      first='1899',
+      second=onu_id_from_address(onu_address={
+        'board_id': '12',
+        'pon_id': '8',
+        'onu_number': '99'
+      })
+    )
+    self.assertEqual(
+      first='2121',
+      second=onu_id_from_address(onu_address={
+        'board_id': '14',
+        'pon_id': '1',
+        'onu_number': '21'
+      })
+    )
+    self.assertEqual(
+      first='2202',
+      second=onu_id_from_address(onu_address={
+        'board_id': '14',
+        'pon_id': '2',
+        'onu_number': '2'
+      })
+    )
+    self.assertEqual(
+      first='2802',
+      second=onu_id_from_address(onu_address={
+        'board_id': '14',
+        'pon_id': '8',
+        'onu_number': '2'
+      })
     )

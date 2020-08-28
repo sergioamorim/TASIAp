@@ -24,28 +24,72 @@ logger = get_logger(__name__)
 
 
 def run():
-  updater = Updater(bot_config.token, use_context=True)
+  updater = Updater(token=bot_config.token, use_context=True)
 
-  updater.dispatcher.add_handler(CommandHandler("start", start))
-  updater.dispatcher.add_handler(CommandHandler("autorizar", autorizar))
-  updater.dispatcher.add_handler(CommandHandler("authorize", authorize))
-  updater.dispatcher.add_handler(CommandHandler("sinal", sinal))
-  updater.dispatcher.add_handler(CommandHandler("reiniciar", reiniciar))
-  updater.dispatcher.add_handler(CommandHandler("procurar", procurar))
-  updater.dispatcher.add_handler(CommandHandler("usuario", usuario))
-  updater.dispatcher.add_handler(CommandHandler("login", login))
-  updater.dispatcher.add_handler(CommandHandler("onuid", onuid))
-  updater.dispatcher.add_handler(CommandHandler("cto", cto))
-  updater.dispatcher.add_handler(CommandHandler("vlan", vlan))
-  updater.dispatcher.add_handler(CommandHandler("wifi", wifi))
-  updater.dispatcher.add_handler(CommandHandler("link", link))
-  updater.dispatcher.add_handler(CallbackQueryHandler(button))
-  updater.dispatcher.add_handler(CommandHandler("help", help_handler))
-  updater.dispatcher.add_handler(MessageHandler(Filters.text, general))
+  updater.dispatcher.add_handler(
+    handler=CommandHandler(command='start', callback=start)
+  )
 
-  updater.dispatcher.add_error_handler(error)
+  updater.dispatcher.add_handler(
+    handler=CommandHandler(command='autorizar', callback=autorizar)
+  )
 
-  logger.info('Starting...')
+  updater.dispatcher.add_handler(
+    handler=CommandHandler(command='authorize', callback=authorize)
+  )
+
+  updater.dispatcher.add_handler(
+    handler=CommandHandler(command='sinal', callback=sinal)
+  )
+
+  updater.dispatcher.add_handler(
+    handler=CommandHandler(command='reiniciar', callback=reiniciar)
+  )
+
+  updater.dispatcher.add_handler(
+    handler=CommandHandler(command='procurar', callback=procurar)
+  )
+
+  updater.dispatcher.add_handler(
+    handler=CommandHandler(command='usuario', callback=usuario)
+  )
+
+  updater.dispatcher.add_handler(
+    handler=CommandHandler(command='login', callback=login)
+  )
+
+  updater.dispatcher.add_handler(
+    handler=CommandHandler(command='onuid', callback=onuid)
+  )
+
+  updater.dispatcher.add_handler(
+    handler=CommandHandler(command='cto', callback=cto)
+  )
+
+  updater.dispatcher.add_handler(
+    handler=CommandHandler(command='vlan', callback=vlan)
+  )
+
+  updater.dispatcher.add_handler(
+    handler=CommandHandler(command='wifi', callback=wifi)
+  )
+
+  updater.dispatcher.add_handler(
+    handler=CommandHandler(command='link', callback=link)
+  )
+
+  updater.dispatcher.add_handler(
+    handler=CommandHandler(command='help', callback=help_handler)
+  )
+
+  updater.dispatcher.add_handler(
+    handler=MessageHandler(filters=Filters.text, callback=general)
+  )
+
+  updater.dispatcher.add_handler(handler=CallbackQueryHandler(callback=button))
+  updater.dispatcher.add_error_handler(callback=error)
+
+  logger.info(msg='Starting...')
   updater.start_polling()
 
   updater.idle()

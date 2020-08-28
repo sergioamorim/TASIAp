@@ -120,14 +120,19 @@ def get_caller_name():
 
 
 def get_auth_onu_device_id(onu_device):
-  board_id = '1' if onu_device.pon.board.board_id == '12' else '2'
-  onu_number = onu_device.number if onu_device.number > 9 else '0{0}'.format(onu_device.number)
-  return '{0}{1}{2}'.format(board_id, onu_device.pon.pon_id, onu_number)
+  return '{board_id}{pon_id}{onu_number:02d}'.format(
+    board_id='1' if onu_device.pon.board.board_id == '12' else '2',
+    pon_id=onu_device.pon.pon_id,
+    onu_number=onu_device.number
+  )
 
 
 def get_onu_id_from_cto_vlan_name(cto_vlan_name):
-  board_id = '1' if cto_vlan_name[7:9] == '12' else '2'
-  return '{0}{1}{2}'.format(board_id, cto_vlan_name[13:14], cto_vlan_name[18:20])
+  return '{board_id}{pon_id}{onu_number}'.format(
+    board_id='1' if cto_vlan_name[7:9] == '12' else '2',
+    pon_id=cto_vlan_name[13:14],
+    onu_number=cto_vlan_name[18:20]
+  )
 
 
 def get_cto_name_from_cto_vlan_name(cto_vlan_name):

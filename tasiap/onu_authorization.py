@@ -219,13 +219,12 @@ def get_onu_list(discovery_list, telnet=None):
 
 
 def onu_tuples(board_id, discovery_list, item_quantity, pon_id):
-  onus_textual = onus_from_pon_textual(
+  return onu_tuples_found(onus_list_textual=onus_from_pon_textual(
     board_id=board_id,
     discovery_list=discovery_list,
     item_quantity=item_quantity,
     pon_id=pon_id
-  )
-  return onu_tuples_found(onus_textual)
+  ))
 
 
 def onu_tuples_found(onus_list_textual):
@@ -233,14 +232,13 @@ def onu_tuples_found(onus_list_textual):
 
 
 def onus_from_pon_textual(board_id, discovery_list, item_quantity, pon_id):
-  pon_discovery_textual_pattern = onus_from_pon_textual_pattern(
-    board_id=board_id,
-    item_quantity=item_quantity,
-    pon_id=pon_id
-  )
   return onus_from_pon_textual_found(
     discovery_list=discovery_list,
-    pon_discovery_textual_pattern=pon_discovery_textual_pattern
+    pon_discovery_textual_pattern=onus_from_pon_textual_pattern(
+      board_id=board_id,
+      item_quantity=item_quantity,
+      pon_id=pon_id
+    )
   )
 
 
@@ -263,8 +261,10 @@ def onus_from_pon_textual_pattern(board_id, item_quantity, pon_id):
 @supply_telnet_session
 @Log(logger)
 def authorize_onu(auth_onu=None, cvlan=None, telnet=None):
-  discovery_list = get_discovery_list(telnet=telnet)
-  onu_list = get_onu_list(discovery_list=discovery_list, telnet=telnet)
+  onu_list = get_onu_list(
+    discovery_list=get_discovery_list(telnet=telnet),
+    telnet=telnet
+  )
   if not len(onu_list):
     return None
   if not auth_onu:

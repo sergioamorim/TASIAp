@@ -179,9 +179,9 @@ class TestOutputMethods(unittest.TestCase):
     self.assertEqual(
       first=[
         call.write(b'cd gponline\n'),
-        call.read_until(b'gponline# ', timeout=1),
+        call.read_until(b'gponline# '),
         call.write(b'show pon_auth all\n'),
-        call.read_until(b'Admin\\gponline# ', timeout=1),
+        call.read_until(b'Admin\\gponline# '),
         call.read_until().decode('ascii')
       ],
       second=telnet.mock_calls,
@@ -191,7 +191,12 @@ class TestOutputMethods(unittest.TestCase):
       )
     )
     self.assertIn(
-      member=[call(pon_pattern, telnet.read_until.return_value.decode.return_value)],
+      member=[
+        call(
+          pattern=pon_pattern,
+          string=telnet.read_until.return_value.decode.return_value
+        )
+      ],
       container=mock_findall.mock_calls,
       msg='Calls findall with the pon address pattern and the decoded output gathered from the telnet session.'
     )

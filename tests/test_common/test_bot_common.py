@@ -26,33 +26,71 @@ class TestBotCommonFunctions(TestCase):
     def vlan(user_id):
       return is_user_authorized(user_id=user_id)
 
-    self.assertTrue(expr=vlan(user_id='1234567890'))
-    self.assertFalse(expr=vlan(user_id='2345678901'))
+    self.assertTrue(
+      expr=vlan(user_id='1234567890'),
+      msg=str(
+        "Returns True when the user id passed is in the list of id's on the permissions config for the function called"
+      )
+    )
+    self.assertFalse(
+      expr=vlan(user_id='2345678901'),
+      msg=str(
+        "Returns False when the user id passed is not in the list of id's on the permissions config for the function "
+        "called"
+      )
+    )
 
     def link(user_id):
       return is_user_authorized(user_id=user_id)
 
-    self.assertFalse(expr=link(user_id='1234567890'))
-    self.assertTrue(expr=link(user_id='2345678901'))
+    self.assertFalse(
+      expr=link(user_id='1234567890'),
+      msg=str(
+        "Returns False when the user id passed is not in the list of id's on the permissions config for the function "
+        "called"
+      )
+    )
+    self.assertTrue(
+      expr=link(user_id='2345678901'),
+      msg=str(
+        "Returns True when the user id passed is in the list of id's on the permissions config for the function called"
+      )
+    )
 
     def login(user_id):
       return is_user_authorized(user_id=user_id)
 
-    self.assertTrue(expr=login(user_id='2345678901'))
-    self.assertTrue(expr=login(user_id='1234567890'))
+    self.assertTrue(
+      expr=login(user_id='2345678901'),
+      msg=str(
+        "Returns True when the user id passed is in the list of id's on the permissions config for the function called"
+      )
+    )
+    self.assertTrue(
+      expr=login(user_id='1234567890'),
+      msg=str(
+        "Returns True when the user id passed is in the list of id's on the permissions config for the function called"
+      )
+    )
 
   def test_get_message_from_update(self):
     message_from_callback_query_a = Message()
     message_from_message_update_a = Message(from_message=True)
 
     self.assertEqual(
-      first=get_message_from_update(update=QueryUpdate(message=message_from_callback_query_a)),
-      second=message_from_callback_query_a
+      first=message_from_callback_query_a,
+      second=get_message_from_update(
+        update=QueryUpdate(message=message_from_callback_query_a)
+      ),
+      msg='Returns the message from the callback query when the update refers to a callback carry'
     )
 
     self.assertEqual(
-      first=get_message_from_update(update=MessageUpdate(message=message_from_message_update_a)),
-      second=message_from_message_update_a
+      first=get_message_from_update(
+        update=MessageUpdate(message=message_from_message_update_a)
+      ),
+      second=message_from_message_update_a,
+      msg='Returns the message from the update itself when the update refers to a message'
     )
 
   @patch('tasiap.common.bot_common.get_onu_power_signal_by_id')
@@ -60,17 +98,37 @@ class TestBotCommonFunctions(TestCase):
     onu_id = '1234'
 
     mock_get_onu_power_signal_by_id.return_value = 'not found'
-    self.assertEqual(first='não existe ONU autorizada com esse ID.', second=get_signal(onu_id=onu_id))
-    mock_get_onu_power_signal_by_id.assert_called_with(onu_id)
+    self.assertEqual(
+      first='não existe ONU autorizada com esse ID.',
+      second=get_signal(onu_id=onu_id),
+      msg='Returns the text of non-authorized onu when the onu is not found'
+    )
+    self.assertIn(
+      member=call(onu_id=onu_id),
+      container=mock_get_onu_power_signal_by_id.mock_calls,
+      msg='Gather the onu power signal from the onu id passed'
+    )
 
     mock_get_onu_power_signal_by_id.return_value = 'off'
-    self.assertEqual(first='sem sinal.', second=get_signal(onu_id=onu_id))
+    self.assertEqual(
+      first='sem sinal.',
+      second=get_signal(onu_id=onu_id),
+      msg='Returns the text of onu with no signal when the onu is found off'
+    )
 
     mock_get_onu_power_signal_by_id.return_value = 'error'
-    self.assertEqual(first='erro não especificado.', second=get_signal(onu_id=onu_id))
+    self.assertEqual(
+      first='erro não especificado.',
+      second=get_signal(onu_id=onu_id),
+      msg='Returns a standard error message when an error is encountered in the process of gathering the power signal'
+    )
 
     mock_get_onu_power_signal_by_id.return_value = '-20.00'
-    self.assertEqual(first=mock_get_onu_power_signal_by_id.return_value, second=get_signal(onu_id=onu_id))
+    self.assertEqual(
+      first=mock_get_onu_power_signal_by_id.return_value,
+      second=get_signal(onu_id=onu_id),
+      msg='Returns the power signal when it is found'
+    )
 
   @patch(target='tasiap.common.bot_common.find_onu_connection_trigger')
   @patch(target='tasiap.common.bot_common.Thread')

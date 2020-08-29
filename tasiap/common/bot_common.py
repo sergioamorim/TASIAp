@@ -11,7 +11,7 @@ def is_user_authorized(user_id):
 
 
 def get_signal(onu_id):
-  signal = get_onu_power_signal_by_id(onu_id)
+  signal = get_onu_power_signal_by_id(onu_id=onu_id)
   if signal == 'not found':
     return 'não existe ONU autorizada com esse ID.'
   elif signal == 'off':

@@ -48,7 +48,7 @@ def get_query_results_online(cto_name, session=None):
 def get_query_results_all(cto_name, session=None):
   clause = "SELECT CalledStationId, max(AcctStopTime) last_connected FROM radius_acct WHERE CalledStationId LIKE " \
            ":cto_name GROUP BY CalledStationId ORDER BY last_connected DESC;"
-  return session.execute(clause=clause, params={'cto_name': cto_name.replace(' ', '%')})
+  return session.execute(clause=clause, params={'cto_name': '%{cto_name}%'.format(cto_name=cto_name.replace(' ', '%'))})
 
 
 @supply_mysql_session

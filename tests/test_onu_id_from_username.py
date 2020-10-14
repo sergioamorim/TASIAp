@@ -61,7 +61,7 @@ class TestOutputMethods(unittest.TestCase):
       )
     )
     self.assertEqual(
-      first=[call(telnet.read_until.return_value.decode.return_value)],
+      first=[call(pon_mac_lookup=telnet.read_until.return_value.decode.return_value)],
       second=mock_get_onu_number.mock_calls,
       msg=str(
         'Calls get_onu_number function with the pon_mac_lookup decoded data that was gathered from the telnet session '
@@ -120,7 +120,7 @@ class TestOutputMethods(unittest.TestCase):
       msg='Returns None when the onu_id can not be determined'
     )
     self.assertEqual(
-      first=[call(mac, pon_address, telnet=telnet) for pon_address in pon_addresses],
+      first=[call(mac=mac, pon=pon_address, telnet=telnet) for pon_address in pon_addresses],
       second=mock_get_onu_id_by_mac_and_pon.mock_calls,
       msg='Checks every pon address available in search for the onu id when no pon is passed'
     )
@@ -138,7 +138,7 @@ class TestOutputMethods(unittest.TestCase):
       msg='Returns the onu id determined by get_onu_id_by_mac_and_pon when it is found'
     )
     self.assertEqual(
-      first=[call(mac, pon_address, telnet=telnet) for pon_address in pon_addresses],
+      first=[call(mac=mac, pon=pon_address, telnet=telnet) for pon_address in pon_addresses],
       second=mock_get_onu_id_by_mac_and_pon.mock_calls,
       msg='Checks every pon address available in search for the onu id when no pon is passed'
     )
@@ -146,7 +146,7 @@ class TestOutputMethods(unittest.TestCase):
     put_onu_id_in_the_last_pon_available(onu_id=current_onu_id)
     get_onu_id_by_mac(mac=mac, pon=pon_addresses[0], telnet=telnet)
     self.assertEqual(
-      first=[call(mac, pon_address, telnet=telnet) for pon_address in pon_addresses],
+      first=[call(mac=mac, pon=pon_address, telnet=telnet) for pon_address in pon_addresses],
       second=mock_get_onu_id_by_mac_and_pon.mock_calls,
       msg=str(
         'Checks every other pon address available in search for the onu id when it can not be found on the pon passed;'
@@ -159,7 +159,7 @@ class TestOutputMethods(unittest.TestCase):
     mock_get_onu_id_by_mac_and_pon.reset_mock()
     get_onu_id_by_mac(mac=mac, pon=pon_addresses[0], telnet=telnet)
     self.assertEqual(
-      first=[call(mac, pon_addresses[0], telnet=telnet)],
+      first=[call(mac=mac, pon=pon_addresses[0], telnet=telnet)],
       second=mock_get_onu_id_by_mac_and_pon.mock_calls,
       msg=str(
         'Calls get_onu_id_by_mac_and_pon only once when the onu id is returned from the pon passed right away'

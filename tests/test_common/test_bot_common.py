@@ -310,23 +310,23 @@ class TestBotCommonFunctions(TestCase):
 
     callback_signal_job(context=context)
     context.bot.send_message.assert_called_once_with(
-      context.job.context['chat_id'],
-      'Sinal: {signal}'.format(signal=mock_get_signal.return_value),
+      chat_id=context.job.context['chat_id'],
+      text='Sinal: {signal}'.format(signal=mock_get_signal.return_value),
       reply_to_message_id=context.job.context['message_id']
     )
 
     context.job.context['chat_id'] += 1
     expected_calls = [
       call(
-        int(bot_config.default_chat),
-        'ONU ID: {onu_id}\nSinal: {signal}'.format(
+        chat_id=int(bot_config.default_chat),
+        text='ONU ID: {onu_id}\nSinal: {signal}'.format(
           onu_id=context.job.context['onu_id'],
           signal=mock_get_signal.return_value
         )
       ),
       call(
-        context.job.context['chat_id'],
-        'Sinal: {signal}'.format(signal=mock_get_signal.return_value),
+        chat_id=context.job.context['chat_id'],
+        text='Sinal: {signal}'.format(signal=mock_get_signal.return_value),
         reply_to_message_id=context.job.context['message_id']
       )
     ]
@@ -347,7 +347,11 @@ class TestBotCommonFunctions(TestCase):
       second=signal_job_caller(context=context, update=update, onu_id=onu_id)
     )
 
-    context.job_queue.run_once.assert_called_once_with(callback_signal_job, 10, context=job_context)
+    context.job_queue.run_once.assert_called_once_with(
+      callback=callback_signal_job,
+      when=10,
+      context=job_context
+    )
 
   @patch(target='tasiap.common.bot_common.find_onu_connection')
   @patch(target='tasiap.common.bot_common.get_message_from_update')
@@ -372,14 +376,18 @@ class TestBotCommonFunctions(TestCase):
     )
 
     find_onu_connection_trigger(bot=bot, update=update, onu_id=onu_id)
-    bot.send_message.assert_called_once_with(message.chat.id, message_text, reply_to_message_id=message.message_id)
+    bot.send_message.assert_called_once_with(
+      chat_id=message.chat.id,
+      text=message_text,
+      reply_to_message_id=message.message_id
+    )
 
     mock_find_onu_connection.return_value = None
     message_text = 'Nenhum roteador foi conectado na ONU ID {onu_id}.'.format(onu_id=onu_id)
     message.chat.id += 1
     expected_calls = [
-      call(message.chat.id, message_text, reply_to_message_id=message.message_id),
-      call(int(bot_config.default_chat), message_text)
+      call(chat_id=message.chat.id, text=message_text, reply_to_message_id=message.message_id),
+      call(chat_id=int(bot_config.default_chat), text=message_text)
     ]
     find_onu_connection_trigger(bot=bot, update=update, onu_id=onu_id)
     bot.send_message.assert_has_calls(calls=expected_calls, any_order=True)

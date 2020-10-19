@@ -2,7 +2,7 @@ from unittest import TestCase
 from unittest.mock import MagicMock, call
 
 from tasiap.onu_id_from_serial import find_onu_by_serial, authorization_table, onu_status_from_phy_id, \
-  onu_id_from_address
+  onu_id_from_address, read_until_multiple_screens_capable, read_until_eof_proof
 from tests.data.onu_id_from_serial_testing_data import test_cases
 
 
@@ -18,9 +18,9 @@ class TestOnuIdFromSerialFunctions(TestCase):
 
   def test_authorization_table(self):
     telnet = MagicMock()
-
+    telnet.read_until.return_value = b''
     self.assertEqual(
-      first=telnet.read_until().decode.return_value,
+      first=telnet.read_until.return_value.decode('ascii'),
       second=authorization_table(telnet=telnet),
       msg='Returns the decoded result of the authorization table request'
     )
@@ -30,22 +30,17 @@ class TestOnuIdFromSerialFunctions(TestCase):
         call.write(b'cd gpononu\n'),
         call.read_until(b'gpononu# '),
         call.write(b'show authorization slot all link all\n'),
-        call.read_until(b'gpononu# ')
+        call.read_until(match=b'gpononu# ', timeout=1)
       ],
       container=telnet.mock_calls,
       msg=str(
         'Requests the authorization table on the gpononu directory from the telnet session passed'
       )
     )
-    self.assertIn(
-      member=call('ascii'),
-      container=telnet.read_until.return_value.decode.mock_calls,
-      msg='Decodes the result of the authorization table request from ascii'
-    )
 
-    telnet.read_until.return_value = None
-    self.assertIsNone(
-      obj=authorization_table(telnet=telnet),
+    telnet.read_until.return_value = b''
+    self.assertFalse(
+      expr=authorization_table(telnet=telnet),
       msg='Returns None when the authorization table can not be determined'
     )
 
@@ -78,6 +73,56 @@ class TestOnuIdFromSerialFunctions(TestCase):
         'Returns the onu address and state of the onu when the authorization tuple for the phy_id passed is found on '
         'the authorization table passed'
       )
+    )
+
+  def test_read_until_multiple_screens_capable(self):
+    def side_effect():
+      yield b'\n  --Press any key to continue Ctrl+c to stop-- '
+      yield b'\ngpononu# '
+
+    telnet = MagicMock()
+    telnet.read_until.side_effect = side_effect()
+    self.assertEqual(
+      first=b'\n  --Press any key to continue Ctrl+c to stop-- \ngpononu# ',
+      second=read_until_multiple_screens_capable(match=b'gpononu# ', timeout=1, telnet=telnet),
+      msg=str(
+        'Returns all the data, even if the buffer for the terminal size is reached and it is needed to ask for more'
+      )
+    )
+    self.assertIn(
+      member=call.write(buffer=b'\n'),
+      container=telnet.mock_calls,
+      msg=str(
+        'Writes a return character to the telnet passed in order to call read_until again after the terminal length '
+        'buffer is reached and a key press is requested and the match is not found yet'
+      )
+    )
+
+  def test_read_until_eof_proof(self):
+    telnet = MagicMock()
+    self.assertEqual(
+      first=telnet.read_until.return_value,
+      second=read_until_eof_proof(
+        match=b'something',
+        timeout=1,
+        telnet=telnet
+      ),
+      msg='Returns whatever is returned from the pure read_until if EOF is not raised'
+    )
+
+    def eof_error_raiser():
+      raise EOFError
+
+    telnet.read_until.side_effect = lambda match, timeout: eof_error_raiser()
+
+    self.assertEqual(
+      first=b'',
+      second=read_until_eof_proof(
+        match=b'something',
+        timeout=1,
+        telnet=telnet
+      ),
+      msg='Returns an empty bytes string when EOFError is raised while calling read_until on the telnet passed'
     )
 
   def test_onu_id_from_address(self):

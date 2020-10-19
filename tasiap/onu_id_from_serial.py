@@ -25,9 +25,36 @@ def authorization_table(telnet=None):
   telnet.write(b'cd gpononu\n')
   telnet.read_until(b'gpononu# ')
   telnet.write(b'show authorization slot all link all\n')
-  if result := telnet.read_until(b'gpononu# '):
-    return result.decode('ascii')
-  return None
+  return read_until_multiple_screens_capable(
+    match=b'gpononu# ',
+    timeout=1,
+    telnet=telnet
+  ).decode('ascii')
+
+
+def read_until_multiple_screens_capable(match, timeout, telnet):
+  if match in (
+    result := read_until_eof_proof(
+      match=match,
+      timeout=timeout,
+      telnet=telnet
+    )
+  ) or result == b'':
+    return result
+
+  telnet.write(buffer=b'\n')
+  return result + read_until_multiple_screens_capable(
+    match=match,
+    timeout=timeout,
+    telnet=telnet
+  )
+
+
+def read_until_eof_proof(match, timeout, telnet):
+  try:
+    return telnet.read_until(match=match, timeout=timeout)
+  except EOFError:
+    return b''
 
 
 def onu_status_from_phy_id(phy_id, current_authorization_table):
